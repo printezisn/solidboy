@@ -6,11 +6,12 @@ pub struct CPU {
   registers: Registers,
   rom: Vec<u8>,
   pc: u16,
-  sp: u16
+  sp: u16,
+  accept_interrupts: bool
 }
 
 struct Instruction {
-  bytes: u8,
+  next_pc: u16,
   cycles: u8
 }
 
@@ -19,8 +20,9 @@ impl CPU {
     CPU {
       registers: Registers::new(),
       rom,
-      pc: 0,
-      sp: 0
+      pc: 0x0100,
+      sp: 0xFFFE,
+      accept_interrupts: true
     }
   }
 
@@ -28,7 +30,7 @@ impl CPU {
     loop {
       let instruction = self.execute_instruction();
 
-      self.pc += instruction.bytes as u16;
+      self.pc = instruction.next_pc;
     }
   }
 
@@ -36,6 +38,20 @@ impl CPU {
     let opcode = self.rom[self.pc as usize];
 
     match opcode {
+      // NOP
+      0x00 => {
+        return Instruction { next_pc: self.pc + 1, cycles: 1 };
+      },
+
+      // LD SP, n16
+      0x31 => {
+        let byte1 = self.rom[self.pc as usize + 1] as u16;
+        let byte2 = self.rom[self.pc as usize + 2] as u16;
+        self.sp = (byte2 << 8) | byte1;
+
+        return Instruction { next_pc: self.pc + 3, cycles: 3 };
+      },
+
       // INC A
       0x3C => {
         let (new_value, overflowing) = self.registers.get_a().overflowing_add(1);
@@ -46,10 +62,26 @@ impl CPU {
         self.registers.set_carry(overflowing);
         self.registers.set_a(new_value);
 
-        return Instruction { bytes: 1, cycles: 1 };
+        return Instruction { next_pc: self.pc + 1, cycles: 1 };
       },
+
+      // JP n16
+      0xC3 => {
+        let byte1 = self.rom[self.pc as usize + 1] as u16;
+        let byte2 = self.rom[self.pc as usize + 2] as u16;
+        let address = (byte2 << 8) | byte1;
+
+        return Instruction { next_pc: address, cycles: 4 };
+      },
+
+      // DI
+      0xF3 => {
+        self.accept_interrupts = false;
+
+        return Instruction { next_pc: self.pc + 1, cycles: 1 };
+      }
+
       _ => {
-        println!("{:?}", self.registers);
         panic!("Unknown opcode: {:02X}", opcode);
       }
     }
