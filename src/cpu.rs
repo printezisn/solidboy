@@ -1,4 +1,4 @@
-pub mod registers;
+mod registers;
 
 use registers::Registers;
 
