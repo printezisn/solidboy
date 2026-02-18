@@ -1,20 +1,19 @@
-pub mod traits;
 pub mod rom_reader;
 
-use traits::RomReader;
+use rom_reader::RomReader;
 
 pub struct Adapters {
-  rom_reader: Box<dyn RomReader>
+  rom_reader: RomReader
 }
 
 impl Adapters {
-  pub fn new() -> Self {
+  pub fn new(rom_reader: RomReader) -> Self {
     Self {
-      rom_reader: Box::new(rom_reader::new())
+      rom_reader
     }
   }
 
-  pub fn get_rom_reader(&self) -> &dyn RomReader {
-    self.rom_reader.as_ref()
+  pub fn rom_reader(&self) -> &RomReader {
+    &self.rom_reader
   }
 }
