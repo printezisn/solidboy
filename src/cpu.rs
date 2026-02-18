@@ -1,17 +1,17 @@
 mod registers;
 
+use registers::Register8;
+use registers::Register16;
 use registers::Registers;
 
 pub struct CPU {
   registers: Registers,
   rom: Vec<u8>,
-  pc: u16,
-  sp: u16,
   accept_interrupts: bool
 }
 
 struct Instruction {
-  next_pc: u16,
+  next_pc: usize,
   cycles: u8
 }
 
@@ -20,8 +20,6 @@ impl CPU {
     CPU {
       registers: Registers::new(),
       rom,
-      pc: 0x0100,
-      sp: 0xFFFE,
       accept_interrupts: true
     }
   }
@@ -30,55 +28,49 @@ impl CPU {
     loop {
       let instruction = self.execute_instruction();
 
-      self.pc = instruction.next_pc;
+      self.registers.set16(Register16::PC, instruction.next_pc as u16);
     }
   }
 
   fn execute_instruction(&mut self) -> Instruction {
-    let opcode = self.rom[self.pc as usize];
+    let pc = self.registers.get16(Register16::PC) as usize;
+    let opcode = self.rom[pc as usize];
 
     match opcode {
       // NOP
       0x00 => {
-        return Instruction { next_pc: self.pc + 1, cycles: 1 };
+        return Instruction { next_pc: pc + 1, cycles: 1 };
       },
 
       // LD SP, n16
       0x31 => {
-        let byte1 = self.rom[self.pc as usize + 1] as u16;
-        let byte2 = self.rom[self.pc as usize + 2] as u16;
-        self.sp = (byte2 << 8) | byte1;
+        let byte1 = self.rom[pc + 1] as u16;
+        let byte2 = self.rom[pc + 2] as u16;
+        self.registers.set16(Register16::SP, (byte2 << 8) | byte1);
 
-        return Instruction { next_pc: self.pc + 3, cycles: 3 };
+        return Instruction { next_pc: pc + 3, cycles: 3 };
       },
 
       // INC A
       0x3C => {
-        let (new_value, overflowing) = self.registers.get_a().overflowing_add(1);
-
-        self.registers.set_zero(new_value == 0);
-        self.registers.set_subtract(false);
-        self.registers.set_half_carry((self.registers.get_a() & 0xF) + 1 > 0xF);
-        self.registers.set_carry(overflowing);
-        self.registers.set_a(new_value);
-
-        return Instruction { next_pc: self.pc + 1, cycles: 1 };
+        self.registers.add8(Register8::A, 1);
+        return Instruction { next_pc: pc + 1, cycles: 1 };
       },
 
       // JP n16
       0xC3 => {
-        let byte1 = self.rom[self.pc as usize + 1] as u16;
-        let byte2 = self.rom[self.pc as usize + 2] as u16;
+        let byte1 = self.rom[pc + 1] as u16;
+        let byte2 = self.rom[pc + 2] as u16;
         let address = (byte2 << 8) | byte1;
 
-        return Instruction { next_pc: address, cycles: 4 };
+        return Instruction { next_pc: address as usize, cycles: 4 };
       },
 
       // DI
       0xF3 => {
         self.accept_interrupts = false;
 
-        return Instruction { next_pc: self.pc + 1, cycles: 1 };
+        return Instruction { next_pc: pc + 1, cycles: 1 };
       }
 
       _ => {
