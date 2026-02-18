@@ -1,6 +1,7 @@
 mod cpu;
 mod adapters;
 mod emulator;
+mod memory_bus;
 
 use adapters::rom_reader::RomReader;
 use adapters::Adapters;

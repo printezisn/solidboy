@@ -131,6 +131,50 @@ impl Registers {
     self.set8(name, new_value);
   }
 
+  pub fn inc8(&mut self, name: Register8) {
+    let old_value = self.get8(name);
+    let new_value = old_value.wrapping_add(1);
+
+    self.zero = new_value == 0;
+    self.subtract = false;
+    self.half_carry = (old_value & 0xF) + 1 > 0xF;
+    self.set8(name, new_value);
+  }
+
+  pub fn inc16(&mut self, name: Register16) {
+    let old_value = self.get16(name);
+    let new_value = old_value.wrapping_add(1);
+    self.set16(name, new_value);
+  }
+
+  pub fn or8(&mut self, name1: Register8, name2: Register8) {
+    let value1 = self.get8(name1);
+    let value2 = self.get8(name2);
+    let new_value = value1 | value2;
+
+    self.zero = new_value == 0;
+    self.subtract = false;
+    self.half_carry = false;
+    self.carry = false;
+    self.set8(name1, new_value);
+  }
+
+  pub fn zero(&self) -> bool {
+    self.zero
+  }
+
+  pub fn subtract(&self) -> bool {
+    self.subtract
+  }
+
+  pub fn half_carry(&self) -> bool {
+    self.half_carry
+  }
+
+  pub fn carry(&self) -> bool {
+    self.carry
+  }
+
   fn f(&self) -> u8 {
     let mut num: u8 = 0;
 
