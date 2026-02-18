@@ -1,5 +1,5 @@
 pub enum RomReader {
-  File { file_path: &'static str }
+  File { file_path: String }
 }
 
 impl RomReader {
