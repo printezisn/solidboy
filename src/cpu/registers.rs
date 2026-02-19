@@ -20,6 +20,49 @@ pub enum Register8 {
   L
 }
 
+pub fn register8(index: u8) -> Register8 {
+  match index {
+    0x00 => Register8::B,
+    0x01 => Register8::C,
+    0x02 => Register8::D,
+    0x03 => Register8::E,
+    0x04 => Register8::H,
+    0x05 => Register8::L,
+    0x07 => Register8::A,
+    _ => panic!("Invalid register8 index: {}", index)
+  }
+}
+
+pub fn register16(index: u8) -> Register16 {
+  match index {
+    0x00 => Register16::BC,
+    0x01 => Register16::DE,
+    0x02 => Register16::HL,
+    0x03 => Register16::SP,
+    _ => panic!("Invalid register16 index: {}", index)
+  }
+}
+
+pub fn register16_stk(index: u8) -> Register16 {
+  match index {
+    0x00 => Register16::BC,
+    0x01 => Register16::DE,
+    0x02 => Register16::HL,
+    0x03 => Register16::AF,
+    _ => panic!("Invalid register16 stk index: {}", index)
+  }
+}
+
+pub fn register16_mem(index: u8) -> (Register16, i8) {
+  match index {
+    0x00 => (Register16::BC, 0),
+    0x01 => (Register16::DE, 0),
+    0x02 => (Register16::HL, 1),
+    0x03 => (Register16::HL, -1),
+    _ => panic!("Invalid register16 mem index: {}", index)
+  }
+}
+
 #[derive(Debug)]
 pub struct Registers {
   a: u8,
