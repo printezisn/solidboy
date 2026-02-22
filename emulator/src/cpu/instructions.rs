@@ -1,5 +1,6 @@
 use super::registers::Register;
 
+#[derive(Copy, Clone, Debug)]
 pub enum Mnemonic {
   NOP,
   LD,
@@ -59,6 +60,7 @@ pub enum Mnemonic {
   SET,
 }
 
+#[derive(Copy, Clone, Debug)]
 pub enum OperandName {
   BC,
   N16,
@@ -100,21 +102,21 @@ pub enum OperandName {
 }
 
 pub struct Operand {
-  name: OperandName,
-  register: Option<Register>,
-  immediate: bool,
-  bytes: u8,
-  increment: bool,
-  decrement: bool,
+  pub name: OperandName,
+  pub register: Option<Register>,
+  pub immediate: bool,
+  pub bytes: u8,
+  pub increment: bool,
+  pub decrement: bool,
 }
 
 pub struct Instruction {
-  mnemonic: Mnemonic,
-  cycles: [u8; 2],
-  bytes: u8,
-  operands: [Operand; 3],
-  total_operands: u8,
-  total_cycles: u8,
+  pub mnemonic: Mnemonic,
+  pub cycles: [u8; 2],
+  pub bytes: u8,
+  pub operands: [Operand; 3],
+  pub total_operands: u8,
+  pub total_cycles: u8,
 }
 
 pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [

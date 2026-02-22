@@ -75,6 +75,7 @@ const REGISTERS = [
 console.log("use super::registers::Register;");
 console.log();
 
+console.log("#[derive(Copy, Clone, Debug)]");
 console.log("pub enum Mnemonic {");
 Array.from(
   new Set([
@@ -91,6 +92,7 @@ Array.from(
 console.log("}");
 console.log();
 
+console.log("#[derive(Copy, Clone, Debug)]");
 console.log("pub enum OperandName {");
 Array.from(
   new Set([
@@ -109,22 +111,22 @@ console.log("}");
 console.log();
 
 console.log("pub struct Operand {");
-console.log("  name: OperandName,");
-console.log("  register: Option<Register>,");
-console.log("  immediate: bool,");
-console.log("  bytes: u8,");
-console.log("  increment: bool,");
-console.log("  decrement: bool,");
+console.log("  pub name: OperandName,");
+console.log("  pub register: Option<Register>,");
+console.log("  pub immediate: bool,");
+console.log("  pub bytes: u8,");
+console.log("  pub increment: bool,");
+console.log("  pub decrement: bool,");
 console.log("}");
 console.log();
 
 console.log("pub struct Instruction {");
-console.log("  mnemonic: Mnemonic,");
-console.log("  cycles: [u8; 2],");
-console.log("  bytes: u8,");
-console.log("  operands: [Operand; 3],");
-console.log("  total_operands: u8,");
-console.log("  total_cycles: u8,");
+console.log("  pub mnemonic: Mnemonic,");
+console.log("  pub cycles: [u8; 2],");
+console.log("  pub bytes: u8,");
+console.log("  pub operands: [Operand; 3],");
+console.log("  pub total_operands: u8,");
+console.log("  pub total_cycles: u8,");
 console.log("}");
 console.log();
 
