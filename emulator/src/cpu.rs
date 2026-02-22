@@ -54,6 +54,7 @@ impl CPU {
         Mnemonic::DI => self.di(&instruction),
         Mnemonic::EI => self.ei(&instruction),
         Mnemonic::LD => self.ld(&instruction),
+        Mnemonic::LDH => self.ldh(&instruction),
       _ => panic!("Unknown opcode: {:02X} {:?}", opcode, instruction.mnemonic)
     }
   }
@@ -70,8 +71,8 @@ impl CPU {
     (high << 8) | low
   }
 
-  fn read_a16(&self) -> u8 {
-    self.memory_bus.read(self.read_n16())
+  fn read_a16(&self, high: bool) -> u8 {
+    self.memory_bus.read(self.sanitize_address(self.read_n16(), high))
   }
 
   fn read_e8(&self) -> u16 {
@@ -79,37 +80,45 @@ impl CPU {
     self.rom[pc + 1] as i16 as u16
   }
 
-  fn read_operand(&self, operand: &Operand) -> (u16, u8) {
+  fn sanitize_address(&self, address: u16, high: bool) -> u16 {
+    if high {
+      0xFF00 | (address & 0x00FF)
+    } else {
+      address
+    }
+  }
+
+  fn read_operand(&self, operand: &Operand, high: bool) -> (u16, u8) {
     match operand.register {
       Some(register) => {
         if operand.immediate {
           return (self.registers.get(register), register_bytes(register));
         }
 
-        let address = self.registers.get(register);
+        let address = self.sanitize_address(self.registers.get(register), high);
         return (self.memory_bus.read(address) as u16, 1);
       },
       None => {
         if !operand.immediate {
-          return (self.read_a16() as u16, 1);
+          return (self.read_a16(high) as u16, 1);
         }
 
         if operand.bytes == 1 {
-          return (self.read_n8() as u16, 1);
+          return (self.sanitize_address(self.read_n8() as u16, high), 1);
         } else {
-          return (self.read_n16(), 2);
+          return (self.sanitize_address(self.read_n16(), high), 2);
         }
       }
     }
   }
 
-  fn write_operand(&mut self, operand: &Operand, value: u16, register_bytes: u8) {
+  fn write_operand(&mut self, operand: &Operand, value: u16, register_bytes: u8, high: bool) {
     match operand.register {
       Some(register) => {
         if operand.immediate {
           self.registers.set(register, value);
         } else {
-          let address = self.registers.get(register);
+          let address = self.sanitize_address(self.registers.get(register), high);
           self.memory_bus.write(address, value as u8);
         }
       },
@@ -118,7 +127,7 @@ impl CPU {
           panic!("Cannot write to an immediate operand");
         }
 
-        let address = self.read_n16();
+        let address = self.sanitize_address(self.read_n16(), high);
         if register_bytes == 1 {
           self.memory_bus.write(address, value as u8);
         } else {
@@ -190,7 +199,7 @@ impl CPU {
   fn ld(&mut self, instruction: &Instruction) -> InstructionResult {
     let pc = self.registers.get(Register::PC);
     
-    let (mut value, register_bytes) = self.read_operand(&instruction.operands[1]);
+    let (mut value, register_bytes) = self.read_operand(&instruction.operands[1], false);
     
     if instruction.total_operands == 3 {
       let offset = self.read_e8();
@@ -203,7 +212,7 @@ impl CPU {
       value = value.overflowing_add(offset).0;
     }
 
-    self.write_operand(&instruction.operands[0], value, register_bytes);
+    self.write_operand(&instruction.operands[0], value, register_bytes, false);
 
     for i in 0..(instruction.total_operands as usize) {
       if instruction.operands[i].increment {
@@ -214,6 +223,17 @@ impl CPU {
         self.registers.set(register, self.registers.get(register) - 1 as u16);
       }
     }
+
+    self.registers.set(Register::PC, pc + instruction.bytes as u16);
+
+    return InstructionResult { cycles: instruction.cycles[0] };
+  }
+
+  fn ldh(&mut self, instruction: &Instruction) -> InstructionResult {
+    let pc = self.registers.get(Register::PC);
+    
+    let (value, register_bytes) = self.read_operand(&instruction.operands[1], true);
+    self.write_operand(&instruction.operands[0], value, register_bytes, true);
 
     self.registers.set(Register::PC, pc + instruction.bytes as u16);
 
@@ -766,6 +786,72 @@ mod tests {
     assert_eq!(result.cycles, 8);
     assert_eq!(cpu.registers.get(Register::SP), 0x1234);
     assert_eq!(cpu.registers.get(Register::HL), 0x1234);
+    assert_eq!(cpu.registers.get(Register::PC), INITIAL_PC + 1);
+    assert_eq!(cpu.registers.zero(), INITIAL_ZERO_FLAG);
+    assert_eq!(cpu.registers.subtract(), INITIAL_SUBTRACT_FLAG);
+    assert_eq!(cpu.registers.half_carry(), INITIAL_HALF_CARRY_FLAG);
+    assert_eq!(cpu.registers.carry(), INITIAL_CARRY_FLAG);
+  }
+
+  #[test]
+  fn test_ldh_a8_a() {
+    let mut cpu = create_cpu(vec![0xE0, 0x80]);
+    cpu.registers.set(Register::A, 0x34);
+
+    let result = cpu.execute_instruction();
+
+    assert_eq!(result.cycles, 12);
+    assert_eq!(cpu.memory_bus.read(0xFF80), 0x34);
+    assert_eq!(cpu.registers.get(Register::PC), INITIAL_PC + 2);
+    assert_eq!(cpu.registers.zero(), INITIAL_ZERO_FLAG);
+    assert_eq!(cpu.registers.subtract(), INITIAL_SUBTRACT_FLAG);
+    assert_eq!(cpu.registers.half_carry(), INITIAL_HALF_CARRY_FLAG);
+    assert_eq!(cpu.registers.carry(), INITIAL_CARRY_FLAG);
+  }
+
+  #[test]
+  fn test_ldh_c_mem_a() {
+    let mut cpu = create_cpu(vec![0xE2]);
+    cpu.registers.set(Register::C, 0x80);
+    cpu.registers.set(Register::A, 0x34);
+
+    let result = cpu.execute_instruction();
+
+    assert_eq!(result.cycles, 8);
+    assert_eq!(cpu.memory_bus.read(0xFF80), 0x34);
+    assert_eq!(cpu.registers.get(Register::PC), INITIAL_PC + 1);
+    assert_eq!(cpu.registers.zero(), INITIAL_ZERO_FLAG);
+    assert_eq!(cpu.registers.subtract(), INITIAL_SUBTRACT_FLAG);
+    assert_eq!(cpu.registers.half_carry(), INITIAL_HALF_CARRY_FLAG);
+    assert_eq!(cpu.registers.carry(), INITIAL_CARRY_FLAG);
+  }
+
+  #[test]
+  fn test_ldh_a_a8() {
+    let mut cpu = create_cpu(vec![0xF0, 0x80]);
+    cpu.memory_bus.write(0xFF80, 0x34);
+
+    let result = cpu.execute_instruction();
+
+    assert_eq!(result.cycles, 12);
+    assert_eq!(cpu.registers.get(Register::A), 0x34);
+    assert_eq!(cpu.registers.get(Register::PC), INITIAL_PC + 2);
+    assert_eq!(cpu.registers.zero(), INITIAL_ZERO_FLAG);
+    assert_eq!(cpu.registers.subtract(), INITIAL_SUBTRACT_FLAG);
+    assert_eq!(cpu.registers.half_carry(), INITIAL_HALF_CARRY_FLAG);
+    assert_eq!(cpu.registers.carry(), INITIAL_CARRY_FLAG);
+  }
+
+  #[test]
+  fn test_ldh_a_c_mem() {
+    let mut cpu = create_cpu(vec![0xF2]);
+    cpu.registers.set(Register::C, 0x80);
+    cpu.memory_bus.write(0xFF80, 0x34);
+
+    let result = cpu.execute_instruction();
+
+    assert_eq!(result.cycles, 8);
+    assert_eq!(cpu.registers.get(Register::A), 0x34);
     assert_eq!(cpu.registers.get(Register::PC), INITIAL_PC + 1);
     assert_eq!(cpu.registers.zero(), INITIAL_ZERO_FLAG);
     assert_eq!(cpu.registers.subtract(), INITIAL_SUBTRACT_FLAG);
