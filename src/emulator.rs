@@ -5,5 +5,7 @@ pub fn emulate(adapters: Adapters) {
   let rom = adapters.rom_reader().read_rom();
   let mut cpu = CPU::new(rom);
 
-  cpu.run();
+  loop {
+    cpu.execute_instruction();
+  }
 }
