@@ -35,6 +35,13 @@ pub struct Registers {
   carry: bool
 }
 
+pub fn register_bytes(name: Register) -> u8 {
+  match name {
+    Register::A | Register::B | Register::C | Register::D | Register::E | Register::F | Register::H | Register::L => 1,
+    Register::PC | Register::SP | Register::AF | Register::BC | Register::DE | Register::HL => 2
+  }
+}
+
 impl Registers {
   pub fn new() -> Self {
     Self {

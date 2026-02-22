@@ -8572,7 +8572,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
         register: Some(Register::SP),
         immediate: true,
         bytes: 0,
-        increment: true,
+        increment: false,
         decrement: false,
       },
       Operand {
