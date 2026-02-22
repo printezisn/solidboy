@@ -49,6 +49,8 @@ impl CPU {
     match instruction.mnemonic {
         Mnemonic::NOP => self.noop(&instruction),
         Mnemonic::JP => self.jp(&instruction),
+        Mnemonic::DI => self.di(&instruction),
+        Mnemonic::EI => self.ei(&instruction),
       _ => panic!("Unknown opcode: {:02X} {:?}", opcode, instruction.mnemonic)
     }
   }
@@ -100,6 +102,22 @@ impl CPU {
     }
 
     return InstructionResult { cycles: instruction.cycles[0] };
+  }
+
+  fn di(&mut self, instruction: &Instruction) -> InstructionResult {
+    self.accept_interrupts = false;
+    let pc = self.registers.get(Register::PC);
+    self.registers.set(Register::PC, pc + instruction.bytes as u16);
+
+    InstructionResult { cycles: instruction.cycles[0] }
+  }
+
+  fn ei(&mut self, instruction: &Instruction) -> InstructionResult {
+    self.accept_interrupts = true;
+    let pc = self.registers.get(Register::PC);
+    self.registers.set(Register::PC, pc + instruction.bytes as u16);
+
+    InstructionResult { cycles: instruction.cycles[0] }
   }
 }
 
@@ -279,6 +297,36 @@ mod tests {
   
       assert_eq!(result.cycles, 4);
       assert_eq!(cpu.registers.get(Register::PC), 0x1234);
+      assert_eq!(cpu.registers.zero(), INITIAL_ZERO_FLAG);
+      assert_eq!(cpu.registers.subtract(), INITIAL_SUBTRACT_FLAG);
+      assert_eq!(cpu.registers.half_carry(), INITIAL_HALF_CARRY_FLAG);
+      assert_eq!(cpu.registers.carry(), INITIAL_CARRY_FLAG);
+  }
+
+  #[test]
+  fn test_di() {
+      let mut cpu = create_cpu(vec![0xF3]);
+      cpu.accept_interrupts = true;
+      
+      let result = cpu.execute_instruction();
+  
+      assert_eq!(result.cycles, 4);
+      assert_eq!(cpu.accept_interrupts, false);
+      assert_eq!(cpu.registers.zero(), INITIAL_ZERO_FLAG);
+      assert_eq!(cpu.registers.subtract(), INITIAL_SUBTRACT_FLAG);
+      assert_eq!(cpu.registers.half_carry(), INITIAL_HALF_CARRY_FLAG);
+      assert_eq!(cpu.registers.carry(), INITIAL_CARRY_FLAG);
+  }
+
+  #[test]
+  fn test_ei() {
+      let mut cpu = create_cpu(vec![0xFB]);
+      cpu.accept_interrupts = false;
+      
+      let result = cpu.execute_instruction();
+  
+      assert_eq!(result.cycles, 4);
+      assert_eq!(cpu.accept_interrupts, true);
       assert_eq!(cpu.registers.zero(), INITIAL_ZERO_FLAG);
       assert_eq!(cpu.registers.subtract(), INITIAL_SUBTRACT_FLAG);
       assert_eq!(cpu.registers.half_carry(), INITIAL_HALF_CARRY_FLAG);
