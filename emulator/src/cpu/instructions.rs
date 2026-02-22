@@ -111,6 +111,7 @@ pub struct Operand {
 }
 
 pub struct Instruction {
+  pub code: &'static str,
   pub mnemonic: Mnemonic,
   pub cycles: [u8; 2],
   pub bytes: u8,
@@ -121,6 +122,7 @@ pub struct Instruction {
 
 pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
   Instruction {
+    code: "0x00",
     mnemonic: Mnemonic::NOP,
     cycles: [4, 0],
     bytes: 1,
@@ -154,6 +156,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x01",
     mnemonic: Mnemonic::LD,
     cycles: [12, 0],
     bytes: 3,
@@ -187,6 +190,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x02",
     mnemonic: Mnemonic::LD,
     cycles: [8, 0],
     bytes: 1,
@@ -220,6 +224,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x03",
     mnemonic: Mnemonic::INC,
     cycles: [8, 0],
     bytes: 1,
@@ -253,6 +258,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x04",
     mnemonic: Mnemonic::INC,
     cycles: [4, 0],
     bytes: 1,
@@ -286,6 +292,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x05",
     mnemonic: Mnemonic::DEC,
     cycles: [4, 0],
     bytes: 1,
@@ -319,6 +326,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x06",
     mnemonic: Mnemonic::LD,
     cycles: [8, 0],
     bytes: 2,
@@ -352,6 +360,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x07",
     mnemonic: Mnemonic::RLCA,
     cycles: [4, 0],
     bytes: 1,
@@ -385,6 +394,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x08",
     mnemonic: Mnemonic::LD,
     cycles: [20, 0],
     bytes: 3,
@@ -418,6 +428,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x09",
     mnemonic: Mnemonic::ADD,
     cycles: [8, 0],
     bytes: 1,
@@ -451,6 +462,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x0A",
     mnemonic: Mnemonic::LD,
     cycles: [8, 0],
     bytes: 1,
@@ -484,6 +496,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x0B",
     mnemonic: Mnemonic::DEC,
     cycles: [8, 0],
     bytes: 1,
@@ -517,6 +530,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x0C",
     mnemonic: Mnemonic::INC,
     cycles: [4, 0],
     bytes: 1,
@@ -550,6 +564,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x0D",
     mnemonic: Mnemonic::DEC,
     cycles: [4, 0],
     bytes: 1,
@@ -583,6 +598,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x0E",
     mnemonic: Mnemonic::LD,
     cycles: [8, 0],
     bytes: 2,
@@ -616,6 +632,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x0F",
     mnemonic: Mnemonic::RRCA,
     cycles: [4, 0],
     bytes: 1,
@@ -649,6 +666,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x10",
     mnemonic: Mnemonic::STOP,
     cycles: [4, 0],
     bytes: 2,
@@ -682,6 +700,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x11",
     mnemonic: Mnemonic::LD,
     cycles: [12, 0],
     bytes: 3,
@@ -715,6 +734,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x12",
     mnemonic: Mnemonic::LD,
     cycles: [8, 0],
     bytes: 1,
@@ -748,6 +768,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x13",
     mnemonic: Mnemonic::INC,
     cycles: [8, 0],
     bytes: 1,
@@ -781,6 +802,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x14",
     mnemonic: Mnemonic::INC,
     cycles: [4, 0],
     bytes: 1,
@@ -814,6 +836,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x15",
     mnemonic: Mnemonic::DEC,
     cycles: [4, 0],
     bytes: 1,
@@ -847,6 +870,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x16",
     mnemonic: Mnemonic::LD,
     cycles: [8, 0],
     bytes: 2,
@@ -880,6 +904,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x17",
     mnemonic: Mnemonic::RLA,
     cycles: [4, 0],
     bytes: 1,
@@ -913,6 +938,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x18",
     mnemonic: Mnemonic::JR,
     cycles: [12, 0],
     bytes: 2,
@@ -946,6 +972,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x19",
     mnemonic: Mnemonic::ADD,
     cycles: [8, 0],
     bytes: 1,
@@ -979,6 +1006,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x1A",
     mnemonic: Mnemonic::LD,
     cycles: [8, 0],
     bytes: 1,
@@ -1012,6 +1040,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x1B",
     mnemonic: Mnemonic::DEC,
     cycles: [8, 0],
     bytes: 1,
@@ -1045,6 +1074,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x1C",
     mnemonic: Mnemonic::INC,
     cycles: [4, 0],
     bytes: 1,
@@ -1078,6 +1108,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x1D",
     mnemonic: Mnemonic::DEC,
     cycles: [4, 0],
     bytes: 1,
@@ -1111,6 +1142,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x1E",
     mnemonic: Mnemonic::LD,
     cycles: [8, 0],
     bytes: 2,
@@ -1144,6 +1176,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x1F",
     mnemonic: Mnemonic::RRA,
     cycles: [4, 0],
     bytes: 1,
@@ -1177,6 +1210,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x20",
     mnemonic: Mnemonic::JR,
     cycles: [12, 8],
     bytes: 2,
@@ -1210,6 +1244,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 2,
   },
   Instruction {
+    code: "0x21",
     mnemonic: Mnemonic::LD,
     cycles: [12, 0],
     bytes: 3,
@@ -1243,6 +1278,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x22",
     mnemonic: Mnemonic::LD,
     cycles: [8, 0],
     bytes: 1,
@@ -1276,6 +1312,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x23",
     mnemonic: Mnemonic::INC,
     cycles: [8, 0],
     bytes: 1,
@@ -1309,6 +1346,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x24",
     mnemonic: Mnemonic::INC,
     cycles: [4, 0],
     bytes: 1,
@@ -1342,6 +1380,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x25",
     mnemonic: Mnemonic::DEC,
     cycles: [4, 0],
     bytes: 1,
@@ -1375,6 +1414,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x26",
     mnemonic: Mnemonic::LD,
     cycles: [8, 0],
     bytes: 2,
@@ -1408,6 +1448,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x27",
     mnemonic: Mnemonic::DAA,
     cycles: [4, 0],
     bytes: 1,
@@ -1441,6 +1482,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x28",
     mnemonic: Mnemonic::JR,
     cycles: [12, 8],
     bytes: 2,
@@ -1474,6 +1516,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 2,
   },
   Instruction {
+    code: "0x29",
     mnemonic: Mnemonic::ADD,
     cycles: [8, 0],
     bytes: 1,
@@ -1507,6 +1550,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x2A",
     mnemonic: Mnemonic::LD,
     cycles: [8, 0],
     bytes: 1,
@@ -1540,6 +1584,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x2B",
     mnemonic: Mnemonic::DEC,
     cycles: [8, 0],
     bytes: 1,
@@ -1573,6 +1618,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x2C",
     mnemonic: Mnemonic::INC,
     cycles: [4, 0],
     bytes: 1,
@@ -1606,6 +1652,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x2D",
     mnemonic: Mnemonic::DEC,
     cycles: [4, 0],
     bytes: 1,
@@ -1639,6 +1686,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x2E",
     mnemonic: Mnemonic::LD,
     cycles: [8, 0],
     bytes: 2,
@@ -1672,6 +1720,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x2F",
     mnemonic: Mnemonic::CPL,
     cycles: [4, 0],
     bytes: 1,
@@ -1705,6 +1754,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x30",
     mnemonic: Mnemonic::JR,
     cycles: [12, 8],
     bytes: 2,
@@ -1738,6 +1788,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 2,
   },
   Instruction {
+    code: "0x31",
     mnemonic: Mnemonic::LD,
     cycles: [12, 0],
     bytes: 3,
@@ -1771,6 +1822,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x32",
     mnemonic: Mnemonic::LD,
     cycles: [8, 0],
     bytes: 1,
@@ -1804,6 +1856,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x33",
     mnemonic: Mnemonic::INC,
     cycles: [8, 0],
     bytes: 1,
@@ -1837,6 +1890,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x34",
     mnemonic: Mnemonic::INC,
     cycles: [12, 0],
     bytes: 1,
@@ -1870,6 +1924,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x35",
     mnemonic: Mnemonic::DEC,
     cycles: [12, 0],
     bytes: 1,
@@ -1903,6 +1958,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x36",
     mnemonic: Mnemonic::LD,
     cycles: [12, 0],
     bytes: 2,
@@ -1936,6 +1992,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x37",
     mnemonic: Mnemonic::SCF,
     cycles: [4, 0],
     bytes: 1,
@@ -1969,6 +2026,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x38",
     mnemonic: Mnemonic::JR,
     cycles: [12, 8],
     bytes: 2,
@@ -2002,6 +2060,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 2,
   },
   Instruction {
+    code: "0x39",
     mnemonic: Mnemonic::ADD,
     cycles: [8, 0],
     bytes: 1,
@@ -2035,6 +2094,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x3A",
     mnemonic: Mnemonic::LD,
     cycles: [8, 0],
     bytes: 1,
@@ -2068,6 +2128,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x3B",
     mnemonic: Mnemonic::DEC,
     cycles: [8, 0],
     bytes: 1,
@@ -2101,6 +2162,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x3C",
     mnemonic: Mnemonic::INC,
     cycles: [4, 0],
     bytes: 1,
@@ -2134,6 +2196,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x3D",
     mnemonic: Mnemonic::DEC,
     cycles: [4, 0],
     bytes: 1,
@@ -2167,6 +2230,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x3E",
     mnemonic: Mnemonic::LD,
     cycles: [8, 0],
     bytes: 2,
@@ -2200,6 +2264,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x3F",
     mnemonic: Mnemonic::CCF,
     cycles: [4, 0],
     bytes: 1,
@@ -2233,6 +2298,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x40",
     mnemonic: Mnemonic::LD,
     cycles: [4, 0],
     bytes: 1,
@@ -2266,6 +2332,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x41",
     mnemonic: Mnemonic::LD,
     cycles: [4, 0],
     bytes: 1,
@@ -2299,6 +2366,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x42",
     mnemonic: Mnemonic::LD,
     cycles: [4, 0],
     bytes: 1,
@@ -2332,6 +2400,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x43",
     mnemonic: Mnemonic::LD,
     cycles: [4, 0],
     bytes: 1,
@@ -2365,6 +2434,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x44",
     mnemonic: Mnemonic::LD,
     cycles: [4, 0],
     bytes: 1,
@@ -2398,6 +2468,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x45",
     mnemonic: Mnemonic::LD,
     cycles: [4, 0],
     bytes: 1,
@@ -2431,6 +2502,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x46",
     mnemonic: Mnemonic::LD,
     cycles: [8, 0],
     bytes: 1,
@@ -2464,6 +2536,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x47",
     mnemonic: Mnemonic::LD,
     cycles: [4, 0],
     bytes: 1,
@@ -2497,6 +2570,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x48",
     mnemonic: Mnemonic::LD,
     cycles: [4, 0],
     bytes: 1,
@@ -2530,6 +2604,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x49",
     mnemonic: Mnemonic::LD,
     cycles: [4, 0],
     bytes: 1,
@@ -2563,6 +2638,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x4A",
     mnemonic: Mnemonic::LD,
     cycles: [4, 0],
     bytes: 1,
@@ -2596,6 +2672,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x4B",
     mnemonic: Mnemonic::LD,
     cycles: [4, 0],
     bytes: 1,
@@ -2629,6 +2706,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x4C",
     mnemonic: Mnemonic::LD,
     cycles: [4, 0],
     bytes: 1,
@@ -2662,6 +2740,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x4D",
     mnemonic: Mnemonic::LD,
     cycles: [4, 0],
     bytes: 1,
@@ -2695,6 +2774,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x4E",
     mnemonic: Mnemonic::LD,
     cycles: [8, 0],
     bytes: 1,
@@ -2728,6 +2808,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x4F",
     mnemonic: Mnemonic::LD,
     cycles: [4, 0],
     bytes: 1,
@@ -2761,6 +2842,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x50",
     mnemonic: Mnemonic::LD,
     cycles: [4, 0],
     bytes: 1,
@@ -2794,6 +2876,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x51",
     mnemonic: Mnemonic::LD,
     cycles: [4, 0],
     bytes: 1,
@@ -2827,6 +2910,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x52",
     mnemonic: Mnemonic::LD,
     cycles: [4, 0],
     bytes: 1,
@@ -2860,6 +2944,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x53",
     mnemonic: Mnemonic::LD,
     cycles: [4, 0],
     bytes: 1,
@@ -2893,6 +2978,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x54",
     mnemonic: Mnemonic::LD,
     cycles: [4, 0],
     bytes: 1,
@@ -2926,6 +3012,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x55",
     mnemonic: Mnemonic::LD,
     cycles: [4, 0],
     bytes: 1,
@@ -2959,6 +3046,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x56",
     mnemonic: Mnemonic::LD,
     cycles: [8, 0],
     bytes: 1,
@@ -2992,6 +3080,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x57",
     mnemonic: Mnemonic::LD,
     cycles: [4, 0],
     bytes: 1,
@@ -3025,6 +3114,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x58",
     mnemonic: Mnemonic::LD,
     cycles: [4, 0],
     bytes: 1,
@@ -3058,6 +3148,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x59",
     mnemonic: Mnemonic::LD,
     cycles: [4, 0],
     bytes: 1,
@@ -3091,6 +3182,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x5A",
     mnemonic: Mnemonic::LD,
     cycles: [4, 0],
     bytes: 1,
@@ -3124,6 +3216,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x5B",
     mnemonic: Mnemonic::LD,
     cycles: [4, 0],
     bytes: 1,
@@ -3157,6 +3250,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x5C",
     mnemonic: Mnemonic::LD,
     cycles: [4, 0],
     bytes: 1,
@@ -3190,6 +3284,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x5D",
     mnemonic: Mnemonic::LD,
     cycles: [4, 0],
     bytes: 1,
@@ -3223,6 +3318,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x5E",
     mnemonic: Mnemonic::LD,
     cycles: [8, 0],
     bytes: 1,
@@ -3256,6 +3352,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x5F",
     mnemonic: Mnemonic::LD,
     cycles: [4, 0],
     bytes: 1,
@@ -3289,6 +3386,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x60",
     mnemonic: Mnemonic::LD,
     cycles: [4, 0],
     bytes: 1,
@@ -3322,6 +3420,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x61",
     mnemonic: Mnemonic::LD,
     cycles: [4, 0],
     bytes: 1,
@@ -3355,6 +3454,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x62",
     mnemonic: Mnemonic::LD,
     cycles: [4, 0],
     bytes: 1,
@@ -3388,6 +3488,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x63",
     mnemonic: Mnemonic::LD,
     cycles: [4, 0],
     bytes: 1,
@@ -3421,6 +3522,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x64",
     mnemonic: Mnemonic::LD,
     cycles: [4, 0],
     bytes: 1,
@@ -3454,6 +3556,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x65",
     mnemonic: Mnemonic::LD,
     cycles: [4, 0],
     bytes: 1,
@@ -3487,6 +3590,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x66",
     mnemonic: Mnemonic::LD,
     cycles: [8, 0],
     bytes: 1,
@@ -3520,6 +3624,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x67",
     mnemonic: Mnemonic::LD,
     cycles: [4, 0],
     bytes: 1,
@@ -3553,6 +3658,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x68",
     mnemonic: Mnemonic::LD,
     cycles: [4, 0],
     bytes: 1,
@@ -3586,6 +3692,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x69",
     mnemonic: Mnemonic::LD,
     cycles: [4, 0],
     bytes: 1,
@@ -3619,6 +3726,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x6A",
     mnemonic: Mnemonic::LD,
     cycles: [4, 0],
     bytes: 1,
@@ -3652,6 +3760,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x6B",
     mnemonic: Mnemonic::LD,
     cycles: [4, 0],
     bytes: 1,
@@ -3685,6 +3794,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x6C",
     mnemonic: Mnemonic::LD,
     cycles: [4, 0],
     bytes: 1,
@@ -3718,6 +3828,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x6D",
     mnemonic: Mnemonic::LD,
     cycles: [4, 0],
     bytes: 1,
@@ -3751,6 +3862,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x6E",
     mnemonic: Mnemonic::LD,
     cycles: [8, 0],
     bytes: 1,
@@ -3784,6 +3896,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x6F",
     mnemonic: Mnemonic::LD,
     cycles: [4, 0],
     bytes: 1,
@@ -3817,6 +3930,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x70",
     mnemonic: Mnemonic::LD,
     cycles: [8, 0],
     bytes: 1,
@@ -3850,6 +3964,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x71",
     mnemonic: Mnemonic::LD,
     cycles: [8, 0],
     bytes: 1,
@@ -3883,6 +3998,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x72",
     mnemonic: Mnemonic::LD,
     cycles: [8, 0],
     bytes: 1,
@@ -3916,6 +4032,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x73",
     mnemonic: Mnemonic::LD,
     cycles: [8, 0],
     bytes: 1,
@@ -3949,6 +4066,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x74",
     mnemonic: Mnemonic::LD,
     cycles: [8, 0],
     bytes: 1,
@@ -3982,6 +4100,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x75",
     mnemonic: Mnemonic::LD,
     cycles: [8, 0],
     bytes: 1,
@@ -4015,6 +4134,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x76",
     mnemonic: Mnemonic::HALT,
     cycles: [4, 0],
     bytes: 1,
@@ -4048,6 +4168,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x77",
     mnemonic: Mnemonic::LD,
     cycles: [8, 0],
     bytes: 1,
@@ -4081,6 +4202,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x78",
     mnemonic: Mnemonic::LD,
     cycles: [4, 0],
     bytes: 1,
@@ -4114,6 +4236,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x79",
     mnemonic: Mnemonic::LD,
     cycles: [4, 0],
     bytes: 1,
@@ -4147,6 +4270,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x7A",
     mnemonic: Mnemonic::LD,
     cycles: [4, 0],
     bytes: 1,
@@ -4180,6 +4304,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x7B",
     mnemonic: Mnemonic::LD,
     cycles: [4, 0],
     bytes: 1,
@@ -4213,6 +4338,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x7C",
     mnemonic: Mnemonic::LD,
     cycles: [4, 0],
     bytes: 1,
@@ -4246,6 +4372,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x7D",
     mnemonic: Mnemonic::LD,
     cycles: [4, 0],
     bytes: 1,
@@ -4279,6 +4406,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x7E",
     mnemonic: Mnemonic::LD,
     cycles: [8, 0],
     bytes: 1,
@@ -4312,6 +4440,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x7F",
     mnemonic: Mnemonic::LD,
     cycles: [4, 0],
     bytes: 1,
@@ -4345,6 +4474,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x80",
     mnemonic: Mnemonic::ADD,
     cycles: [4, 0],
     bytes: 1,
@@ -4378,6 +4508,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x81",
     mnemonic: Mnemonic::ADD,
     cycles: [4, 0],
     bytes: 1,
@@ -4411,6 +4542,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x82",
     mnemonic: Mnemonic::ADD,
     cycles: [4, 0],
     bytes: 1,
@@ -4444,6 +4576,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x83",
     mnemonic: Mnemonic::ADD,
     cycles: [4, 0],
     bytes: 1,
@@ -4477,6 +4610,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x84",
     mnemonic: Mnemonic::ADD,
     cycles: [4, 0],
     bytes: 1,
@@ -4510,6 +4644,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x85",
     mnemonic: Mnemonic::ADD,
     cycles: [4, 0],
     bytes: 1,
@@ -4543,6 +4678,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x86",
     mnemonic: Mnemonic::ADD,
     cycles: [8, 0],
     bytes: 1,
@@ -4576,6 +4712,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x87",
     mnemonic: Mnemonic::ADD,
     cycles: [4, 0],
     bytes: 1,
@@ -4609,6 +4746,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x88",
     mnemonic: Mnemonic::ADC,
     cycles: [4, 0],
     bytes: 1,
@@ -4642,6 +4780,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x89",
     mnemonic: Mnemonic::ADC,
     cycles: [4, 0],
     bytes: 1,
@@ -4675,6 +4814,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x8A",
     mnemonic: Mnemonic::ADC,
     cycles: [4, 0],
     bytes: 1,
@@ -4708,6 +4848,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x8B",
     mnemonic: Mnemonic::ADC,
     cycles: [4, 0],
     bytes: 1,
@@ -4741,6 +4882,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x8C",
     mnemonic: Mnemonic::ADC,
     cycles: [4, 0],
     bytes: 1,
@@ -4774,6 +4916,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x8D",
     mnemonic: Mnemonic::ADC,
     cycles: [4, 0],
     bytes: 1,
@@ -4807,6 +4950,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x8E",
     mnemonic: Mnemonic::ADC,
     cycles: [8, 0],
     bytes: 1,
@@ -4840,6 +4984,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x8F",
     mnemonic: Mnemonic::ADC,
     cycles: [4, 0],
     bytes: 1,
@@ -4873,6 +5018,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x90",
     mnemonic: Mnemonic::SUB,
     cycles: [4, 0],
     bytes: 1,
@@ -4906,6 +5052,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x91",
     mnemonic: Mnemonic::SUB,
     cycles: [4, 0],
     bytes: 1,
@@ -4939,6 +5086,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x92",
     mnemonic: Mnemonic::SUB,
     cycles: [4, 0],
     bytes: 1,
@@ -4972,6 +5120,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x93",
     mnemonic: Mnemonic::SUB,
     cycles: [4, 0],
     bytes: 1,
@@ -5005,6 +5154,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x94",
     mnemonic: Mnemonic::SUB,
     cycles: [4, 0],
     bytes: 1,
@@ -5038,6 +5188,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x95",
     mnemonic: Mnemonic::SUB,
     cycles: [4, 0],
     bytes: 1,
@@ -5071,6 +5222,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x96",
     mnemonic: Mnemonic::SUB,
     cycles: [8, 0],
     bytes: 1,
@@ -5104,6 +5256,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x97",
     mnemonic: Mnemonic::SUB,
     cycles: [4, 0],
     bytes: 1,
@@ -5137,6 +5290,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x98",
     mnemonic: Mnemonic::SBC,
     cycles: [4, 0],
     bytes: 1,
@@ -5170,6 +5324,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x99",
     mnemonic: Mnemonic::SBC,
     cycles: [4, 0],
     bytes: 1,
@@ -5203,6 +5358,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x9A",
     mnemonic: Mnemonic::SBC,
     cycles: [4, 0],
     bytes: 1,
@@ -5236,6 +5392,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x9B",
     mnemonic: Mnemonic::SBC,
     cycles: [4, 0],
     bytes: 1,
@@ -5269,6 +5426,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x9C",
     mnemonic: Mnemonic::SBC,
     cycles: [4, 0],
     bytes: 1,
@@ -5302,6 +5460,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x9D",
     mnemonic: Mnemonic::SBC,
     cycles: [4, 0],
     bytes: 1,
@@ -5335,6 +5494,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x9E",
     mnemonic: Mnemonic::SBC,
     cycles: [8, 0],
     bytes: 1,
@@ -5368,6 +5528,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x9F",
     mnemonic: Mnemonic::SBC,
     cycles: [4, 0],
     bytes: 1,
@@ -5401,6 +5562,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xA0",
     mnemonic: Mnemonic::AND,
     cycles: [4, 0],
     bytes: 1,
@@ -5434,6 +5596,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xA1",
     mnemonic: Mnemonic::AND,
     cycles: [4, 0],
     bytes: 1,
@@ -5467,6 +5630,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xA2",
     mnemonic: Mnemonic::AND,
     cycles: [4, 0],
     bytes: 1,
@@ -5500,6 +5664,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xA3",
     mnemonic: Mnemonic::AND,
     cycles: [4, 0],
     bytes: 1,
@@ -5533,6 +5698,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xA4",
     mnemonic: Mnemonic::AND,
     cycles: [4, 0],
     bytes: 1,
@@ -5566,6 +5732,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xA5",
     mnemonic: Mnemonic::AND,
     cycles: [4, 0],
     bytes: 1,
@@ -5599,6 +5766,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xA6",
     mnemonic: Mnemonic::AND,
     cycles: [8, 0],
     bytes: 1,
@@ -5632,6 +5800,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xA7",
     mnemonic: Mnemonic::AND,
     cycles: [4, 0],
     bytes: 1,
@@ -5665,6 +5834,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xA8",
     mnemonic: Mnemonic::XOR,
     cycles: [4, 0],
     bytes: 1,
@@ -5698,6 +5868,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xA9",
     mnemonic: Mnemonic::XOR,
     cycles: [4, 0],
     bytes: 1,
@@ -5731,6 +5902,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xAA",
     mnemonic: Mnemonic::XOR,
     cycles: [4, 0],
     bytes: 1,
@@ -5764,6 +5936,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xAB",
     mnemonic: Mnemonic::XOR,
     cycles: [4, 0],
     bytes: 1,
@@ -5797,6 +5970,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xAC",
     mnemonic: Mnemonic::XOR,
     cycles: [4, 0],
     bytes: 1,
@@ -5830,6 +6004,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xAD",
     mnemonic: Mnemonic::XOR,
     cycles: [4, 0],
     bytes: 1,
@@ -5863,6 +6038,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xAE",
     mnemonic: Mnemonic::XOR,
     cycles: [8, 0],
     bytes: 1,
@@ -5896,6 +6072,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xAF",
     mnemonic: Mnemonic::XOR,
     cycles: [4, 0],
     bytes: 1,
@@ -5929,6 +6106,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xB0",
     mnemonic: Mnemonic::OR,
     cycles: [4, 0],
     bytes: 1,
@@ -5962,6 +6140,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xB1",
     mnemonic: Mnemonic::OR,
     cycles: [4, 0],
     bytes: 1,
@@ -5995,6 +6174,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xB2",
     mnemonic: Mnemonic::OR,
     cycles: [4, 0],
     bytes: 1,
@@ -6028,6 +6208,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xB3",
     mnemonic: Mnemonic::OR,
     cycles: [4, 0],
     bytes: 1,
@@ -6061,6 +6242,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xB4",
     mnemonic: Mnemonic::OR,
     cycles: [4, 0],
     bytes: 1,
@@ -6094,6 +6276,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xB5",
     mnemonic: Mnemonic::OR,
     cycles: [4, 0],
     bytes: 1,
@@ -6127,6 +6310,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xB6",
     mnemonic: Mnemonic::OR,
     cycles: [8, 0],
     bytes: 1,
@@ -6160,6 +6344,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xB7",
     mnemonic: Mnemonic::OR,
     cycles: [4, 0],
     bytes: 1,
@@ -6193,6 +6378,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xB8",
     mnemonic: Mnemonic::CP,
     cycles: [4, 0],
     bytes: 1,
@@ -6226,6 +6412,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xB9",
     mnemonic: Mnemonic::CP,
     cycles: [4, 0],
     bytes: 1,
@@ -6259,6 +6446,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xBA",
     mnemonic: Mnemonic::CP,
     cycles: [4, 0],
     bytes: 1,
@@ -6292,6 +6480,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xBB",
     mnemonic: Mnemonic::CP,
     cycles: [4, 0],
     bytes: 1,
@@ -6325,6 +6514,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xBC",
     mnemonic: Mnemonic::CP,
     cycles: [4, 0],
     bytes: 1,
@@ -6358,6 +6548,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xBD",
     mnemonic: Mnemonic::CP,
     cycles: [4, 0],
     bytes: 1,
@@ -6391,6 +6582,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xBE",
     mnemonic: Mnemonic::CP,
     cycles: [8, 0],
     bytes: 1,
@@ -6424,6 +6616,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xBF",
     mnemonic: Mnemonic::CP,
     cycles: [4, 0],
     bytes: 1,
@@ -6457,6 +6650,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xC0",
     mnemonic: Mnemonic::RET,
     cycles: [20, 8],
     bytes: 1,
@@ -6490,6 +6684,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 2,
   },
   Instruction {
+    code: "0xC1",
     mnemonic: Mnemonic::POP,
     cycles: [12, 0],
     bytes: 1,
@@ -6523,6 +6718,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xC2",
     mnemonic: Mnemonic::JP,
     cycles: [16, 12],
     bytes: 3,
@@ -6556,6 +6752,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 2,
   },
   Instruction {
+    code: "0xC3",
     mnemonic: Mnemonic::JP,
     cycles: [16, 0],
     bytes: 3,
@@ -6589,6 +6786,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xC4",
     mnemonic: Mnemonic::CALL,
     cycles: [24, 12],
     bytes: 3,
@@ -6622,6 +6820,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 2,
   },
   Instruction {
+    code: "0xC5",
     mnemonic: Mnemonic::PUSH,
     cycles: [16, 0],
     bytes: 1,
@@ -6655,6 +6854,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xC6",
     mnemonic: Mnemonic::ADD,
     cycles: [8, 0],
     bytes: 2,
@@ -6688,6 +6888,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xC7",
     mnemonic: Mnemonic::RST,
     cycles: [16, 0],
     bytes: 1,
@@ -6721,6 +6922,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xC8",
     mnemonic: Mnemonic::RET,
     cycles: [20, 8],
     bytes: 1,
@@ -6754,6 +6956,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 2,
   },
   Instruction {
+    code: "0xC9",
     mnemonic: Mnemonic::RET,
     cycles: [16, 0],
     bytes: 1,
@@ -6787,6 +6990,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xCA",
     mnemonic: Mnemonic::JP,
     cycles: [16, 12],
     bytes: 3,
@@ -6820,6 +7024,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 2,
   },
   Instruction {
+    code: "0xCB",
     mnemonic: Mnemonic::PREFIX,
     cycles: [4, 0],
     bytes: 1,
@@ -6853,6 +7058,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xCC",
     mnemonic: Mnemonic::CALL,
     cycles: [24, 12],
     bytes: 3,
@@ -6886,6 +7092,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 2,
   },
   Instruction {
+    code: "0xCD",
     mnemonic: Mnemonic::CALL,
     cycles: [24, 0],
     bytes: 3,
@@ -6919,6 +7126,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xCE",
     mnemonic: Mnemonic::ADC,
     cycles: [8, 0],
     bytes: 2,
@@ -6952,6 +7160,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xCF",
     mnemonic: Mnemonic::RST,
     cycles: [16, 0],
     bytes: 1,
@@ -6985,6 +7194,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xD0",
     mnemonic: Mnemonic::RET,
     cycles: [20, 8],
     bytes: 1,
@@ -7018,6 +7228,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 2,
   },
   Instruction {
+    code: "0xD1",
     mnemonic: Mnemonic::POP,
     cycles: [12, 0],
     bytes: 1,
@@ -7051,6 +7262,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xD2",
     mnemonic: Mnemonic::JP,
     cycles: [16, 12],
     bytes: 3,
@@ -7084,6 +7296,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 2,
   },
   Instruction {
+    code: "0xD3",
     mnemonic: Mnemonic::ILLEGALD3,
     cycles: [4, 0],
     bytes: 1,
@@ -7117,6 +7330,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xD4",
     mnemonic: Mnemonic::CALL,
     cycles: [24, 12],
     bytes: 3,
@@ -7150,6 +7364,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 2,
   },
   Instruction {
+    code: "0xD5",
     mnemonic: Mnemonic::PUSH,
     cycles: [16, 0],
     bytes: 1,
@@ -7183,6 +7398,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xD6",
     mnemonic: Mnemonic::SUB,
     cycles: [8, 0],
     bytes: 2,
@@ -7216,6 +7432,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xD7",
     mnemonic: Mnemonic::RST,
     cycles: [16, 0],
     bytes: 1,
@@ -7249,6 +7466,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xD8",
     mnemonic: Mnemonic::RET,
     cycles: [20, 8],
     bytes: 1,
@@ -7282,6 +7500,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 2,
   },
   Instruction {
+    code: "0xD9",
     mnemonic: Mnemonic::RETI,
     cycles: [16, 0],
     bytes: 1,
@@ -7315,6 +7534,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xDA",
     mnemonic: Mnemonic::JP,
     cycles: [16, 12],
     bytes: 3,
@@ -7348,6 +7568,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 2,
   },
   Instruction {
+    code: "0xDB",
     mnemonic: Mnemonic::ILLEGALDB,
     cycles: [4, 0],
     bytes: 1,
@@ -7381,6 +7602,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xDC",
     mnemonic: Mnemonic::CALL,
     cycles: [24, 12],
     bytes: 3,
@@ -7414,6 +7636,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 2,
   },
   Instruction {
+    code: "0xDD",
     mnemonic: Mnemonic::ILLEGALDD,
     cycles: [4, 0],
     bytes: 1,
@@ -7447,6 +7670,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xDE",
     mnemonic: Mnemonic::SBC,
     cycles: [8, 0],
     bytes: 2,
@@ -7480,6 +7704,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xDF",
     mnemonic: Mnemonic::RST,
     cycles: [16, 0],
     bytes: 1,
@@ -7513,6 +7738,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xE0",
     mnemonic: Mnemonic::LDH,
     cycles: [12, 0],
     bytes: 2,
@@ -7546,6 +7772,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xE1",
     mnemonic: Mnemonic::POP,
     cycles: [12, 0],
     bytes: 1,
@@ -7579,6 +7806,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xE2",
     mnemonic: Mnemonic::LDH,
     cycles: [8, 0],
     bytes: 1,
@@ -7612,6 +7840,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xE3",
     mnemonic: Mnemonic::ILLEGALE3,
     cycles: [4, 0],
     bytes: 1,
@@ -7645,6 +7874,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xE4",
     mnemonic: Mnemonic::ILLEGALE4,
     cycles: [4, 0],
     bytes: 1,
@@ -7678,6 +7908,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xE5",
     mnemonic: Mnemonic::PUSH,
     cycles: [16, 0],
     bytes: 1,
@@ -7711,6 +7942,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xE6",
     mnemonic: Mnemonic::AND,
     cycles: [8, 0],
     bytes: 2,
@@ -7744,6 +7976,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xE7",
     mnemonic: Mnemonic::RST,
     cycles: [16, 0],
     bytes: 1,
@@ -7777,6 +8010,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xE8",
     mnemonic: Mnemonic::ADD,
     cycles: [16, 0],
     bytes: 2,
@@ -7810,6 +8044,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xE9",
     mnemonic: Mnemonic::JP,
     cycles: [4, 0],
     bytes: 1,
@@ -7843,6 +8078,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xEA",
     mnemonic: Mnemonic::LD,
     cycles: [16, 0],
     bytes: 3,
@@ -7876,6 +8112,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xEB",
     mnemonic: Mnemonic::ILLEGALEB,
     cycles: [4, 0],
     bytes: 1,
@@ -7909,6 +8146,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xEC",
     mnemonic: Mnemonic::ILLEGALEC,
     cycles: [4, 0],
     bytes: 1,
@@ -7942,6 +8180,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xED",
     mnemonic: Mnemonic::ILLEGALED,
     cycles: [4, 0],
     bytes: 1,
@@ -7975,6 +8214,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xEE",
     mnemonic: Mnemonic::XOR,
     cycles: [8, 0],
     bytes: 2,
@@ -8008,6 +8248,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xEF",
     mnemonic: Mnemonic::RST,
     cycles: [16, 0],
     bytes: 1,
@@ -8041,6 +8282,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xF0",
     mnemonic: Mnemonic::LDH,
     cycles: [12, 0],
     bytes: 2,
@@ -8074,6 +8316,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xF1",
     mnemonic: Mnemonic::POP,
     cycles: [12, 0],
     bytes: 1,
@@ -8107,6 +8350,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xF2",
     mnemonic: Mnemonic::LDH,
     cycles: [8, 0],
     bytes: 1,
@@ -8140,6 +8384,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xF3",
     mnemonic: Mnemonic::DI,
     cycles: [4, 0],
     bytes: 1,
@@ -8173,6 +8418,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xF4",
     mnemonic: Mnemonic::ILLEGALF4,
     cycles: [4, 0],
     bytes: 1,
@@ -8206,6 +8452,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xF5",
     mnemonic: Mnemonic::PUSH,
     cycles: [16, 0],
     bytes: 1,
@@ -8239,6 +8486,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xF6",
     mnemonic: Mnemonic::OR,
     cycles: [8, 0],
     bytes: 2,
@@ -8272,6 +8520,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xF7",
     mnemonic: Mnemonic::RST,
     cycles: [16, 0],
     bytes: 1,
@@ -8305,6 +8554,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xF8",
     mnemonic: Mnemonic::LD,
     cycles: [12, 0],
     bytes: 2,
@@ -8338,6 +8588,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xF9",
     mnemonic: Mnemonic::LD,
     cycles: [8, 0],
     bytes: 1,
@@ -8371,6 +8622,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xFA",
     mnemonic: Mnemonic::LD,
     cycles: [16, 0],
     bytes: 3,
@@ -8404,6 +8656,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xFB",
     mnemonic: Mnemonic::EI,
     cycles: [4, 0],
     bytes: 1,
@@ -8437,6 +8690,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xFC",
     mnemonic: Mnemonic::ILLEGALFC,
     cycles: [4, 0],
     bytes: 1,
@@ -8470,6 +8724,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xFD",
     mnemonic: Mnemonic::ILLEGALFD,
     cycles: [4, 0],
     bytes: 1,
@@ -8503,6 +8758,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xFE",
     mnemonic: Mnemonic::CP,
     cycles: [8, 0],
     bytes: 2,
@@ -8536,6 +8792,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xFF",
     mnemonic: Mnemonic::RST,
     cycles: [16, 0],
     bytes: 1,
@@ -8572,6 +8829,7 @@ pub const PREFIXED_INSTRUCTIONS: [Instruction; 256] = [
 
 pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
   Instruction {
+    code: "0x00",
     mnemonic: Mnemonic::RLC,
     cycles: [8, 0],
     bytes: 2,
@@ -8605,6 +8863,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x01",
     mnemonic: Mnemonic::RLC,
     cycles: [8, 0],
     bytes: 2,
@@ -8638,6 +8897,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x02",
     mnemonic: Mnemonic::RLC,
     cycles: [8, 0],
     bytes: 2,
@@ -8671,6 +8931,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x03",
     mnemonic: Mnemonic::RLC,
     cycles: [8, 0],
     bytes: 2,
@@ -8704,6 +8965,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x04",
     mnemonic: Mnemonic::RLC,
     cycles: [8, 0],
     bytes: 2,
@@ -8737,6 +8999,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x05",
     mnemonic: Mnemonic::RLC,
     cycles: [8, 0],
     bytes: 2,
@@ -8770,6 +9033,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x06",
     mnemonic: Mnemonic::RLC,
     cycles: [16, 0],
     bytes: 2,
@@ -8803,6 +9067,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x07",
     mnemonic: Mnemonic::RLC,
     cycles: [8, 0],
     bytes: 2,
@@ -8836,6 +9101,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x08",
     mnemonic: Mnemonic::RRC,
     cycles: [8, 0],
     bytes: 2,
@@ -8869,6 +9135,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x09",
     mnemonic: Mnemonic::RRC,
     cycles: [8, 0],
     bytes: 2,
@@ -8902,6 +9169,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x0A",
     mnemonic: Mnemonic::RRC,
     cycles: [8, 0],
     bytes: 2,
@@ -8935,6 +9203,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x0B",
     mnemonic: Mnemonic::RRC,
     cycles: [8, 0],
     bytes: 2,
@@ -8968,6 +9237,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x0C",
     mnemonic: Mnemonic::RRC,
     cycles: [8, 0],
     bytes: 2,
@@ -9001,6 +9271,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x0D",
     mnemonic: Mnemonic::RRC,
     cycles: [8, 0],
     bytes: 2,
@@ -9034,6 +9305,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x0E",
     mnemonic: Mnemonic::RRC,
     cycles: [16, 0],
     bytes: 2,
@@ -9067,6 +9339,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x0F",
     mnemonic: Mnemonic::RRC,
     cycles: [8, 0],
     bytes: 2,
@@ -9100,6 +9373,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x10",
     mnemonic: Mnemonic::RL,
     cycles: [8, 0],
     bytes: 2,
@@ -9133,6 +9407,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x11",
     mnemonic: Mnemonic::RL,
     cycles: [8, 0],
     bytes: 2,
@@ -9166,6 +9441,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x12",
     mnemonic: Mnemonic::RL,
     cycles: [8, 0],
     bytes: 2,
@@ -9199,6 +9475,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x13",
     mnemonic: Mnemonic::RL,
     cycles: [8, 0],
     bytes: 2,
@@ -9232,6 +9509,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x14",
     mnemonic: Mnemonic::RL,
     cycles: [8, 0],
     bytes: 2,
@@ -9265,6 +9543,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x15",
     mnemonic: Mnemonic::RL,
     cycles: [8, 0],
     bytes: 2,
@@ -9298,6 +9577,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x16",
     mnemonic: Mnemonic::RL,
     cycles: [16, 0],
     bytes: 2,
@@ -9331,6 +9611,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x17",
     mnemonic: Mnemonic::RL,
     cycles: [8, 0],
     bytes: 2,
@@ -9364,6 +9645,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x18",
     mnemonic: Mnemonic::RR,
     cycles: [8, 0],
     bytes: 2,
@@ -9397,6 +9679,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x19",
     mnemonic: Mnemonic::RR,
     cycles: [8, 0],
     bytes: 2,
@@ -9430,6 +9713,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x1A",
     mnemonic: Mnemonic::RR,
     cycles: [8, 0],
     bytes: 2,
@@ -9463,6 +9747,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x1B",
     mnemonic: Mnemonic::RR,
     cycles: [8, 0],
     bytes: 2,
@@ -9496,6 +9781,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x1C",
     mnemonic: Mnemonic::RR,
     cycles: [8, 0],
     bytes: 2,
@@ -9529,6 +9815,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x1D",
     mnemonic: Mnemonic::RR,
     cycles: [8, 0],
     bytes: 2,
@@ -9562,6 +9849,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x1E",
     mnemonic: Mnemonic::RR,
     cycles: [16, 0],
     bytes: 2,
@@ -9595,6 +9883,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x1F",
     mnemonic: Mnemonic::RR,
     cycles: [8, 0],
     bytes: 2,
@@ -9628,6 +9917,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x20",
     mnemonic: Mnemonic::SLA,
     cycles: [8, 0],
     bytes: 2,
@@ -9661,6 +9951,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x21",
     mnemonic: Mnemonic::SLA,
     cycles: [8, 0],
     bytes: 2,
@@ -9694,6 +9985,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x22",
     mnemonic: Mnemonic::SLA,
     cycles: [8, 0],
     bytes: 2,
@@ -9727,6 +10019,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x23",
     mnemonic: Mnemonic::SLA,
     cycles: [8, 0],
     bytes: 2,
@@ -9760,6 +10053,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x24",
     mnemonic: Mnemonic::SLA,
     cycles: [8, 0],
     bytes: 2,
@@ -9793,6 +10087,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x25",
     mnemonic: Mnemonic::SLA,
     cycles: [8, 0],
     bytes: 2,
@@ -9826,6 +10121,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x26",
     mnemonic: Mnemonic::SLA,
     cycles: [16, 0],
     bytes: 2,
@@ -9859,6 +10155,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x27",
     mnemonic: Mnemonic::SLA,
     cycles: [8, 0],
     bytes: 2,
@@ -9892,6 +10189,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x28",
     mnemonic: Mnemonic::SRA,
     cycles: [8, 0],
     bytes: 2,
@@ -9925,6 +10223,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x29",
     mnemonic: Mnemonic::SRA,
     cycles: [8, 0],
     bytes: 2,
@@ -9958,6 +10257,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x2A",
     mnemonic: Mnemonic::SRA,
     cycles: [8, 0],
     bytes: 2,
@@ -9991,6 +10291,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x2B",
     mnemonic: Mnemonic::SRA,
     cycles: [8, 0],
     bytes: 2,
@@ -10024,6 +10325,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x2C",
     mnemonic: Mnemonic::SRA,
     cycles: [8, 0],
     bytes: 2,
@@ -10057,6 +10359,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x2D",
     mnemonic: Mnemonic::SRA,
     cycles: [8, 0],
     bytes: 2,
@@ -10090,6 +10393,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x2E",
     mnemonic: Mnemonic::SRA,
     cycles: [16, 0],
     bytes: 2,
@@ -10123,6 +10427,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x2F",
     mnemonic: Mnemonic::SRA,
     cycles: [8, 0],
     bytes: 2,
@@ -10156,6 +10461,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x30",
     mnemonic: Mnemonic::SWAP,
     cycles: [8, 0],
     bytes: 2,
@@ -10189,6 +10495,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x31",
     mnemonic: Mnemonic::SWAP,
     cycles: [8, 0],
     bytes: 2,
@@ -10222,6 +10529,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x32",
     mnemonic: Mnemonic::SWAP,
     cycles: [8, 0],
     bytes: 2,
@@ -10255,6 +10563,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x33",
     mnemonic: Mnemonic::SWAP,
     cycles: [8, 0],
     bytes: 2,
@@ -10288,6 +10597,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x34",
     mnemonic: Mnemonic::SWAP,
     cycles: [8, 0],
     bytes: 2,
@@ -10321,6 +10631,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x35",
     mnemonic: Mnemonic::SWAP,
     cycles: [8, 0],
     bytes: 2,
@@ -10354,6 +10665,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x36",
     mnemonic: Mnemonic::SWAP,
     cycles: [16, 0],
     bytes: 2,
@@ -10387,6 +10699,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x37",
     mnemonic: Mnemonic::SWAP,
     cycles: [8, 0],
     bytes: 2,
@@ -10420,6 +10733,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x38",
     mnemonic: Mnemonic::SRL,
     cycles: [8, 0],
     bytes: 2,
@@ -10453,6 +10767,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x39",
     mnemonic: Mnemonic::SRL,
     cycles: [8, 0],
     bytes: 2,
@@ -10486,6 +10801,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x3A",
     mnemonic: Mnemonic::SRL,
     cycles: [8, 0],
     bytes: 2,
@@ -10519,6 +10835,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x3B",
     mnemonic: Mnemonic::SRL,
     cycles: [8, 0],
     bytes: 2,
@@ -10552,6 +10869,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x3C",
     mnemonic: Mnemonic::SRL,
     cycles: [8, 0],
     bytes: 2,
@@ -10585,6 +10903,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x3D",
     mnemonic: Mnemonic::SRL,
     cycles: [8, 0],
     bytes: 2,
@@ -10618,6 +10937,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x3E",
     mnemonic: Mnemonic::SRL,
     cycles: [16, 0],
     bytes: 2,
@@ -10651,6 +10971,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x3F",
     mnemonic: Mnemonic::SRL,
     cycles: [8, 0],
     bytes: 2,
@@ -10684,6 +11005,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x40",
     mnemonic: Mnemonic::BIT,
     cycles: [8, 0],
     bytes: 2,
@@ -10717,6 +11039,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x41",
     mnemonic: Mnemonic::BIT,
     cycles: [8, 0],
     bytes: 2,
@@ -10750,6 +11073,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x42",
     mnemonic: Mnemonic::BIT,
     cycles: [8, 0],
     bytes: 2,
@@ -10783,6 +11107,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x43",
     mnemonic: Mnemonic::BIT,
     cycles: [8, 0],
     bytes: 2,
@@ -10816,6 +11141,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x44",
     mnemonic: Mnemonic::BIT,
     cycles: [8, 0],
     bytes: 2,
@@ -10849,6 +11175,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x45",
     mnemonic: Mnemonic::BIT,
     cycles: [8, 0],
     bytes: 2,
@@ -10882,6 +11209,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x46",
     mnemonic: Mnemonic::BIT,
     cycles: [12, 0],
     bytes: 2,
@@ -10915,6 +11243,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x47",
     mnemonic: Mnemonic::BIT,
     cycles: [8, 0],
     bytes: 2,
@@ -10948,6 +11277,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x48",
     mnemonic: Mnemonic::BIT,
     cycles: [8, 0],
     bytes: 2,
@@ -10981,6 +11311,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x49",
     mnemonic: Mnemonic::BIT,
     cycles: [8, 0],
     bytes: 2,
@@ -11014,6 +11345,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x4A",
     mnemonic: Mnemonic::BIT,
     cycles: [8, 0],
     bytes: 2,
@@ -11047,6 +11379,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x4B",
     mnemonic: Mnemonic::BIT,
     cycles: [8, 0],
     bytes: 2,
@@ -11080,6 +11413,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x4C",
     mnemonic: Mnemonic::BIT,
     cycles: [8, 0],
     bytes: 2,
@@ -11113,6 +11447,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x4D",
     mnemonic: Mnemonic::BIT,
     cycles: [8, 0],
     bytes: 2,
@@ -11146,6 +11481,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x4E",
     mnemonic: Mnemonic::BIT,
     cycles: [12, 0],
     bytes: 2,
@@ -11179,6 +11515,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x4F",
     mnemonic: Mnemonic::BIT,
     cycles: [8, 0],
     bytes: 2,
@@ -11212,6 +11549,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x50",
     mnemonic: Mnemonic::BIT,
     cycles: [8, 0],
     bytes: 2,
@@ -11245,6 +11583,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x51",
     mnemonic: Mnemonic::BIT,
     cycles: [8, 0],
     bytes: 2,
@@ -11278,6 +11617,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x52",
     mnemonic: Mnemonic::BIT,
     cycles: [8, 0],
     bytes: 2,
@@ -11311,6 +11651,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x53",
     mnemonic: Mnemonic::BIT,
     cycles: [8, 0],
     bytes: 2,
@@ -11344,6 +11685,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x54",
     mnemonic: Mnemonic::BIT,
     cycles: [8, 0],
     bytes: 2,
@@ -11377,6 +11719,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x55",
     mnemonic: Mnemonic::BIT,
     cycles: [8, 0],
     bytes: 2,
@@ -11410,6 +11753,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x56",
     mnemonic: Mnemonic::BIT,
     cycles: [12, 0],
     bytes: 2,
@@ -11443,6 +11787,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x57",
     mnemonic: Mnemonic::BIT,
     cycles: [8, 0],
     bytes: 2,
@@ -11476,6 +11821,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x58",
     mnemonic: Mnemonic::BIT,
     cycles: [8, 0],
     bytes: 2,
@@ -11509,6 +11855,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x59",
     mnemonic: Mnemonic::BIT,
     cycles: [8, 0],
     bytes: 2,
@@ -11542,6 +11889,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x5A",
     mnemonic: Mnemonic::BIT,
     cycles: [8, 0],
     bytes: 2,
@@ -11575,6 +11923,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x5B",
     mnemonic: Mnemonic::BIT,
     cycles: [8, 0],
     bytes: 2,
@@ -11608,6 +11957,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x5C",
     mnemonic: Mnemonic::BIT,
     cycles: [8, 0],
     bytes: 2,
@@ -11641,6 +11991,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x5D",
     mnemonic: Mnemonic::BIT,
     cycles: [8, 0],
     bytes: 2,
@@ -11674,6 +12025,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x5E",
     mnemonic: Mnemonic::BIT,
     cycles: [12, 0],
     bytes: 2,
@@ -11707,6 +12059,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x5F",
     mnemonic: Mnemonic::BIT,
     cycles: [8, 0],
     bytes: 2,
@@ -11740,6 +12093,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x60",
     mnemonic: Mnemonic::BIT,
     cycles: [8, 0],
     bytes: 2,
@@ -11773,6 +12127,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x61",
     mnemonic: Mnemonic::BIT,
     cycles: [8, 0],
     bytes: 2,
@@ -11806,6 +12161,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x62",
     mnemonic: Mnemonic::BIT,
     cycles: [8, 0],
     bytes: 2,
@@ -11839,6 +12195,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x63",
     mnemonic: Mnemonic::BIT,
     cycles: [8, 0],
     bytes: 2,
@@ -11872,6 +12229,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x64",
     mnemonic: Mnemonic::BIT,
     cycles: [8, 0],
     bytes: 2,
@@ -11905,6 +12263,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x65",
     mnemonic: Mnemonic::BIT,
     cycles: [8, 0],
     bytes: 2,
@@ -11938,6 +12297,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x66",
     mnemonic: Mnemonic::BIT,
     cycles: [12, 0],
     bytes: 2,
@@ -11971,6 +12331,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x67",
     mnemonic: Mnemonic::BIT,
     cycles: [8, 0],
     bytes: 2,
@@ -12004,6 +12365,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x68",
     mnemonic: Mnemonic::BIT,
     cycles: [8, 0],
     bytes: 2,
@@ -12037,6 +12399,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x69",
     mnemonic: Mnemonic::BIT,
     cycles: [8, 0],
     bytes: 2,
@@ -12070,6 +12433,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x6A",
     mnemonic: Mnemonic::BIT,
     cycles: [8, 0],
     bytes: 2,
@@ -12103,6 +12467,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x6B",
     mnemonic: Mnemonic::BIT,
     cycles: [8, 0],
     bytes: 2,
@@ -12136,6 +12501,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x6C",
     mnemonic: Mnemonic::BIT,
     cycles: [8, 0],
     bytes: 2,
@@ -12169,6 +12535,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x6D",
     mnemonic: Mnemonic::BIT,
     cycles: [8, 0],
     bytes: 2,
@@ -12202,6 +12569,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x6E",
     mnemonic: Mnemonic::BIT,
     cycles: [12, 0],
     bytes: 2,
@@ -12235,6 +12603,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x6F",
     mnemonic: Mnemonic::BIT,
     cycles: [8, 0],
     bytes: 2,
@@ -12268,6 +12637,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x70",
     mnemonic: Mnemonic::BIT,
     cycles: [8, 0],
     bytes: 2,
@@ -12301,6 +12671,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x71",
     mnemonic: Mnemonic::BIT,
     cycles: [8, 0],
     bytes: 2,
@@ -12334,6 +12705,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x72",
     mnemonic: Mnemonic::BIT,
     cycles: [8, 0],
     bytes: 2,
@@ -12367,6 +12739,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x73",
     mnemonic: Mnemonic::BIT,
     cycles: [8, 0],
     bytes: 2,
@@ -12400,6 +12773,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x74",
     mnemonic: Mnemonic::BIT,
     cycles: [8, 0],
     bytes: 2,
@@ -12433,6 +12807,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x75",
     mnemonic: Mnemonic::BIT,
     cycles: [8, 0],
     bytes: 2,
@@ -12466,275 +12841,284 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
-    mnemonic: Mnemonic::BIT,
-    cycles: [12, 0],
-    bytes: 2,
-    operands: [
-      Operand {
-        name: OperandName::NUM6,
-        register: None,
-        immediate: true,
-        bytes: 0,
-        increment: false,
-        decrement: false,
-      },
-      Operand {
-        name: OperandName::HL,
-        register: Some(Register::HL),
-        immediate: false,
-        bytes: 0,
-        increment: false,
-        decrement: false,
-      },
-      Operand {
-        name: OperandName::NONE,
-        register: None,
-        immediate: false,
-        bytes: 0,
-        increment: false,
-        decrement: false,
-      },
-    ],
-    total_operands: 2,
-    total_cycles: 1,
-  },
-  Instruction {
-    mnemonic: Mnemonic::BIT,
-    cycles: [8, 0],
-    bytes: 2,
-    operands: [
-      Operand {
-        name: OperandName::NUM6,
-        register: None,
-        immediate: true,
-        bytes: 0,
-        increment: false,
-        decrement: false,
-      },
-      Operand {
-        name: OperandName::A,
-        register: Some(Register::A),
-        immediate: true,
-        bytes: 0,
-        increment: false,
-        decrement: false,
-      },
-      Operand {
-        name: OperandName::NONE,
-        register: None,
-        immediate: false,
-        bytes: 0,
-        increment: false,
-        decrement: false,
-      },
-    ],
-    total_operands: 2,
-    total_cycles: 1,
-  },
-  Instruction {
-    mnemonic: Mnemonic::BIT,
-    cycles: [8, 0],
-    bytes: 2,
-    operands: [
-      Operand {
-        name: OperandName::NUM7,
-        register: None,
-        immediate: true,
-        bytes: 0,
-        increment: false,
-        decrement: false,
-      },
-      Operand {
-        name: OperandName::B,
-        register: Some(Register::B),
-        immediate: true,
-        bytes: 0,
-        increment: false,
-        decrement: false,
-      },
-      Operand {
-        name: OperandName::NONE,
-        register: None,
-        immediate: false,
-        bytes: 0,
-        increment: false,
-        decrement: false,
-      },
-    ],
-    total_operands: 2,
-    total_cycles: 1,
-  },
-  Instruction {
-    mnemonic: Mnemonic::BIT,
-    cycles: [8, 0],
-    bytes: 2,
-    operands: [
-      Operand {
-        name: OperandName::NUM7,
-        register: None,
-        immediate: true,
-        bytes: 0,
-        increment: false,
-        decrement: false,
-      },
-      Operand {
-        name: OperandName::C,
-        register: Some(Register::C),
-        immediate: true,
-        bytes: 0,
-        increment: false,
-        decrement: false,
-      },
-      Operand {
-        name: OperandName::NONE,
-        register: None,
-        immediate: false,
-        bytes: 0,
-        increment: false,
-        decrement: false,
-      },
-    ],
-    total_operands: 2,
-    total_cycles: 1,
-  },
-  Instruction {
-    mnemonic: Mnemonic::BIT,
-    cycles: [8, 0],
-    bytes: 2,
-    operands: [
-      Operand {
-        name: OperandName::NUM7,
-        register: None,
-        immediate: true,
-        bytes: 0,
-        increment: false,
-        decrement: false,
-      },
-      Operand {
-        name: OperandName::D,
-        register: Some(Register::D),
-        immediate: true,
-        bytes: 0,
-        increment: false,
-        decrement: false,
-      },
-      Operand {
-        name: OperandName::NONE,
-        register: None,
-        immediate: false,
-        bytes: 0,
-        increment: false,
-        decrement: false,
-      },
-    ],
-    total_operands: 2,
-    total_cycles: 1,
-  },
-  Instruction {
-    mnemonic: Mnemonic::BIT,
-    cycles: [8, 0],
-    bytes: 2,
-    operands: [
-      Operand {
-        name: OperandName::NUM7,
-        register: None,
-        immediate: true,
-        bytes: 0,
-        increment: false,
-        decrement: false,
-      },
-      Operand {
-        name: OperandName::E,
-        register: Some(Register::E),
-        immediate: true,
-        bytes: 0,
-        increment: false,
-        decrement: false,
-      },
-      Operand {
-        name: OperandName::NONE,
-        register: None,
-        immediate: false,
-        bytes: 0,
-        increment: false,
-        decrement: false,
-      },
-    ],
-    total_operands: 2,
-    total_cycles: 1,
-  },
-  Instruction {
-    mnemonic: Mnemonic::BIT,
-    cycles: [8, 0],
-    bytes: 2,
-    operands: [
-      Operand {
-        name: OperandName::NUM7,
-        register: None,
-        immediate: true,
-        bytes: 0,
-        increment: false,
-        decrement: false,
-      },
-      Operand {
-        name: OperandName::H,
-        register: Some(Register::H),
-        immediate: true,
-        bytes: 0,
-        increment: false,
-        decrement: false,
-      },
-      Operand {
-        name: OperandName::NONE,
-        register: None,
-        immediate: false,
-        bytes: 0,
-        increment: false,
-        decrement: false,
-      },
-    ],
-    total_operands: 2,
-    total_cycles: 1,
-  },
-  Instruction {
-    mnemonic: Mnemonic::BIT,
-    cycles: [8, 0],
-    bytes: 2,
-    operands: [
-      Operand {
-        name: OperandName::NUM7,
-        register: None,
-        immediate: true,
-        bytes: 0,
-        increment: false,
-        decrement: false,
-      },
-      Operand {
-        name: OperandName::L,
-        register: Some(Register::L),
-        immediate: true,
-        bytes: 0,
-        increment: false,
-        decrement: false,
-      },
-      Operand {
-        name: OperandName::NONE,
-        register: None,
-        immediate: false,
-        bytes: 0,
-        increment: false,
-        decrement: false,
-      },
-    ],
-    total_operands: 2,
-    total_cycles: 1,
-  },
-  Instruction {
+    code: "0x76",
     mnemonic: Mnemonic::BIT,
     cycles: [12, 0],
     bytes: 2,
     operands: [
       Operand {
+        name: OperandName::NUM6,
+        register: None,
+        immediate: true,
+        bytes: 0,
+        increment: false,
+        decrement: false,
+      },
+      Operand {
+        name: OperandName::HL,
+        register: Some(Register::HL),
+        immediate: false,
+        bytes: 0,
+        increment: false,
+        decrement: false,
+      },
+      Operand {
+        name: OperandName::NONE,
+        register: None,
+        immediate: false,
+        bytes: 0,
+        increment: false,
+        decrement: false,
+      },
+    ],
+    total_operands: 2,
+    total_cycles: 1,
+  },
+  Instruction {
+    code: "0x77",
+    mnemonic: Mnemonic::BIT,
+    cycles: [8, 0],
+    bytes: 2,
+    operands: [
+      Operand {
+        name: OperandName::NUM6,
+        register: None,
+        immediate: true,
+        bytes: 0,
+        increment: false,
+        decrement: false,
+      },
+      Operand {
+        name: OperandName::A,
+        register: Some(Register::A),
+        immediate: true,
+        bytes: 0,
+        increment: false,
+        decrement: false,
+      },
+      Operand {
+        name: OperandName::NONE,
+        register: None,
+        immediate: false,
+        bytes: 0,
+        increment: false,
+        decrement: false,
+      },
+    ],
+    total_operands: 2,
+    total_cycles: 1,
+  },
+  Instruction {
+    code: "0x78",
+    mnemonic: Mnemonic::BIT,
+    cycles: [8, 0],
+    bytes: 2,
+    operands: [
+      Operand {
+        name: OperandName::NUM7,
+        register: None,
+        immediate: true,
+        bytes: 0,
+        increment: false,
+        decrement: false,
+      },
+      Operand {
+        name: OperandName::B,
+        register: Some(Register::B),
+        immediate: true,
+        bytes: 0,
+        increment: false,
+        decrement: false,
+      },
+      Operand {
+        name: OperandName::NONE,
+        register: None,
+        immediate: false,
+        bytes: 0,
+        increment: false,
+        decrement: false,
+      },
+    ],
+    total_operands: 2,
+    total_cycles: 1,
+  },
+  Instruction {
+    code: "0x79",
+    mnemonic: Mnemonic::BIT,
+    cycles: [8, 0],
+    bytes: 2,
+    operands: [
+      Operand {
+        name: OperandName::NUM7,
+        register: None,
+        immediate: true,
+        bytes: 0,
+        increment: false,
+        decrement: false,
+      },
+      Operand {
+        name: OperandName::C,
+        register: Some(Register::C),
+        immediate: true,
+        bytes: 0,
+        increment: false,
+        decrement: false,
+      },
+      Operand {
+        name: OperandName::NONE,
+        register: None,
+        immediate: false,
+        bytes: 0,
+        increment: false,
+        decrement: false,
+      },
+    ],
+    total_operands: 2,
+    total_cycles: 1,
+  },
+  Instruction {
+    code: "0x7A",
+    mnemonic: Mnemonic::BIT,
+    cycles: [8, 0],
+    bytes: 2,
+    operands: [
+      Operand {
+        name: OperandName::NUM7,
+        register: None,
+        immediate: true,
+        bytes: 0,
+        increment: false,
+        decrement: false,
+      },
+      Operand {
+        name: OperandName::D,
+        register: Some(Register::D),
+        immediate: true,
+        bytes: 0,
+        increment: false,
+        decrement: false,
+      },
+      Operand {
+        name: OperandName::NONE,
+        register: None,
+        immediate: false,
+        bytes: 0,
+        increment: false,
+        decrement: false,
+      },
+    ],
+    total_operands: 2,
+    total_cycles: 1,
+  },
+  Instruction {
+    code: "0x7B",
+    mnemonic: Mnemonic::BIT,
+    cycles: [8, 0],
+    bytes: 2,
+    operands: [
+      Operand {
+        name: OperandName::NUM7,
+        register: None,
+        immediate: true,
+        bytes: 0,
+        increment: false,
+        decrement: false,
+      },
+      Operand {
+        name: OperandName::E,
+        register: Some(Register::E),
+        immediate: true,
+        bytes: 0,
+        increment: false,
+        decrement: false,
+      },
+      Operand {
+        name: OperandName::NONE,
+        register: None,
+        immediate: false,
+        bytes: 0,
+        increment: false,
+        decrement: false,
+      },
+    ],
+    total_operands: 2,
+    total_cycles: 1,
+  },
+  Instruction {
+    code: "0x7C",
+    mnemonic: Mnemonic::BIT,
+    cycles: [8, 0],
+    bytes: 2,
+    operands: [
+      Operand {
+        name: OperandName::NUM7,
+        register: None,
+        immediate: true,
+        bytes: 0,
+        increment: false,
+        decrement: false,
+      },
+      Operand {
+        name: OperandName::H,
+        register: Some(Register::H),
+        immediate: true,
+        bytes: 0,
+        increment: false,
+        decrement: false,
+      },
+      Operand {
+        name: OperandName::NONE,
+        register: None,
+        immediate: false,
+        bytes: 0,
+        increment: false,
+        decrement: false,
+      },
+    ],
+    total_operands: 2,
+    total_cycles: 1,
+  },
+  Instruction {
+    code: "0x7D",
+    mnemonic: Mnemonic::BIT,
+    cycles: [8, 0],
+    bytes: 2,
+    operands: [
+      Operand {
+        name: OperandName::NUM7,
+        register: None,
+        immediate: true,
+        bytes: 0,
+        increment: false,
+        decrement: false,
+      },
+      Operand {
+        name: OperandName::L,
+        register: Some(Register::L),
+        immediate: true,
+        bytes: 0,
+        increment: false,
+        decrement: false,
+      },
+      Operand {
+        name: OperandName::NONE,
+        register: None,
+        immediate: false,
+        bytes: 0,
+        increment: false,
+        decrement: false,
+      },
+    ],
+    total_operands: 2,
+    total_cycles: 1,
+  },
+  Instruction {
+    code: "0x7E",
+    mnemonic: Mnemonic::BIT,
+    cycles: [12, 0],
+    bytes: 2,
+    operands: [
+      Operand {
         name: OperandName::NUM7,
         register: None,
         immediate: true,
@@ -12763,6 +13147,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x7F",
     mnemonic: Mnemonic::BIT,
     cycles: [8, 0],
     bytes: 2,
@@ -12796,6 +13181,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x80",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -12829,6 +13215,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x81",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -12862,6 +13249,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x82",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -12895,6 +13283,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x83",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -12928,6 +13317,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x84",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -12961,6 +13351,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x85",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -12994,6 +13385,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x86",
     mnemonic: Mnemonic::RES,
     cycles: [16, 0],
     bytes: 2,
@@ -13027,6 +13419,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x87",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -13060,6 +13453,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x88",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -13093,6 +13487,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x89",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -13126,6 +13521,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x8A",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -13159,6 +13555,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x8B",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -13192,6 +13589,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x8C",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -13225,6 +13623,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x8D",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -13258,6 +13657,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x8E",
     mnemonic: Mnemonic::RES,
     cycles: [16, 0],
     bytes: 2,
@@ -13291,6 +13691,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x8F",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -13324,6 +13725,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x90",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -13357,6 +13759,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x91",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -13390,6 +13793,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x92",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -13423,6 +13827,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x93",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -13456,6 +13861,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x94",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -13489,6 +13895,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x95",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -13522,6 +13929,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x96",
     mnemonic: Mnemonic::RES,
     cycles: [16, 0],
     bytes: 2,
@@ -13555,6 +13963,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x97",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -13588,6 +13997,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x98",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -13621,6 +14031,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x99",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -13654,6 +14065,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x9A",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -13687,6 +14099,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x9B",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -13720,6 +14133,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x9C",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -13753,6 +14167,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x9D",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -13786,6 +14201,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x9E",
     mnemonic: Mnemonic::RES,
     cycles: [16, 0],
     bytes: 2,
@@ -13819,6 +14235,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0x9F",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -13852,6 +14269,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xA0",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -13885,6 +14303,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xA1",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -13918,6 +14337,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xA2",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -13951,6 +14371,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xA3",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -13984,6 +14405,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xA4",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -14017,6 +14439,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xA5",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -14050,6 +14473,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xA6",
     mnemonic: Mnemonic::RES,
     cycles: [16, 0],
     bytes: 2,
@@ -14083,6 +14507,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xA7",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -14116,6 +14541,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xA8",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -14149,6 +14575,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xA9",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -14182,6 +14609,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xAA",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -14215,6 +14643,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xAB",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -14248,6 +14677,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xAC",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -14281,6 +14711,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xAD",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -14314,6 +14745,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xAE",
     mnemonic: Mnemonic::RES,
     cycles: [16, 0],
     bytes: 2,
@@ -14347,6 +14779,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xAF",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -14380,6 +14813,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xB0",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -14413,6 +14847,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xB1",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -14446,6 +14881,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xB2",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -14479,6 +14915,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xB3",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -14512,6 +14949,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xB4",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -14545,6 +14983,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xB5",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -14578,6 +15017,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xB6",
     mnemonic: Mnemonic::RES,
     cycles: [16, 0],
     bytes: 2,
@@ -14611,6 +15051,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xB7",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -14644,6 +15085,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xB8",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -14677,6 +15119,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xB9",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -14710,6 +15153,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xBA",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -14743,6 +15187,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xBB",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -14776,6 +15221,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xBC",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -14809,6 +15255,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xBD",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -14842,6 +15289,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xBE",
     mnemonic: Mnemonic::RES,
     cycles: [16, 0],
     bytes: 2,
@@ -14875,6 +15323,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xBF",
     mnemonic: Mnemonic::RES,
     cycles: [8, 0],
     bytes: 2,
@@ -14908,6 +15357,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xC0",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,
@@ -14941,6 +15391,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xC1",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,
@@ -14974,6 +15425,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xC2",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,
@@ -15007,6 +15459,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xC3",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,
@@ -15040,6 +15493,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xC4",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,
@@ -15073,6 +15527,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xC5",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,
@@ -15106,6 +15561,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xC6",
     mnemonic: Mnemonic::SET,
     cycles: [16, 0],
     bytes: 2,
@@ -15139,6 +15595,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xC7",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,
@@ -15172,6 +15629,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xC8",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,
@@ -15205,6 +15663,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xC9",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,
@@ -15238,6 +15697,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xCA",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,
@@ -15271,6 +15731,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xCB",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,
@@ -15304,6 +15765,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xCC",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,
@@ -15337,6 +15799,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xCD",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,
@@ -15370,6 +15833,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xCE",
     mnemonic: Mnemonic::SET,
     cycles: [16, 0],
     bytes: 2,
@@ -15403,6 +15867,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xCF",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,
@@ -15436,6 +15901,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xD0",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,
@@ -15469,6 +15935,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xD1",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,
@@ -15502,6 +15969,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xD2",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,
@@ -15535,6 +16003,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xD3",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,
@@ -15568,6 +16037,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xD4",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,
@@ -15601,6 +16071,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xD5",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,
@@ -15634,6 +16105,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xD6",
     mnemonic: Mnemonic::SET,
     cycles: [16, 0],
     bytes: 2,
@@ -15667,6 +16139,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xD7",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,
@@ -15700,6 +16173,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xD8",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,
@@ -15733,6 +16207,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xD9",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,
@@ -15766,6 +16241,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xDA",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,
@@ -15799,6 +16275,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xDB",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,
@@ -15832,6 +16309,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xDC",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,
@@ -15865,6 +16343,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xDD",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,
@@ -15898,6 +16377,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xDE",
     mnemonic: Mnemonic::SET,
     cycles: [16, 0],
     bytes: 2,
@@ -15931,6 +16411,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xDF",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,
@@ -15964,6 +16445,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xE0",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,
@@ -15997,6 +16479,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xE1",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,
@@ -16030,6 +16513,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xE2",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,
@@ -16063,6 +16547,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xE3",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,
@@ -16096,6 +16581,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xE4",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,
@@ -16129,6 +16615,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xE5",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,
@@ -16162,6 +16649,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xE6",
     mnemonic: Mnemonic::SET,
     cycles: [16, 0],
     bytes: 2,
@@ -16195,6 +16683,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xE7",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,
@@ -16228,6 +16717,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xE8",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,
@@ -16261,6 +16751,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xE9",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,
@@ -16294,6 +16785,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xEA",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,
@@ -16327,6 +16819,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xEB",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,
@@ -16360,6 +16853,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xEC",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,
@@ -16393,6 +16887,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xED",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,
@@ -16426,6 +16921,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xEE",
     mnemonic: Mnemonic::SET,
     cycles: [16, 0],
     bytes: 2,
@@ -16459,6 +16955,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xEF",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,
@@ -16492,6 +16989,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xF0",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,
@@ -16525,6 +17023,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xF1",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,
@@ -16558,6 +17057,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xF2",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,
@@ -16591,6 +17091,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xF3",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,
@@ -16624,6 +17125,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xF4",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,
@@ -16657,6 +17159,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xF5",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,
@@ -16690,6 +17193,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xF6",
     mnemonic: Mnemonic::SET,
     cycles: [16, 0],
     bytes: 2,
@@ -16723,6 +17227,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xF7",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,
@@ -16756,6 +17261,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xF8",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,
@@ -16789,6 +17295,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xF9",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,
@@ -16822,6 +17329,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xFA",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,
@@ -16855,6 +17363,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xFB",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,
@@ -16888,6 +17397,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xFC",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,
@@ -16921,6 +17431,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xFD",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,
@@ -16954,6 +17465,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xFE",
     mnemonic: Mnemonic::SET,
     cycles: [16, 0],
     bytes: 2,
@@ -16987,6 +17499,7 @@ pub const CBPREFIXED_INSTRUCTIONS: [Instruction; 256] = [
     total_cycles: 1,
   },
   Instruction {
+    code: "0xFF",
     mnemonic: Mnemonic::SET,
     cycles: [8, 0],
     bytes: 2,

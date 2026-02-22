@@ -41,6 +41,7 @@ const logInstructions = (instructions) => {
 
     console.log(
       "  Instruction {\n" +
+        `    code: "${key}",\n` +
         `    mnemonic: Mnemonic::${instruction.mnemonic.toUpperCase().replace(/_/g, "")},\n` +
         `    cycles: [${allCycles.join(", ")}],\n` +
         `    bytes: ${instruction.bytes},\n` +
@@ -121,6 +122,7 @@ console.log("}");
 console.log();
 
 console.log("pub struct Instruction {");
+console.log("  pub code: &'static str,");
 console.log("  pub mnemonic: Mnemonic,");
 console.log("  pub cycles: [u8; 2],");
 console.log("  pub bytes: u8,");
