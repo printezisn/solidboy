@@ -3,5 +3,5 @@
 version = 4
 
 [[package]]
-name = "gameboy-emulator"
+name = "solidboy-emulator"
 version = "0.1.0"
