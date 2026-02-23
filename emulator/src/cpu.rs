@@ -1,5 +1,6 @@
 mod registers;
 mod instructions;
+mod memory_bus;
 
 use registers::Registers;
 use registers::Register;
@@ -7,16 +8,14 @@ use instructions::Mnemonic;
 use instructions::OperandName;
 use instructions::Operand;
 use instructions::PREFIXED_INSTRUCTIONS;
-use crate::cpu::instructions::CBPREFIXED_INSTRUCTIONS;
-use crate::cpu::instructions::Instruction;
-use crate::cpu::registers::register_bytes;
-
-use super::memory_bus::MemoryBus;
+use instructions::CBPREFIXED_INSTRUCTIONS;
+use instructions::Instruction;
+use registers::register_bytes;
+use memory_bus::MemoryBus;
 
 pub struct CPU {
   registers: Registers,
   memory_bus: MemoryBus,
-  rom: Vec<u8>,
   accept_interrupts: bool
 }
 
@@ -28,18 +27,17 @@ impl CPU {
   pub fn new(rom: Vec<u8>) -> Self {
     CPU {
       registers: Registers::new(),
-      memory_bus: MemoryBus::new(),
-      rom,
+      memory_bus: MemoryBus::new(rom),
       accept_interrupts: true
     }
   }
 
   pub fn execute_instruction(&mut self) -> InstructionResult {
-    let pc = self.registers.get(Register::PC) as usize;
-    let opcode = self.rom[pc as usize];
+    let pc = self.registers.get(Register::PC);
+    let opcode = self.memory_bus.read(pc);
 
     if opcode == 0xCB {
-      let cb_opcode = self.rom[pc + 1];
+      let cb_opcode = self.memory_bus.read(pc + 1);
       let cb_instruction = &CBPREFIXED_INSTRUCTIONS[cb_opcode as usize];
 
       match cb_instruction.mnemonic {
@@ -63,14 +61,14 @@ impl CPU {
   }
 
   fn read_n8(&self) -> u8 {
-    let pc = self.registers.get(Register::PC) as usize;
-    self.rom[pc + 1]
+    let pc = self.registers.get(Register::PC);
+    self.memory_bus.read(pc + 1)
   }
 
   fn read_n16(&self) -> u16 {
-    let pc = self.registers.get(Register::PC) as usize;
-    let low = self.rom[pc + 1] as u16;
-    let high = self.rom[pc + 2] as u16;
+    let pc = self.registers.get(Register::PC);
+    let low = self.memory_bus.read(pc + 1) as u16;
+    let high = self.memory_bus.read(pc + 2) as u16;
     (high << 8) | low
   }
 
@@ -79,8 +77,8 @@ impl CPU {
   }
 
   fn read_e8(&self) -> u16 {
-    let pc = self.registers.get(Register::PC) as usize;
-    (self.rom[pc + 1] as i8) as i16 as u16
+    let pc = self.registers.get(Register::PC);
+    (self.memory_bus.read(pc + 1) as i8) as i16 as u16
   }
 
   fn sanitize_address(&self, address: u16, high: bool) -> u16 {
@@ -986,13 +984,13 @@ mod tests {
   #[test]
   pub fn test_inc_hl_mem_no_carry() {
     let mut cpu = create_cpu(vec![0x34]);
-    cpu.registers.set(Register::HL, 0x1234);
-    cpu.memory_bus.write(0x1234, 0x80);
+    cpu.registers.set(Register::HL, 0xF234);
+    cpu.memory_bus.write(0xF234, 0x80);
 
     let result = cpu.execute_instruction();
 
     assert_eq!(result.cycles, 12);
-    assert_eq!(cpu.memory_bus.read(0x1234), 0x81);
+    assert_eq!(cpu.memory_bus.read(0xF234), 0x81);
     assert_eq!(cpu.registers.get(Register::PC), INITIAL_PC + 1);
     assert_eq!(cpu.registers.zero(), false);
     assert_eq!(cpu.registers.subtract(), false);
@@ -1003,13 +1001,13 @@ mod tests {
   #[test]
   pub fn test_inc_hl_mem_carry() {
     let mut cpu = create_cpu(vec![0x34]);
-    cpu.registers.set(Register::HL, 0x1234);
-    cpu.memory_bus.write(0x1234, 0x0F);
+    cpu.registers.set(Register::HL, 0xF234);
+    cpu.memory_bus.write(0xF234, 0x0F);
 
     let result = cpu.execute_instruction();
 
     assert_eq!(result.cycles, 12);
-    assert_eq!(cpu.memory_bus.read(0x1234), 0x10);
+    assert_eq!(cpu.memory_bus.read(0xF234), 0x10);
     assert_eq!(cpu.registers.get(Register::PC), INITIAL_PC + 1);
     assert_eq!(cpu.registers.zero(), false);
     assert_eq!(cpu.registers.subtract(), false);
@@ -1020,14 +1018,14 @@ mod tests {
   #[test]
   pub fn test_inc_hl_mem_zero() {
     let mut cpu = create_cpu(vec![0x34]);
-    cpu.registers.set(Register::HL, 0x1234);
-    cpu.memory_bus.write(0x1234, 0xFF);
+    cpu.registers.set(Register::HL, 0xF234);
+    cpu.memory_bus.write(0xF234, 0xFF);
     cpu.registers.set_carry(false);
 
     let result = cpu.execute_instruction();
 
     assert_eq!(result.cycles, 12);
-    assert_eq!(cpu.memory_bus.read(0x1234), 0x00);
+    assert_eq!(cpu.memory_bus.read(0xF234), 0x00);
     assert_eq!(cpu.registers.get(Register::PC), INITIAL_PC + 1);
     assert_eq!(cpu.registers.zero(), true);
     assert_eq!(cpu.registers.subtract(), false);
@@ -1293,13 +1291,13 @@ mod tests {
   #[test]
   pub fn test_dec_hl_mem_no_carry() {
     let mut cpu = create_cpu(vec![0x35]);
-    cpu.registers.set(Register::HL, 0x1234);
-    cpu.memory_bus.write(0x1234, 0x81);
+    cpu.registers.set(Register::HL, 0xF234);
+    cpu.memory_bus.write(0xF234, 0x81);
 
     let result = cpu.execute_instruction();
 
     assert_eq!(result.cycles, 12);
-    assert_eq!(cpu.memory_bus.read(0x1234), 0x80);
+    assert_eq!(cpu.memory_bus.read(0xF234), 0x80);
     assert_eq!(cpu.registers.get(Register::PC), INITIAL_PC + 1);
     assert_eq!(cpu.registers.zero(), false);
     assert_eq!(cpu.registers.subtract(), true);
@@ -1310,13 +1308,13 @@ mod tests {
   #[test]
   pub fn test_dec_hl_mem_carry() {
     let mut cpu = create_cpu(vec![0x35]);
-    cpu.registers.set(Register::HL, 0x1234);
-    cpu.memory_bus.write(0x1234, 0x80);
+    cpu.registers.set(Register::HL, 0xF234);
+    cpu.memory_bus.write(0xF234, 0x80);
 
     let result = cpu.execute_instruction();
 
     assert_eq!(result.cycles, 12);
-    assert_eq!(cpu.memory_bus.read(0x1234), 0x7F);
+    assert_eq!(cpu.memory_bus.read(0xF234), 0x7F);
     assert_eq!(cpu.registers.get(Register::PC), INITIAL_PC + 1);
     assert_eq!(cpu.registers.zero(), false);
     assert_eq!(cpu.registers.subtract(), true);
@@ -1327,14 +1325,14 @@ mod tests {
   #[test]
   pub fn test_dec_hl_mem_zero() {
     let mut cpu = create_cpu(vec![0x35]);
-    cpu.registers.set(Register::HL, 0x1234);
-    cpu.memory_bus.write(0x1234, 0x01);
+    cpu.registers.set(Register::HL, 0xF234);
+    cpu.memory_bus.write(0xF234, 0x01);
     cpu.registers.set_carry(false);
 
     let result = cpu.execute_instruction();
 
     assert_eq!(result.cycles, 12);
-    assert_eq!(cpu.memory_bus.read(0x1234), 0x00);
+    assert_eq!(cpu.memory_bus.read(0xF234), 0x00);
     assert_eq!(cpu.registers.get(Register::PC), INITIAL_PC + 1);
     assert_eq!(cpu.registers.zero(), true);
     assert_eq!(cpu.registers.subtract(), true);
