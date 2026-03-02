@@ -38,4 +38,20 @@ impl MemoryBus {
       _ => self.memory[(address - 0x8000) as usize]
     }
   }
+
+  pub fn if_flag(&self) -> u8 {
+    self.memory[0xFF0F - 0x8000]
+  }
+
+  pub fn set_if_flag(&mut self, value: u8) {
+    self.memory[0xFF0F - 0x8000] = value;
+  }
+
+  pub fn ie_flag(&self) -> u8 {
+    self.memory[0xFFFF - 0x8000]
+  }
+
+  pub fn set_ie_flag(&mut self, value: u8) {
+    self.memory[0xFFFF - 0x8000] = value;
+  }
 }

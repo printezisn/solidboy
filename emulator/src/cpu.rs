@@ -18,7 +18,8 @@ use crate::adapters::Adapters;
 pub struct CPU {
   registers: Registers,
   memory_bus: MemoryBus,
-  accept_interrupts: bool
+  ime: bool,
+  pending_ime_set: bool
 }
 
 pub struct InstructionResult {
@@ -30,19 +31,23 @@ impl CPU {
     CPU {
       registers: Registers::new(),
       memory_bus: MemoryBus::new(adapters),
-      accept_interrupts: true
+      ime: false,
+      pending_ime_set: false
     }
   }
 
   pub fn execute_instruction(&mut self) -> InstructionResult {
     let pc = self.registers.get(Register::PC);
     let opcode = self.memory_bus.read(pc);
+    let result: InstructionResult;
 
-    if opcode == 0xCB {
+    if self.ime && (self.memory_bus.if_flag() & self.memory_bus.ie_flag() & 0x1F) != 0 {
+      result = self.interrupt();
+    } else if opcode == 0xCB {
       let cb_opcode = self.memory_bus.read(pc + 1);
       let cb_instruction = &CBPREFIXED_INSTRUCTIONS[cb_opcode as usize];
 
-      return match cb_instruction.mnemonic {
+      result = match cb_instruction.mnemonic {
         Mnemonic::SRL => self.srl(&cb_instruction),
         Mnemonic::SRA => self.sra(&cb_instruction),
         Mnemonic::SLA => self.sla(&cb_instruction),
@@ -51,38 +56,77 @@ impl CPU {
         Mnemonic::RL => self.rl(&cb_instruction),
         Mnemonic::RLC => self.rlc(&cb_instruction),
         _ => panic!("Unknown CB-prefixed opcode: {:02X} {:?}", cb_opcode, cb_instruction.mnemonic)
+      };
+
+      if self.pending_ime_set {
+        self.ime = true;
+        self.pending_ime_set = false;
+      }
+    } else {
+      let instruction = &PREFIXED_INSTRUCTIONS[opcode as usize];
+      result = match instruction.mnemonic {
+          Mnemonic::NOP => self.noop(&instruction),
+          Mnemonic::JP => self.jp(&instruction),
+          Mnemonic::DI => self.di(&instruction),
+          Mnemonic::EI => self.ei(&instruction),
+          Mnemonic::LD => self.ld(&instruction),
+          Mnemonic::LDH => self.ldh(&instruction),
+          Mnemonic::INC => self.inc(&instruction),
+          Mnemonic::JR => self.jr(&instruction),
+          Mnemonic::DEC => self.dec(&instruction),
+          Mnemonic::CALL => self.call(&instruction),
+          Mnemonic::PUSH => self.push(&instruction),
+          Mnemonic::POP => self.pop(&instruction),
+          Mnemonic::RET => self.ret(&instruction),
+          Mnemonic::OR => self.or(&instruction),
+          Mnemonic::ADD => self.add(&instruction),
+          Mnemonic::SUB => self.sub(&instruction),
+          Mnemonic::CP => self.cp(&instruction),
+          Mnemonic::AND => self.and(&instruction),
+          Mnemonic::XOR => self.xor(&instruction),
+          Mnemonic::RRCA => self.rrc(&instruction),
+          Mnemonic::RRA => self.rr(&instruction),
+          Mnemonic::RLA => self.rl(&instruction),
+          Mnemonic::RLCA => self.rlc(&instruction),
+          Mnemonic::ADC => self.adc(&instruction),
+          Mnemonic::DAA => self.daa(&instruction),
+        _ => panic!("Unknown opcode: {:02X} {:?}", opcode, instruction.mnemonic)
+      };
+
+      if self.pending_ime_set && !matches!(instruction.mnemonic, Mnemonic::EI) {
+        self.ime = true;
+        self.pending_ime_set = false;
       }
     }
 
-    let instruction = &PREFIXED_INSTRUCTIONS[opcode as usize];
-    match instruction.mnemonic {
-        Mnemonic::NOP => self.noop(&instruction),
-        Mnemonic::JP => self.jp(&instruction),
-        Mnemonic::DI => self.di(&instruction),
-        Mnemonic::EI => self.ei(&instruction),
-        Mnemonic::LD => self.ld(&instruction),
-        Mnemonic::LDH => self.ldh(&instruction),
-        Mnemonic::INC => self.inc(&instruction),
-        Mnemonic::JR => self.jr(&instruction),
-        Mnemonic::DEC => self.dec(&instruction),
-        Mnemonic::CALL => self.call(&instruction),
-        Mnemonic::PUSH => self.push(&instruction),
-        Mnemonic::POP => self.pop(&instruction),
-        Mnemonic::RET => self.ret(&instruction),
-        Mnemonic::OR => self.or(&instruction),
-        Mnemonic::ADD => self.add(&instruction),
-        Mnemonic::SUB => self.sub(&instruction),
-        Mnemonic::CP => self.cp(&instruction),
-        Mnemonic::AND => self.and(&instruction),
-        Mnemonic::XOR => self.xor(&instruction),
-        Mnemonic::RRCA => self.rrc(&instruction),
-        Mnemonic::RRA => self.rr(&instruction),
-        Mnemonic::RLA => self.rl(&instruction),
-        Mnemonic::RLCA => self.rlc(&instruction),
-        Mnemonic::ADC => self.adc(&instruction),
-        Mnemonic::DAA => self.daa(&instruction),
-      _ => panic!("Unknown opcode: {:02X} {:?}", opcode, instruction.mnemonic)
+    return result;
+  }
+
+  fn interrupt(&mut self) -> InstructionResult {
+    self.ime = false;
+
+    let pending = self.memory_bus.if_flag() & self.memory_bus.ie_flag() & 0x1F;
+    let mut interrupt_num: u8 = 1;
+    let mut interrupt_bit: u8 = 0;
+
+    while interrupt_num <= 0x10 {
+      if pending & interrupt_num != 0 {
+        break;
+      }
+
+      interrupt_num <<= 1;
+      interrupt_bit += 1;
     }
+    if interrupt_num > 0x10 {
+      interrupt_num = 1;
+      interrupt_bit = 0;
+    }
+
+    self.memory_bus.set_if_flag(self.memory_bus.if_flag() & (!interrupt_num));
+    self.stack16(self.registers.get(Register::PC));
+    self.registers.set(Register::PC, (0x0040 + interrupt_bit * 8) as u16);
+
+    return InstructionResult { cycles: 20 };
   }
 
   fn read_n8(&self) -> u8 {
@@ -295,7 +339,8 @@ impl CPU {
   }
 
   fn di(&mut self, instruction: &Instruction) -> InstructionResult {
-    self.accept_interrupts = false;
+    self.ime = false;
+    self.pending_ime_set = false;
     let pc = self.registers.get(Register::PC);
     self.registers.set(Register::PC, pc + instruction.bytes as u16);
 
@@ -303,7 +348,7 @@ impl CPU {
   }
 
   fn ei(&mut self, instruction: &Instruction) -> InstructionResult {
-    self.accept_interrupts = true;
+    self.pending_ime_set = true;
     let pc = self.registers.get(Register::PC);
     self.registers.set(Register::PC, pc + instruction.bytes as u16);
 
@@ -975,12 +1020,12 @@ use super::*;
   #[test]
   fn test_di() {
       let mut cpu = create_cpu(vec![0xF3]);
-      cpu.accept_interrupts = true;
+      cpu.ime = true;
       
       let result = cpu.execute_instruction();
   
       assert_eq!(result.cycles, 4);
-      assert_eq!(cpu.accept_interrupts, false);
+      assert_eq!(cpu.ime, false);
       assert_eq!(cpu.registers.zero(), INITIAL_ZERO_FLAG);
       assert_eq!(cpu.registers.subtract(), INITIAL_SUBTRACT_FLAG);
       assert_eq!(cpu.registers.half_carry(), INITIAL_HALF_CARRY_FLAG);
@@ -989,17 +1034,56 @@ use super::*;
 
   #[test]
   fn test_ei() {
-      let mut cpu = create_cpu(vec![0xFB]);
-      cpu.accept_interrupts = false;
+      let mut cpu = create_cpu(vec![0xFB, 0x00]);
+      cpu.ime = false;
+      cpu.pending_ime_set = false;
       
       let result = cpu.execute_instruction();
   
       assert_eq!(result.cycles, 4);
-      assert_eq!(cpu.accept_interrupts, true);
+      assert_eq!(cpu.ime, false);
+      assert_eq!(cpu.pending_ime_set, true);
       assert_eq!(cpu.registers.zero(), INITIAL_ZERO_FLAG);
       assert_eq!(cpu.registers.subtract(), INITIAL_SUBTRACT_FLAG);
       assert_eq!(cpu.registers.half_carry(), INITIAL_HALF_CARRY_FLAG);
       assert_eq!(cpu.registers.carry(), INITIAL_CARRY_FLAG);
+
+      cpu.execute_instruction();
+
+      assert_eq!(cpu.ime, true);
+      assert_eq!(cpu.pending_ime_set, false);
+  }
+
+  #[test]
+  fn test_interrupt() {
+    let mut cpu = create_cpu(vec![0xFB, 0x00, 0x00]);
+      cpu.ime = false;
+      cpu.pending_ime_set = false;
+      cpu.memory_bus.write(0xFF0F, 1 << 2);
+      cpu.memory_bus.write(0xFFFF, 1 << 2);
+      
+      cpu.execute_instruction();
+      cpu.execute_instruction();
+      let result = cpu.execute_instruction();
+  
+      assert_eq!(result.cycles, 20);
+      assert_eq!(cpu.ime, false);
+      assert_eq!(cpu.pending_ime_set, false);
+      assert_eq!(cpu.registers.zero(), INITIAL_ZERO_FLAG);
+      assert_eq!(cpu.registers.subtract(), INITIAL_SUBTRACT_FLAG);
+      assert_eq!(cpu.registers.half_carry(), INITIAL_HALF_CARRY_FLAG);
+      assert_eq!(cpu.registers.carry(), INITIAL_CARRY_FLAG);
+
+      assert_eq!(cpu.ime, false);
+      assert_eq!(cpu.pending_ime_set, false);
+      assert_eq!(cpu.registers.get(Register::PC), 0x50);
+      assert_eq!(cpu.memory_bus.read(0xFF0F), 0x00);
+      
+      let sp = cpu.registers.get(Register::SP);
+      assert_eq!(sp, INITIAL_SP - 2);
+
+      let old_pc = cpu.memory_bus.read(sp) as u16 | ((cpu.memory_bus.read(sp + 1) as u16) << 8);
+      assert_eq!(old_pc, INITIAL_PC + 2);
   }
 
   #[test]
