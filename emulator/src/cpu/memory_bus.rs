@@ -1,9 +1,12 @@
 use crate::adapters::Adapters;
+use super::timer::Timer;
+use super::timer::TimerTickResult;
 
 pub struct MemoryBus {
   adapters: Adapters,
   rom: Vec<u8>,
-  memory: [u8; 0x7FFF + 1]
+  memory: [u8; 0x7FFF + 1],
+  timer: Timer
 }
 
 impl MemoryBus {
@@ -13,18 +16,31 @@ impl MemoryBus {
     MemoryBus {
       adapters,
       rom,
-      memory: [0; 0x7FFF + 1]
+      memory: [0; 0x7FFF + 1],
+      timer: Timer::new()
     }
   }
 
   pub fn write(&mut self, address: u16, value: u8) {
     match address {
-      0..=0x7FFF => panic!("Invalid memory write {:?}", address),
+      0..=0x7FFF => panic!("Invalid memory write {:02X}", address),
       0xFF01 => {
         self.adapters.serial_port().write(value);
       }
       0xFF02 => {
         self.adapters.serial_port().control(value);
+      },
+      0xFF04 => {
+        self.timer.reset_div();
+      },
+      0xFF05 => {
+        self.timer.set_tima(value);
+      },
+      0xFF06 => {
+        self.timer.set_tma(value);
+      },
+      0xFF07 => {
+        self.timer.set_tac(value);
       },
       _ => self.memory[(address - 0x8000) as usize] = value
     }
@@ -34,6 +50,10 @@ impl MemoryBus {
     match address {
       0..=0x7FFF => self.rom[address as usize],
       0xFF01..=0xFF02 => panic!("Invalid memory read {:?}", address),
+      0xFF04 => self.timer.div(),
+      0xFF05 => self.timer.tima(),
+      0xFF06 => self.timer.tma(),
+      0xFF07 => self.timer.tac(),
       _ => self.memory[(address - 0x8000) as usize]
     }
   }
@@ -52,5 +72,11 @@ impl MemoryBus {
 
   pub fn set_ie_flag(&mut self, value: u8) {
     self.memory[0xFFFF - 0x8000] = value;
+  }
+
+  pub fn tick(&mut self, cycles: u8) {
+    if self.timer.tick(cycles).request_interrupt {
+      self.set_if_flag(self.if_flag() | 0x04);
+    }
   }
 }

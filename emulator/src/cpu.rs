@@ -1,6 +1,7 @@
 mod registers;
 mod instructions;
 mod memory_bus;
+mod timer;
 
 use registers::Registers;
 use registers::Register;
@@ -98,6 +99,8 @@ impl CPU {
         self.pending_ime_set = false;
       }
     }
+
+    self.memory_bus.tick(result.cycles);
 
     return result;
   }
@@ -831,7 +834,7 @@ impl CPU {
 mod tests {
   use crate::adapters::{rom_reader::RomReader, serial_port::SerialPort};
 
-use super::*;
+  use super::*;
 
   const INITIAL_PC: u16 = 0x0100;
   const INITIAL_SP: u16 = 0xFFFE;
