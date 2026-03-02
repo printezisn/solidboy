@@ -78,6 +78,7 @@ impl CPU {
         Mnemonic::RLA => self.rl(&instruction),
         Mnemonic::RLCA => self.rlc(&instruction),
         Mnemonic::ADC => self.adc(&instruction),
+        Mnemonic::DAA => self.daa(&instruction),
       _ => panic!("Unknown opcode: {:02X} {:?}", opcode, instruction.mnemonic)
     }
   }
@@ -741,6 +742,41 @@ impl CPU {
     self.registers.set(Register::PC, pc + instruction.bytes as u16);
 
     return InstructionResult { cycles: instruction.cycles[0] }
+  }
+
+  fn daa(&mut self, instruction: &Instruction) -> InstructionResult {
+    let mut a = self.registers.get(Register::A) as u8;
+    let mut adjust: u8 = 0;
+    let mut carry = self.registers.carry();
+
+    if !self.registers.subtract() {
+      if self.registers.half_carry() || (a & 0x0F) > 0x9 {
+        adjust |= 0x06;
+      }
+      if carry || a > 0x99 {
+        adjust |= 0x60;
+        carry = true;
+      }
+      a = a.wrapping_add(adjust);
+    } else {
+      if self.registers.half_carry() {
+        adjust |= 0x06;
+      }
+      if carry {
+        adjust |= 0x60;
+      }
+      a = a.wrapping_sub(adjust);
+    }
+
+    self.registers.set_zero(a == 0);
+    self.registers.set_half_carry(false);
+    self.registers.set_carry(carry);
+
+    self.registers.set(Register::A, a as u16);
+    let pc = self.registers.get(Register::PC);
+    self.registers.set(Register::PC, pc + instruction.bytes as u16);
+
+    InstructionResult { cycles: instruction.cycles[0] }
   }
 }
 
@@ -4639,5 +4675,184 @@ mod tests {
     assert_eq!(cpu.registers.subtract(), false);
     assert_eq!(cpu.registers.half_carry(), true);
     assert_eq!(cpu.registers.carry(), true);
+  }
+
+  #[test]
+  pub fn test_daa_non_sub_no_adjust() {
+    let mut cpu = create_cpu(vec![0x27]);
+    cpu.registers.set(Register::A, 0x15);
+    cpu.registers.set_subtract(false);
+    cpu.registers.set_half_carry(false);
+    cpu.registers.set_carry(false);
+
+    let result = cpu.execute_instruction();
+
+    assert_eq!(cpu.registers.get(Register::A), 0x15);
+    assert_eq!(cpu.registers.zero(), false);
+    assert_eq!(cpu.registers.half_carry(), false);
+    assert_eq!(cpu.registers.carry(), false);
+    assert_eq!(cpu.registers.subtract(), false);
+    assert_eq!(cpu.registers.get(Register::PC), INITIAL_PC + 1);
+    assert_eq!(result.cycles, 4);
+  }
+
+  #[test]
+  pub fn test_daa_non_sub_gt9() {
+    let mut cpu = create_cpu(vec![0x27]);
+    cpu.registers.set(Register::A, 0x1A);
+    cpu.registers.set_subtract(false);
+    cpu.registers.set_half_carry(false);
+    cpu.registers.set_carry(false);
+
+    let result = cpu.execute_instruction();
+
+    assert_eq!(cpu.registers.get(Register::A), 0x20);
+    assert_eq!(cpu.registers.zero(), false);
+    assert_eq!(cpu.registers.subtract(), false);
+    assert_eq!(cpu.registers.half_carry(), false);
+    assert_eq!(cpu.registers.carry(), false);
+    assert_eq!(result.cycles, 4);
+  }
+
+  #[test]
+  pub fn test_daa_non_sub_half_carry() {
+    let mut cpu = create_cpu(vec![0x27]);
+    cpu.registers.set(Register::A, 0x15);
+    cpu.registers.set_subtract(false);
+    cpu.registers.set_half_carry(true);
+    cpu.registers.set_carry(false);
+
+    let result = cpu.execute_instruction();
+
+    assert_eq!(cpu.registers.get(Register::A), 0x1B);
+    assert_eq!(cpu.registers.zero(), false);
+    assert_eq!(cpu.registers.subtract(), false);
+    assert_eq!(cpu.registers.half_carry(), false);
+    assert_eq!(cpu.registers.carry(), false);
+    assert_eq!(result.cycles, 4);
+  }
+
+  #[test]
+  pub fn test_daa_non_sub_carry() {
+    let mut cpu = create_cpu(vec![0x27]);
+    cpu.registers.set(Register::A, 0x15);
+    cpu.registers.set_subtract(false);
+    cpu.registers.set_half_carry(false);
+    cpu.registers.set_carry(true);
+
+    let result = cpu.execute_instruction();
+
+    assert_eq!(cpu.registers.get(Register::A), 0x75);
+    assert_eq!(cpu.registers.zero(), false);
+    assert_eq!(cpu.registers.half_carry(), false);
+    assert_eq!(cpu.registers.carry(), true);
+    assert_eq!(result.cycles, 4);
+  }
+
+    #[test]
+  pub fn test_daa_non_sub_gt99() {
+    let mut cpu = create_cpu(vec![0x27]);
+    cpu.registers.set(Register::A, 0xC0);
+    cpu.registers.set_subtract(false);
+    cpu.registers.set_half_carry(false);
+    cpu.registers.set_carry(false);
+
+    let result = cpu.execute_instruction();
+
+    assert_eq!(cpu.registers.get(Register::A), 0x20);
+    assert_eq!(cpu.registers.zero(), false);
+    assert_eq!(cpu.registers.half_carry(), false);
+    assert_eq!(cpu.registers.carry(), true);
+    assert_eq!(result.cycles, 4);
+  }
+
+  #[test]
+  pub fn test_daa_non_sub_both() {
+    let mut cpu = create_cpu(vec![0x27]);
+    cpu.registers.set(Register::A, 0x9A);
+    cpu.registers.set_subtract(false);
+    cpu.registers.set_half_carry(false);
+    cpu.registers.set_carry(false);
+
+    let result = cpu.execute_instruction();
+
+    assert_eq!(cpu.registers.get(Register::A), 0x00);
+    assert_eq!(cpu.registers.zero(), true);
+    assert_eq!(cpu.registers.half_carry(), false);
+    assert_eq!(cpu.registers.carry(), true);
+    assert_eq!(result.cycles, 4);
+  }
+
+  #[test]
+  pub fn test_daa_sub_no_adjust() {
+    let mut cpu = create_cpu(vec![0x27]);
+    cpu.registers.set(Register::A, 0x15);
+    cpu.registers.set_subtract(true);
+    cpu.registers.set_half_carry(false);
+    cpu.registers.set_carry(false);
+
+    let result = cpu.execute_instruction();
+
+    assert_eq!(cpu.registers.get(Register::A), 0x15);
+    assert_eq!(cpu.registers.zero(), false);
+    assert_eq!(cpu.registers.half_carry(), false);
+    assert_eq!(cpu.registers.carry(), false);
+    assert_eq!(cpu.registers.subtract(), true);
+    assert_eq!(cpu.registers.get(Register::PC), INITIAL_PC + 1);
+    assert_eq!(result.cycles, 4);
+  }
+
+  #[test]
+  pub fn test_daa_sub_half_carry() {
+    let mut cpu = create_cpu(vec![0x27]);
+    cpu.registers.set(Register::A, 0x15);
+    cpu.registers.set_subtract(true);
+    cpu.registers.set_half_carry(true);
+    cpu.registers.set_carry(false);
+
+    let result = cpu.execute_instruction();
+
+    assert_eq!(cpu.registers.get(Register::A), 0x0F);
+    assert_eq!(cpu.registers.zero(), false);
+    assert_eq!(cpu.registers.half_carry(), false);
+    assert_eq!(cpu.registers.carry(), false);
+    assert_eq!(cpu.registers.subtract(), true);
+    assert_eq!(result.cycles, 4);
+  }
+
+  #[test]
+  pub fn test_daa_sub_carry() {
+    let mut cpu = create_cpu(vec![0x27]);
+    cpu.registers.set(Register::A, 0x15);
+    cpu.registers.set_subtract(true);
+    cpu.registers.set_half_carry(false);
+    cpu.registers.set_carry(true);
+
+    let result = cpu.execute_instruction();
+
+    assert_eq!(cpu.registers.get(Register::A), 0xB5);
+    assert_eq!(cpu.registers.zero(), false);
+    assert_eq!(cpu.registers.half_carry(), false);
+    assert_eq!(cpu.registers.carry(), true);
+    assert_eq!(cpu.registers.subtract(), true);
+    assert_eq!(result.cycles, 4);
+  }
+
+  #[test]
+  pub fn test_daa_sub_both() {
+    let mut cpu = create_cpu(vec![0x27]);
+    cpu.registers.set(Register::A, 0x66);
+    cpu.registers.set_subtract(true);
+    cpu.registers.set_half_carry(true);
+    cpu.registers.set_carry(true);
+
+    let result = cpu.execute_instruction();
+
+    assert_eq!(cpu.registers.get(Register::A), 0x00);
+    assert_eq!(cpu.registers.zero(), true);
+    assert_eq!(cpu.registers.half_carry(), false);
+    assert_eq!(cpu.registers.carry(), true);
+    assert_eq!(cpu.registers.subtract(), true);
+    assert_eq!(result.cycles, 4);
   }
 }
