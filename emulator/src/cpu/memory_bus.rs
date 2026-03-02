@@ -21,11 +21,9 @@ impl MemoryBus {
     match address {
       0..=0x7FFF => panic!("Invalid memory write {:?}", address),
       0xFF01 => {
-        self.memory[(address - 0x8000) as usize] = value;
         self.adapters.serial_port().write(value);
       }
       0xFF02 => {
-        self.memory[(address - 0x8000) as usize] = value;
         self.adapters.serial_port().control(value);
       },
       _ => self.memory[(address - 0x8000) as usize] = value
@@ -35,6 +33,7 @@ impl MemoryBus {
   pub fn read(&self, address: u16) -> u8 {
     match address {
       0..=0x7FFF => self.rom[address as usize],
+      0xFF01..=0xFF02 => panic!("Invalid memory read {:?}", address),
       _ => self.memory[(address - 0x8000) as usize]
     }
   }

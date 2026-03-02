@@ -1342,14 +1342,14 @@ use super::*;
 
   #[test]
   fn test_ld_a16_sp() {
-    let mut cpu = create_cpu(vec![0x08, 0x00, 0xFF]);
+    let mut cpu = create_cpu(vec![0x08, 0x34, 0xF2]);
     cpu.registers.set(Register::SP, 0x1234);
 
     let result = cpu.execute_instruction();
 
     assert_eq!(result.cycles, 20);
-    assert_eq!(cpu.memory_bus.read(0xFF00), 0x34);
-    assert_eq!(cpu.memory_bus.read(0xFF01), 0x12);
+    assert_eq!(cpu.memory_bus.read(0xF234), 0x34);
+    assert_eq!(cpu.memory_bus.read(0xF235), 0x12);
     assert_eq!(cpu.registers.get(Register::SP), 0x1234);
     assert_eq!(cpu.registers.get(Register::PC), INITIAL_PC + 3);
     assert_eq!(cpu.registers.zero(), INITIAL_ZERO_FLAG);
