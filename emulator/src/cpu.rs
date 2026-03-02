@@ -13,6 +13,8 @@ use instructions::Instruction;
 use registers::register_bytes;
 use memory_bus::MemoryBus;
 
+use crate::adapters::Adapters;
+
 pub struct CPU {
   registers: Registers,
   memory_bus: MemoryBus,
@@ -24,10 +26,10 @@ pub struct InstructionResult {
 }
 
 impl CPU {
-  pub fn new(rom: Vec<u8>) -> Self {
+  pub fn new(adapters: Adapters) -> Self {
     CPU {
       registers: Registers::new(),
-      memory_bus: MemoryBus::new(rom),
+      memory_bus: MemoryBus::new(adapters),
       accept_interrupts: true
     }
   }
@@ -782,7 +784,9 @@ impl CPU {
 
 #[cfg(test)]
 mod tests {
-  use super::*;
+  use crate::adapters::{rom_reader::RomReader, serial_port::SerialPort};
+
+use super::*;
 
   const INITIAL_PC: u16 = 0x0100;
   const INITIAL_SP: u16 = 0xFFFE;
@@ -797,7 +801,12 @@ mod tests {
       rom[INITIAL_PC as usize + i] = bytes[i];
     }
 
-    CPU::new(rom)
+    let adapters = Adapters::new(
+      RomReader::Memory { rom },
+      SerialPort::None
+    );
+
+    CPU::new(adapters)
   }
 
   #[test]

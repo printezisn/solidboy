@@ -1,11 +1,17 @@
+use crate::adapters::Adapters;
+
 pub struct MemoryBus {
+  adapters: Adapters,
   rom: Vec<u8>,
   memory: [u8; 0x7FFF + 1]
 }
 
 impl MemoryBus {
-  pub fn new(rom: Vec<u8>) -> Self {
+  pub fn new(adapters: Adapters) -> Self {
+    let rom = adapters.rom_reader().read_rom();
+
     MemoryBus {
+      adapters,
       rom,
       memory: [0; 0x7FFF + 1]
     }
@@ -14,6 +20,14 @@ impl MemoryBus {
   pub fn write(&mut self, address: u16, value: u8) {
     match address {
       0..=0x7FFF => panic!("Invalid memory write {:?}", address),
+      0xFF01 => {
+        self.memory[(address - 0x8000) as usize] = value;
+        self.adapters.serial_port().write(value);
+      }
+      0xFF02 => {
+        self.memory[(address - 0x8000) as usize] = value;
+        self.adapters.serial_port().control(value);
+      },
       _ => self.memory[(address - 0x8000) as usize] = value
     }
   }
