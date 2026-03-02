@@ -20,7 +20,8 @@ pub struct CPU {
   registers: Registers,
   memory_bus: MemoryBus,
   ime: bool,
-  pending_ime_set: bool
+  pending_ime_set: bool,
+  halted: bool
 }
 
 pub struct InstructionResult {
@@ -33,7 +34,8 @@ impl CPU {
       registers: Registers::new(),
       memory_bus: MemoryBus::new(adapters),
       ime: false,
-      pending_ime_set: false
+      pending_ime_set: false,
+      halted: false
     }
   }
 
@@ -42,8 +44,15 @@ impl CPU {
     let opcode = self.memory_bus.read(pc);
     let result: InstructionResult;
 
-    if self.ime && (self.memory_bus.if_flag() & self.memory_bus.ie_flag() & 0x1F) != 0 {
+    let interrupt_pending = (self.memory_bus.if_flag() & self.memory_bus.ie_flag() & 0x1F) != 0;
+    if interrupt_pending && self.halted {
+      self.halted = false;
+    }
+
+    if self.ime && interrupt_pending {
       result = self.interrupt();
+    } else if self.halted {
+      result = InstructionResult { cycles: 4 };
     } else if opcode == 0xCB {
       let cb_opcode = self.memory_bus.read(pc + 1);
       let cb_instruction = &CBPREFIXED_INSTRUCTIONS[cb_opcode as usize];
@@ -91,6 +100,7 @@ impl CPU {
           Mnemonic::RLCA => self.rlc(&instruction),
           Mnemonic::ADC => self.adc(&instruction),
           Mnemonic::DAA => self.daa(&instruction),
+          Mnemonic::HALT => self.halt(&instruction),
         _ => panic!("Unknown opcode: {:02X} {:?}", opcode, instruction.mnemonic)
       };
 
@@ -823,6 +833,14 @@ impl CPU {
     self.registers.set_carry(carry);
 
     self.registers.set(Register::A, a as u16);
+    let pc = self.registers.get(Register::PC);
+    self.registers.set(Register::PC, pc + instruction.bytes as u16);
+
+    InstructionResult { cycles: instruction.cycles[0] }
+  }
+
+  fn halt(&mut self, instruction: &Instruction) -> InstructionResult {
+    self.halted = true;
     let pc = self.registers.get(Register::PC);
     self.registers.set(Register::PC, pc + instruction.bytes as u16);
 
@@ -4950,5 +4968,105 @@ mod tests {
     assert_eq!(cpu.registers.carry(), true);
     assert_eq!(cpu.registers.subtract(), true);
     assert_eq!(result.cycles, 4);
+  }
+
+  #[test]
+  pub fn test_halt_sets_halted_flag() {
+    let mut cpu = create_cpu(vec![0x76]);
+    assert_eq!(cpu.halted, false);
+
+    let result = cpu.execute_instruction();
+
+    assert_eq!(cpu.halted, true);
+    assert_eq!(cpu.registers.get(Register::PC), INITIAL_PC + 1);
+    assert_eq!(result.cycles, 4);
+  }
+
+  #[test]
+  pub fn test_halt_increments_pc() {
+    let mut cpu = create_cpu(vec![0x76]);
+    
+    let result = cpu.execute_instruction();
+
+    assert_eq!(cpu.registers.get(Register::PC), INITIAL_PC + 1);
+    assert_eq!(result.cycles, 4);
+  }
+
+  #[test]
+  pub fn test_halted_cpu_returns_without_executing() {
+    let mut cpu = create_cpu(vec![0x76, 0x27]);
+    
+    let result1 = cpu.execute_instruction();
+    assert_eq!(cpu.halted, true);
+    assert_eq!(cpu.registers.get(Register::PC), INITIAL_PC + 1);
+    assert_eq!(result1.cycles, 4);
+
+    let result2 = cpu.execute_instruction();
+    assert_eq!(cpu.halted, true);
+    assert_eq!(cpu.registers.get(Register::PC), INITIAL_PC + 1);
+    assert_eq!(result2.cycles, 4);
+  }
+
+  #[test]
+  pub fn test_halt_wakes_on_interrupt_with_ime_set() {
+    let mut cpu = create_cpu(vec![0x76]);
+    cpu.ime = true;
+    
+    let result = cpu.execute_instruction();
+    assert_eq!(cpu.halted, true);
+    assert_eq!(result.cycles, 4);
+
+    cpu.memory_bus.set_if_flag(0x01);
+    cpu.memory_bus.set_ie_flag(0x01);
+
+    let result = cpu.execute_instruction();
+    assert_eq!(cpu.halted, false);
+    assert_eq!(result.cycles, 20);
+  }
+
+  #[test]
+  pub fn test_halt_wakes_on_interrupt_without_ime() {
+    let mut cpu = create_cpu(vec![0x76, 0x00]);
+    cpu.ime = false;
+    
+    let result = cpu.execute_instruction();
+    assert_eq!(cpu.halted, true);
+
+    cpu.memory_bus.set_if_flag(0x01);
+    cpu.memory_bus.set_ie_flag(0x01);
+
+    let _result = cpu.execute_instruction();
+    assert_eq!(cpu.halted, false);
+    assert_eq!(cpu.registers.get(Register::PC), INITIAL_PC + 2);
+    assert_eq!(result.cycles, 4);
+  }
+
+  #[test]
+  pub fn test_halt_no_interrupt_stays_halted() {
+    let mut cpu = create_cpu(vec![0x76]);
+    cpu.ime = true;
+    
+    let _result = cpu.execute_instruction();
+    assert_eq!(cpu.halted, true);
+
+    let _result = cpu.execute_instruction();
+    assert_eq!(cpu.halted, true);
+    assert_eq!(cpu.registers.get(Register::PC), INITIAL_PC + 1);
+  }
+
+  #[test]
+  pub fn test_halt_interrupt_lower_priority_wakes() {
+    let mut cpu = create_cpu(vec![0x76]);
+    cpu.ime = true;
+    
+    let _result = cpu.execute_instruction();
+    assert_eq!(cpu.halted, true);
+
+    cpu.memory_bus.set_if_flag(0x1F);
+    cpu.memory_bus.set_ie_flag(0x1F);
+
+    let result = cpu.execute_instruction();
+    assert_eq!(cpu.halted, false);
+    assert_eq!(result.cycles, 20);
   }
 }
