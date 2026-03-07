@@ -214,7 +214,7 @@ impl CPU {
   }
 
   fn set_add16_half_carry_flag(&mut self, old_value: u16, offset: u16) {
-    self.registers.set_half_carry((old_value & 0xFF) + (offset & 0xFF) > 0xFF);
+    self.registers.set_half_carry((old_value & 0x0FFF) + (offset & 0x0FFF) > 0x0FFF);
   }
 
   fn set_add16_carry_flag(&mut self, old_value: u16, offset: u16) {
@@ -511,6 +511,8 @@ impl CPU {
     if register_bytes == 1 {
       if !matches!(instruction.operands[1].name, OperandName::E8) {
         self.set_add8_zero_flag(value1, value2);
+      } else {
+        self.registers.set_zero(false);
       }
       self.set_add8_half_carry_flag(value1, value2);
       self.set_add8_carry_flag(value1, value2);
@@ -2908,7 +2910,7 @@ mod tests {
     assert_eq!(cpu.registers.get(Register::PC), INITIAL_PC + 2);
 
     assert_eq!(result.cycles, 16);
-    assert_eq!(cpu.registers.zero(), INITIAL_ZERO_FLAG);
+    assert_eq!(cpu.registers.zero(), false);
     assert_eq!(cpu.registers.subtract(), false);
     assert_eq!(cpu.registers.half_carry(), false);
     assert_eq!(cpu.registers.carry(), false);
@@ -2925,7 +2927,7 @@ mod tests {
     assert_eq!(cpu.registers.get(Register::PC), INITIAL_PC + 2);
 
     assert_eq!(result.cycles, 16);
-    assert_eq!(cpu.registers.zero(), INITIAL_ZERO_FLAG);
+    assert_eq!(cpu.registers.zero(), false);
     assert_eq!(cpu.registers.subtract(), false);
     assert_eq!(cpu.registers.half_carry(), true);
     assert_eq!(cpu.registers.carry(), false);
@@ -2942,7 +2944,7 @@ mod tests {
     assert_eq!(cpu.registers.get(Register::PC), INITIAL_PC + 2);
 
     assert_eq!(result.cycles, 16);
-    assert_eq!(cpu.registers.zero(), INITIAL_ZERO_FLAG);
+    assert_eq!(cpu.registers.zero(), false);
     assert_eq!(cpu.registers.subtract(), false);
     assert_eq!(cpu.registers.half_carry(), true);
     assert_eq!(cpu.registers.carry(), true);
@@ -2951,7 +2953,7 @@ mod tests {
   #[test]
   pub fn test_add_sp_e8_zero() {
     let mut cpu = create_cpu(vec![0xE8, 0xFF]);
-    cpu.registers.set_zero(false);
+    cpu.registers.set_zero(true);
     cpu.registers.set(Register::SP, 0x0001);
 
     let result = cpu.execute_instruction();

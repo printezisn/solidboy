@@ -17,7 +17,7 @@ impl MemoryBus {
 
   pub fn write(&mut self, address: u16, value: u8) {
     match address {
-      0..=0x7FFF => panic!("Invalid memory write {:02X}", address),
+      0..=0x7FFF => self.rom[address as usize] = value,
       0xFF04 => {
         self.timer.reset_div();
       },
