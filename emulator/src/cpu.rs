@@ -109,6 +109,7 @@ impl CPU {
           Mnemonic::CPL => self.cpl(&instruction),
           Mnemonic::SCF => self.scf(&instruction),
           Mnemonic::CCF => self.ccf(&instruction),
+          Mnemonic::STOP => self.stop(&instruction),
         _ => panic!("Unknown opcode: {:02X} {:?}", opcode, instruction.mnemonic)
       };
 
@@ -1019,6 +1020,13 @@ impl CPU {
 
     let (value, register_bytes) = self.read_operand(&instruction.operands[1], false);
     self.write_operand(&instruction.operands[1], value | mask, register_bytes, false);
+    self.registers.set(Register::PC, pc + instruction.bytes as u16);
+
+    InstructionResult { cycles: instruction.cycles[0] }
+  }
+
+  fn stop(&mut self, instruction: &Instruction) -> InstructionResult {
+    let pc = self.registers.get(Register::PC);
     self.registers.set(Register::PC, pc + instruction.bytes as u16);
 
     InstructionResult { cycles: instruction.cycles[0] }
@@ -6129,6 +6137,21 @@ mod tests {
     assert_eq!(cpu.registers.get(Register::PC), INITIAL_PC + 2);
 
     assert_eq!(result.cycles, 16);
+    assert_eq!(cpu.registers.zero(), INITIAL_ZERO_FLAG);
+    assert_eq!(cpu.registers.subtract(), INITIAL_SUBTRACT_FLAG);
+    assert_eq!(cpu.registers.half_carry(), INITIAL_HALF_CARRY_FLAG);
+    assert_eq!(cpu.registers.carry(), INITIAL_CARRY_FLAG);
+  }
+
+  #[test]
+  pub fn test_stop() {
+    let mut cpu = create_cpu(vec![0x10, 0x00]);
+
+    let result = cpu.execute_instruction();
+
+    assert_eq!(cpu.registers.get(Register::PC), INITIAL_PC + 2);
+
+    assert_eq!(result.cycles, 4);
     assert_eq!(cpu.registers.zero(), INITIAL_ZERO_FLAG);
     assert_eq!(cpu.registers.subtract(), INITIAL_SUBTRACT_FLAG);
     assert_eq!(cpu.registers.half_carry(), INITIAL_HALF_CARRY_FLAG);
