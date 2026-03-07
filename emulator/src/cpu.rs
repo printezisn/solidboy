@@ -101,6 +101,7 @@ impl CPU {
           Mnemonic::DAA => self.daa(&instruction),
           Mnemonic::HALT => self.halt(&instruction),
           Mnemonic::SBC => self.sbc(&instruction),
+          Mnemonic::RETI => self.reti(&instruction),
         _ => panic!("Unknown opcode: {:02X} {:?}", opcode, instruction.mnemonic)
       };
 
@@ -481,6 +482,14 @@ impl CPU {
 
     let value = self.pop16();
     self.registers.set(Register::PC, value);
+
+    return InstructionResult { cycles: instruction.cycles[0] };
+  }
+
+  fn reti(&mut self, instruction: &Instruction) -> InstructionResult {
+    let value = self.pop16();
+    self.registers.set(Register::PC, value);
+    self.pending_ime_set = true;
 
     return InstructionResult { cycles: instruction.cycles[0] };
   }
@@ -2455,6 +2464,107 @@ mod tests {
     assert_eq!(cpu.registers.subtract(), INITIAL_SUBTRACT_FLAG);
     assert_eq!(cpu.registers.half_carry(), INITIAL_HALF_CARRY_FLAG);
     assert_eq!(cpu.registers.carry(), false);
+  }
+
+  #[test]
+  pub fn test_reti_basic() {
+    let mut cpu = create_cpu(vec![0xD9]);
+    cpu.stack16(0x1234);
+    cpu.ime = false;
+
+    let result = cpu.execute_instruction();
+
+    let sp = cpu.registers.get(Register::SP);
+
+    assert_eq!(sp, INITIAL_SP);
+    assert_eq!(cpu.registers.get(Register::PC), 0x1234);
+    assert_eq!(cpu.ime, true);
+    assert_eq!(cpu.pending_ime_set, false);
+
+    assert_eq!(result.cycles, 16);
+    assert_eq!(cpu.registers.zero(), INITIAL_ZERO_FLAG);
+    assert_eq!(cpu.registers.subtract(), INITIAL_SUBTRACT_FLAG);
+    assert_eq!(cpu.registers.half_carry(), INITIAL_HALF_CARRY_FLAG);
+    assert_eq!(cpu.registers.carry(), INITIAL_CARRY_FLAG);
+  }
+
+  #[test]
+  pub fn test_reti_different_address() {
+    let mut cpu = create_cpu(vec![0xD9]);
+    cpu.stack16(0x5678);
+    cpu.ime = false;
+
+    let result = cpu.execute_instruction();
+
+    let sp = cpu.registers.get(Register::SP);
+
+    assert_eq!(sp, INITIAL_SP);
+    assert_eq!(cpu.registers.get(Register::PC), 0x5678);
+    assert_eq!(cpu.ime, true);
+    assert_eq!(cpu.pending_ime_set, false);
+
+    assert_eq!(result.cycles, 16);
+  }
+
+  #[test]
+  pub fn test_reti_zero_address() {
+    let mut cpu = create_cpu(vec![0xD9]);
+    cpu.stack16(0x0000);
+    cpu.ime = false;
+
+    let result = cpu.execute_instruction();
+
+    assert_eq!(cpu.registers.get(Register::PC), 0x0000);
+    assert_eq!(cpu.ime, true);
+    assert_eq!(cpu.pending_ime_set, false);
+
+    assert_eq!(result.cycles, 16);
+  }
+
+  #[test]
+  pub fn test_reti_high_address() {
+    let mut cpu = create_cpu(vec![0xD9]);
+    cpu.stack16(0xFFFF);
+    cpu.ime = false;
+
+    let result = cpu.execute_instruction();
+
+    assert_eq!(cpu.registers.get(Register::PC), 0xFFFF);
+    assert_eq!(cpu.ime, true);
+    assert_eq!(cpu.pending_ime_set, false);
+
+    assert_eq!(result.cycles, 16);
+  }
+
+  #[test]
+  pub fn test_reti_enables_ime_immediately() {
+    let mut cpu = create_cpu(vec![0xD9, 0x00]);
+    cpu.stack16(0x1234);
+    cpu.ime = false;
+
+    let result = cpu.execute_instruction();
+
+    assert_eq!(cpu.ime, true);
+    assert_eq!(cpu.pending_ime_set, false);
+    assert_eq!(result.cycles, 16);
+  }
+
+  #[test]
+  pub fn test_reti_preserves_flags() {
+    let mut cpu = create_cpu(vec![0xD9]);
+    cpu.stack16(0x3000);
+    cpu.ime = false;
+    cpu.registers.set_zero(true);
+    cpu.registers.set_subtract(true);
+    cpu.registers.set_half_carry(true);
+    cpu.registers.set_carry(true);
+
+    let _result = cpu.execute_instruction();
+
+    assert_eq!(cpu.registers.zero(), true);
+    assert_eq!(cpu.registers.subtract(), true);
+    assert_eq!(cpu.registers.half_carry(), true);
+    assert_eq!(cpu.registers.carry(), true);
   }
 
   #[test]
