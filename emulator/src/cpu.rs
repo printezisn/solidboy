@@ -65,6 +65,8 @@ impl CPU {
         Mnemonic::RLC => self.rlc(&cb_instruction),
         Mnemonic::SWAP => self.swap(&cb_instruction),
         Mnemonic::BIT => self.bit(&cb_instruction),
+        Mnemonic::RES => self.res(&cb_instruction),
+        Mnemonic::SET => self.set(&cb_instruction),
         _ => panic!("Unknown CB-prefixed opcode: {:02X} {:?}", cb_opcode, cb_instruction.mnemonic)
       };
 
@@ -971,6 +973,52 @@ impl CPU {
     self.registers.set_zero((value & mask) == 0);
     self.registers.set_subtract(false);
     self.registers.set_half_carry(true);
+    self.registers.set(Register::PC, pc + instruction.bytes as u16);
+
+    InstructionResult { cycles: instruction.cycles[0] }
+  }
+
+  fn res(&mut self, instruction: &Instruction) -> InstructionResult {
+    let pc = self.registers.get(Register::PC);
+
+    let bit = match instruction.operands[0].name {
+      OperandName::NUM0 => 1,
+      OperandName::NUM1 => 2,
+      OperandName::NUM2 => 3,
+      OperandName::NUM3 => 4,
+      OperandName::NUM4 => 5,
+      OperandName::NUM5 => 6,
+      OperandName::NUM6 => 7,
+      OperandName::NUM7 => 8,
+      _ => unreachable!()
+    };
+    let mask = !(1 << (bit - 1));
+
+    let (value, register_bytes) = self.read_operand(&instruction.operands[1], false);
+    self.write_operand(&instruction.operands[1], value & mask, register_bytes, false);
+    self.registers.set(Register::PC, pc + instruction.bytes as u16);
+
+    InstructionResult { cycles: instruction.cycles[0] }
+  }
+
+  fn set(&mut self, instruction: &Instruction) -> InstructionResult {
+    let pc = self.registers.get(Register::PC);
+
+    let bit = match instruction.operands[0].name {
+      OperandName::NUM0 => 1,
+      OperandName::NUM1 => 2,
+      OperandName::NUM2 => 3,
+      OperandName::NUM3 => 4,
+      OperandName::NUM4 => 5,
+      OperandName::NUM5 => 6,
+      OperandName::NUM6 => 7,
+      OperandName::NUM7 => 8,
+      _ => unreachable!()
+    };
+    let mask = 1 << (bit - 1);
+
+    let (value, register_bytes) = self.read_operand(&instruction.operands[1], false);
+    self.write_operand(&instruction.operands[1], value | mask, register_bytes, false);
     self.registers.set(Register::PC, pc + instruction.bytes as u16);
 
     InstructionResult { cycles: instruction.cycles[0] }
@@ -5980,6 +6028,110 @@ mod tests {
     assert_eq!(cpu.registers.zero(), true);
     assert_eq!(cpu.registers.subtract(), false);
     assert_eq!(cpu.registers.half_carry(), true);
+    assert_eq!(cpu.registers.carry(), INITIAL_CARRY_FLAG);
+  }
+
+  #[test]
+  pub fn test_res_0_b() {
+    let mut cpu = create_cpu(vec![0xCB, 0x80]);
+    cpu.registers.set(Register::B, 0xFF); // all bits set
+
+    let result = cpu.execute_instruction();
+
+    assert_eq!(cpu.registers.get(Register::B), 0xFE); // bit 0 cleared
+    assert_eq!(cpu.registers.get(Register::PC), INITIAL_PC + 2);
+
+    assert_eq!(result.cycles, 8);
+    assert_eq!(cpu.registers.zero(), INITIAL_ZERO_FLAG);
+    assert_eq!(cpu.registers.subtract(), INITIAL_SUBTRACT_FLAG);
+    assert_eq!(cpu.registers.half_carry(), INITIAL_HALF_CARRY_FLAG);
+    assert_eq!(cpu.registers.carry(), INITIAL_CARRY_FLAG);
+  }
+
+  #[test]
+  pub fn test_res_7_a() {
+    let mut cpu = create_cpu(vec![0xCB, 0xBF]);
+    cpu.registers.set(Register::A, 0xFF);
+
+    let result = cpu.execute_instruction();
+
+    assert_eq!(cpu.registers.get(Register::A), 0x7F); // bit 7 cleared
+    assert_eq!(cpu.registers.get(Register::PC), INITIAL_PC + 2);
+
+    assert_eq!(result.cycles, 8);
+    assert_eq!(cpu.registers.zero(), INITIAL_ZERO_FLAG);
+    assert_eq!(cpu.registers.subtract(), INITIAL_SUBTRACT_FLAG);
+    assert_eq!(cpu.registers.half_carry(), INITIAL_HALF_CARRY_FLAG);
+    assert_eq!(cpu.registers.carry(), INITIAL_CARRY_FLAG);
+  }
+
+  #[test]
+  pub fn test_res_4_hl_mem() {
+    let mut cpu = create_cpu(vec![0xCB, 0xA6]);
+    cpu.registers.set(Register::HL, 0xF234);
+    cpu.memory_bus.write(0xF234, 0xFF);
+
+    let result = cpu.execute_instruction();
+
+    assert_eq!(cpu.memory_bus.read(0xF234), 0xEF); // bit 4 cleared
+    assert_eq!(cpu.registers.get(Register::PC), INITIAL_PC + 2);
+
+    assert_eq!(result.cycles, 16);
+    assert_eq!(cpu.registers.zero(), INITIAL_ZERO_FLAG);
+    assert_eq!(cpu.registers.subtract(), INITIAL_SUBTRACT_FLAG);
+    assert_eq!(cpu.registers.half_carry(), INITIAL_HALF_CARRY_FLAG);
+    assert_eq!(cpu.registers.carry(), INITIAL_CARRY_FLAG);
+  }
+
+  #[test]
+  pub fn test_set_0_c() {
+    let mut cpu = create_cpu(vec![0xCB, 0xC1]);
+    cpu.registers.set(Register::C, 0x00); // all bits clear
+
+    let result = cpu.execute_instruction();
+
+    assert_eq!(cpu.registers.get(Register::C), 0x01); // bit 0 set
+    assert_eq!(cpu.registers.get(Register::PC), INITIAL_PC + 2);
+
+    assert_eq!(result.cycles, 8);
+    assert_eq!(cpu.registers.zero(), INITIAL_ZERO_FLAG);
+    assert_eq!(cpu.registers.subtract(), INITIAL_SUBTRACT_FLAG);
+    assert_eq!(cpu.registers.half_carry(), INITIAL_HALF_CARRY_FLAG);
+    assert_eq!(cpu.registers.carry(), INITIAL_CARRY_FLAG);
+  }
+
+  #[test]
+  pub fn test_set_7_d() {
+    let mut cpu = create_cpu(vec![0xCB, 0xFA]);
+    cpu.registers.set(Register::D, 0x00);
+
+    let result = cpu.execute_instruction();
+
+    assert_eq!(cpu.registers.get(Register::D), 0x80); // bit 7 set
+    assert_eq!(cpu.registers.get(Register::PC), INITIAL_PC + 2);
+
+    assert_eq!(result.cycles, 8);
+    assert_eq!(cpu.registers.zero(), INITIAL_ZERO_FLAG);
+    assert_eq!(cpu.registers.subtract(), INITIAL_SUBTRACT_FLAG);
+    assert_eq!(cpu.registers.half_carry(), INITIAL_HALF_CARRY_FLAG);
+    assert_eq!(cpu.registers.carry(), INITIAL_CARRY_FLAG);
+  }
+
+  #[test]
+  pub fn test_set_3_hl_mem() {
+    let mut cpu = create_cpu(vec![0xCB, 0xDE]);
+    cpu.registers.set(Register::HL, 0xF234);
+    cpu.memory_bus.write(0xF234, 0x00);
+
+    let result = cpu.execute_instruction();
+
+    assert_eq!(cpu.memory_bus.read(0xF234), 0x08); // bit 3 set
+    assert_eq!(cpu.registers.get(Register::PC), INITIAL_PC + 2);
+
+    assert_eq!(result.cycles, 16);
+    assert_eq!(cpu.registers.zero(), INITIAL_ZERO_FLAG);
+    assert_eq!(cpu.registers.subtract(), INITIAL_SUBTRACT_FLAG);
+    assert_eq!(cpu.registers.half_carry(), INITIAL_HALF_CARRY_FLAG);
     assert_eq!(cpu.registers.carry(), INITIAL_CARRY_FLAG);
   }
 }
