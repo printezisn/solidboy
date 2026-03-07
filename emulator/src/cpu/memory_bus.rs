@@ -2,6 +2,7 @@ use super::timer::Timer;
 
 pub struct MemoryBus {
   rom: Vec<u8>,
+  rom_bank: u8,
   memory: [u8; 0x7FFF + 1],
   timer: Timer
 }
@@ -10,6 +11,7 @@ impl MemoryBus {
   pub fn new(rom: Vec<u8>) -> Self {
     MemoryBus {
       rom,
+      rom_bank: 1,
       memory: [0; 0x7FFF + 1],
       timer: Timer::new()
     }
@@ -17,7 +19,17 @@ impl MemoryBus {
 
   pub fn write(&mut self, address: u16, value: u8) {
     match address {
-      0..=0x7FFF => self.rom[address as usize] = value,
+      0x0000..=0x1FFF => panic!("Invalid write to address {:02X}", address),
+      0x2000..=0x3FFF => {
+        self.rom_bank = value & 0x1F;
+        if self.rom_bank == 0 {
+          self.rom_bank = 1;
+        }
+
+        let rom_bank_mask = (2 << self.rom[0x0148]) - 1;
+        self.rom_bank %= rom_bank_mask;
+      },
+      0x4000..=0x7FFF => panic!("Invalid write to address {:02X}", address),
       0xFF04 => {
         self.timer.reset_div();
       },
@@ -41,7 +53,8 @@ impl MemoryBus {
 
   pub fn read(&self, address: u16) -> u8 {
     match address {
-      0..=0x7FFF => self.rom[address as usize],
+      0x0000..=0x3FFF => self.rom[address as usize],
+      0x4000..=0x7FFF => self.rom[((self.rom_bank as u16) * 0x4000 + (address as u16) - 0x4000) as usize],
       0xFF04 => self.timer.div(),
       0xFF05 => self.timer.tima(),
       0xFF06 => self.timer.tma(),
