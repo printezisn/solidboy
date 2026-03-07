@@ -103,6 +103,9 @@ impl CPU {
           Mnemonic::SBC => self.sbc(&instruction),
           Mnemonic::RETI => self.reti(&instruction),
           Mnemonic::RST => self.rst(&instruction),
+          Mnemonic::CPL => self.cpl(&instruction),
+          Mnemonic::SCF => self.scf(&instruction),
+          Mnemonic::CCF => self.ccf(&instruction),
         _ => panic!("Unknown opcode: {:02X} {:?}", opcode, instruction.mnemonic)
       };
 
@@ -908,7 +911,42 @@ impl CPU {
 
     self.registers.set(Register::PC, pc + instruction.bytes as u16);
 
-    return InstructionResult { cycles: instruction.cycles[0] }
+    InstructionResult { cycles: instruction.cycles[0] }
+  }
+
+  fn cpl(&mut self, instruction: &Instruction) -> InstructionResult {
+    let pc = self.registers.get(Register::PC);
+    let a = self.registers.get(Register::A);
+
+    self.registers.set(Register::A, !a);
+    self.registers.set(Register::PC, pc + instruction.bytes as u16);
+
+    self.registers.set_subtract(true);
+    self.registers.set_half_carry(true);
+
+    InstructionResult { cycles: instruction.cycles[0] }
+  }
+
+  fn scf(&mut self, instruction: &Instruction) -> InstructionResult {
+    let pc = self.registers.get(Register::PC);
+
+    self.registers.set_subtract(false);
+    self.registers.set_half_carry(false);
+    self.registers.set_carry(true);
+    self.registers.set(Register::PC, pc + instruction.bytes as u16);
+
+    InstructionResult { cycles: instruction.cycles[0] }
+  }
+
+  fn ccf(&mut self, instruction: &Instruction) -> InstructionResult {
+    let pc = self.registers.get(Register::PC);
+
+    self.registers.set_subtract(false);
+    self.registers.set_half_carry(false);
+    self.registers.set_carry(!self.registers.carry());
+    self.registers.set(Register::PC, pc + instruction.bytes as u16);
+
+    InstructionResult { cycles: instruction.cycles[0] }
   }
 }
 
@@ -5727,6 +5765,95 @@ mod tests {
     assert_eq!(result.cycles, 8);
     assert_eq!(cpu.registers.zero(), true);
     assert_eq!(cpu.registers.subtract(), true);
+    assert_eq!(cpu.registers.half_carry(), false);
+    assert_eq!(cpu.registers.carry(), false);
+  }
+
+  #[test]
+  pub fn test_cpl() {
+    let mut cpu = create_cpu(vec![0x2F]);
+    cpu.registers.set(Register::A, 0x05);
+
+    let result = cpu.execute_instruction();
+
+    assert_eq!(cpu.registers.get(Register::A), 0x00FA);
+    assert_eq!(cpu.registers.get(Register::PC), INITIAL_PC + 1);
+
+    assert_eq!(result.cycles, 4);
+    assert_eq!(cpu.registers.zero(), INITIAL_ZERO_FLAG);
+    assert_eq!(cpu.registers.subtract(), true);
+    assert_eq!(cpu.registers.half_carry(), true);
+    assert_eq!(cpu.registers.carry(), INITIAL_CARRY_FLAG);
+  }
+
+  #[test]
+  pub fn test_scf_already_off() {
+    let mut cpu = create_cpu(vec![0x37]);
+    cpu.registers.set_subtract(true);
+    cpu.registers.set_half_carry(true);
+    cpu.registers.set_carry(false);
+
+    let result = cpu.execute_instruction();
+
+    assert_eq!(cpu.registers.get(Register::PC), INITIAL_PC + 1);
+
+    assert_eq!(result.cycles, 4);
+    assert_eq!(cpu.registers.zero(), INITIAL_ZERO_FLAG);
+    assert_eq!(cpu.registers.subtract(), false);
+    assert_eq!(cpu.registers.half_carry(), false);
+    assert_eq!(cpu.registers.carry(), true);
+  }
+
+  #[test]
+  pub fn test_scf_already_on() {
+    let mut cpu = create_cpu(vec![0x37]);
+    cpu.registers.set_subtract(true);
+    cpu.registers.set_half_carry(true);
+    cpu.registers.set_carry(true);
+
+    let result = cpu.execute_instruction();
+
+    assert_eq!(cpu.registers.get(Register::PC), INITIAL_PC + 1);
+
+    assert_eq!(result.cycles, 4);
+    assert_eq!(cpu.registers.zero(), INITIAL_ZERO_FLAG);
+    assert_eq!(cpu.registers.subtract(), false);
+    assert_eq!(cpu.registers.half_carry(), false);
+    assert_eq!(cpu.registers.carry(), true);
+  }
+
+  #[test]
+  pub fn test_ccf_switch_on() {
+    let mut cpu = create_cpu(vec![0x3F]);
+    cpu.registers.set_subtract(true);
+    cpu.registers.set_half_carry(true);
+    cpu.registers.set_carry(false);
+
+    let result = cpu.execute_instruction();
+
+    assert_eq!(cpu.registers.get(Register::PC), INITIAL_PC + 1);
+
+    assert_eq!(result.cycles, 4);
+    assert_eq!(cpu.registers.zero(), INITIAL_ZERO_FLAG);
+    assert_eq!(cpu.registers.subtract(), false);
+    assert_eq!(cpu.registers.half_carry(), false);
+    assert_eq!(cpu.registers.carry(), true);
+  }
+
+  #[test]
+  pub fn test_ccf_switch_off() {
+    let mut cpu = create_cpu(vec![0x3F]);
+    cpu.registers.set_subtract(true);
+    cpu.registers.set_half_carry(true);
+    cpu.registers.set_carry(true);
+
+    let result = cpu.execute_instruction();
+
+    assert_eq!(cpu.registers.get(Register::PC), INITIAL_PC + 1);
+
+    assert_eq!(result.cycles, 4);
+    assert_eq!(cpu.registers.zero(), INITIAL_ZERO_FLAG);
+    assert_eq!(cpu.registers.subtract(), false);
     assert_eq!(cpu.registers.half_carry(), false);
     assert_eq!(cpu.registers.carry(), false);
   }
