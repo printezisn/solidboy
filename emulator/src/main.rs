@@ -1,10 +1,7 @@
 mod cpu;
-mod adapters;
 mod emulator;
 
-use adapters::rom_reader::RomReader;
-use adapters::serial_port::SerialPort;
-use adapters::Adapters;
+use emulator::Emulator;
 
 fn main() {
     let args = std::env::args().collect::<Vec<String>>();
@@ -13,10 +10,8 @@ fn main() {
         panic!("Please provide a path to a game rom.");
     }
 
-    let adapters = Adapters::new(
-        RomReader::File { file_path: args[1].clone() },
-        SerialPort::Debug { byte: 0 }
-    );
+    let rom = std::fs::read(args[1].clone()).unwrap();
+    let mut emulator = Emulator::new(rom);
 
-    emulator::emulate(adapters);
+    emulator.run();
 }

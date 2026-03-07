@@ -1,10 +1,19 @@
-use super::adapters::Adapters;
-use super::cpu::CPU;
+use crate::cpu::CPU;
 
-pub fn emulate(adapters: Adapters) {
-  let mut cpu = CPU::new(adapters);
+pub struct Emulator {
+  cpu: CPU
+}
 
-  loop {
-    cpu.execute_instruction();
+impl Emulator {
+  pub fn new(rom: Vec<u8>) -> Self {
+    Emulator {
+      cpu: CPU::new(rom)
+    }
+  }
+
+  pub fn run(&mut self) {
+    loop {
+      self.cpu.execute_instruction();
+    }
   }
 }
