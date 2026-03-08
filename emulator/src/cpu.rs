@@ -38,9 +38,7 @@ impl CPU {
   }
 
   pub fn execute_instruction(&mut self) -> InstructionResult {
-    let pc = self.registers.get(Register::PC);
-    let opcode = self.memory_bus.read(pc);
-    let result: InstructionResult;
+    self.memory_bus.reset_total_cycles();
 
     let interrupt_pending = (self.memory_bus.if_flag() & self.memory_bus.ie_flag() & 0x1F) != 0;
     if interrupt_pending && self.halted {
@@ -48,14 +46,22 @@ impl CPU {
     }
 
     if self.ime && interrupt_pending {
-      result = self.interrupt();
-    } else if self.halted {
-      result = InstructionResult { cycles: 4 };
-    } else if opcode == 0xCB {
+      self.interrupt();
+      return InstructionResult { cycles: self.memory_bus.total_cycles() };
+    }
+    if self.halted {
+      self.memory_bus.tick(4);
+      return InstructionResult { cycles: self.memory_bus.total_cycles() };
+    }
+
+    let pc = self.registers.get(Register::PC);
+    let opcode = self.memory_bus.read(pc);
+
+    if opcode == 0xCB {
       let cb_opcode = self.memory_bus.read(pc + 1);
       let cb_instruction = &CBPREFIXED_INSTRUCTIONS[cb_opcode as usize];
 
-      result = match cb_instruction.mnemonic {
+      match cb_instruction.mnemonic {
         Mnemonic::SRL => self.srl(&cb_instruction),
         Mnemonic::SRA => self.sra(&cb_instruction),
         Mnemonic::SLA => self.sla(&cb_instruction),
@@ -76,7 +82,7 @@ impl CPU {
       }
     } else {
       let instruction = &PREFIXED_INSTRUCTIONS[opcode as usize];
-      result = match instruction.mnemonic {
+      match instruction.mnemonic {
           Mnemonic::NOP => self.noop(&instruction),
           Mnemonic::JP => self.jp(&instruction),
           Mnemonic::DI => self.di(&instruction),
@@ -104,7 +110,7 @@ impl CPU {
           Mnemonic::DAA => self.daa(&instruction),
           Mnemonic::HALT => self.halt(&instruction),
           Mnemonic::SBC => self.sbc(&instruction),
-          Mnemonic::RETI => self.reti(&instruction),
+          Mnemonic::RETI => self.reti(),
           Mnemonic::RST => self.rst(&instruction),
           Mnemonic::CPL => self.cpl(&instruction),
           Mnemonic::SCF => self.scf(&instruction),
@@ -119,12 +125,10 @@ impl CPU {
       }
     }
 
-    self.memory_bus.tick(result.cycles);
-
-    return result;
+    InstructionResult { cycles: self.memory_bus.total_cycles() }
   }
 
-  fn interrupt(&mut self) -> InstructionResult {
+  fn interrupt(&mut self) {
     self.ime = false;
 
     let pending = self.memory_bus.if_flag() & self.memory_bus.ie_flag() & 0x1F;
@@ -145,29 +149,33 @@ impl CPU {
     }
 
     self.memory_bus.set_if_flag(self.memory_bus.if_flag() & (!interrupt_num));
+
+    self.memory_bus.tick(8);
+
     self.stack16(self.registers.get(Register::PC));
     self.registers.set(Register::PC, (0x0040 + interrupt_bit * 8) as u16);
 
-    return InstructionResult { cycles: 20 };
+    self.memory_bus.tick(4);
   }
 
-  fn read_n8(&self) -> u8 {
+  fn read_n8(&mut self) -> u8 {
     let pc = self.registers.get(Register::PC);
     self.memory_bus.read(pc + 1)
   }
 
-  fn read_n16(&self) -> u16 {
+  fn read_n16(&mut self) -> u16 {
     let pc = self.registers.get(Register::PC);
     let low = self.memory_bus.read(pc + 1) as u16;
     let high = self.memory_bus.read(pc + 2) as u16;
     (high << 8) | low
   }
 
-  fn read_a16(&self, high: bool) -> u8 {
-    self.memory_bus.read(self.sanitize_address(self.read_n16(), high))
+  fn read_a16(&mut self, high: bool) -> u8 {
+    let address = self.read_n16();
+    self.memory_bus.read(self.sanitize_address(address, high))
   }
 
-  fn read_e8(&self) -> u16 {
+  fn read_e8(&mut self) -> u16 {
     let pc = self.registers.get(Register::PC);
     (self.memory_bus.read(pc + 1) as i8) as i16 as u16
   }
@@ -243,7 +251,7 @@ impl CPU {
     self.registers.set_zero(old_value.wrapping_sub(offset).wrapping_sub(carry) & 0xFF == 0);
   }
 
-  fn read_operand(&self, operand: &Operand, high: bool) -> (u16, u8) {
+  fn read_operand(&mut self, operand: &Operand, high: bool) -> (u16, u8) {
     match operand.register {
       Some(register) => {
         if operand.immediate {
@@ -254,18 +262,28 @@ impl CPU {
         return (self.memory_bus.read(address) as u16, 1);
       },
       None => {
-        if !operand.immediate {
-          return (self.read_a16(high) as u16, 1);
-        }
+        match operand.name {
+          OperandName::A8 => {
+            let address = self.read_n8() as u16;
+            return (self.memory_bus.read(self.sanitize_address(address, high)) as u16, 1);
+          },
+          OperandName::E8 => {
+            return (self.read_e8(), 1)
+          },
+          _ => {
+            if !operand.immediate {
+              return (self.read_a16(high) as u16, 1);
+            }
 
-        if matches!(operand.name, OperandName::E8) {
-          return (self.read_e8(), 1);
-        }
-        if operand.bytes == 1 {
-          return (self.sanitize_address(self.read_n8() as u16, high), 1);
-        }
+            if operand.bytes == 1 {
+              let address = self.read_n8() as u16;
+              return (self.sanitize_address(address, high), 1);
+            }
 
-        return (self.sanitize_address(self.read_n16(), high), 2);
+            let address = self.read_n16();
+            return (self.sanitize_address(address, high), 2);
+          }
+        };
       }
     }
   }
@@ -285,35 +303,41 @@ impl CPU {
           panic!("Cannot write to an immediate operand");
         }
 
-        let address = self.sanitize_address(self.read_n16(), high);
+        let address = match operand.name {
+          OperandName::A8 => self.read_n8() as u16,
+          _ => self.read_n16()
+        };
+
+        let sanitized_address = self.sanitize_address(address, high);
         if register_bytes == 1 {
-          self.memory_bus.write(address, value as u8);
+          self.memory_bus.write(sanitized_address, value as u8);
         } else {
-          self.memory_bus.write(address, (value & 0xFF) as u8);
-          self.memory_bus.write(address + 1, (value >> 8) as u8);
+          self.memory_bus.write(sanitized_address, (value & 0xFF) as u8);
+          self.memory_bus.write(sanitized_address + 1, (value >> 8) as u8);
         }
       }
     }
   }
 
-  fn noop(&mut self, instruction: &Instruction) -> InstructionResult {
+  fn noop(&mut self, instruction: &Instruction) {
     let pc = self.registers.get(Register::PC);
     self.registers.set(Register::PC, pc + instruction.bytes as u16);
-
-    InstructionResult { cycles: instruction.cycles[0] }
   }
 
-  fn jp(&mut self, instruction: &Instruction) -> InstructionResult {
+  fn jp(&mut self, instruction: &Instruction) {
     let pc = self.registers.get(Register::PC);
 
     if instruction.total_operands == 2 {
+      let address = self.read_n16();
+
       if !self.is_condition_true(&instruction.operands[0]) {
           self.registers.set(Register::PC, pc + instruction.bytes as u16);
-          return InstructionResult { cycles: instruction.cycles[1] }
+          return;
       }
 
-      self.registers.set(Register::PC, self.read_n16());
-      return InstructionResult { cycles: instruction.cycles[0] }
+      self.registers.set(Register::PC, address);
+      self.memory_bus.tick(4);
+      return;
     }
 
     match instruction.operands[0].register {
@@ -324,69 +348,65 @@ impl CPU {
       None => {
         let target = self.read_n16();
         self.registers.set(Register::PC, target);
+        self.memory_bus.tick(4);
       }
     }
-
-    return InstructionResult { cycles: instruction.cycles[0] };
   }
 
-  fn call(&mut self, instruction: &Instruction) -> InstructionResult {
+  fn call(&mut self, instruction: &Instruction) {
     let pc = self.registers.get(Register::PC);
+    let address = self.read_n16();
 
     if instruction.total_operands == 2 {
       if !self.is_condition_true(&instruction.operands[0]) {
           self.registers.set(Register::PC, pc + instruction.bytes as u16);
-          return InstructionResult { cycles: instruction.cycles[1] }
+          return;
       }
     }
 
     self.stack16(pc + instruction.bytes as u16);
 
-    self.registers.set(Register::PC, self.read_n16());
-    return InstructionResult { cycles: instruction.cycles[0] }
+    self.registers.set(Register::PC, address);
+    self.memory_bus.tick(4);
   }
 
-  fn rst(&mut self, instruction: &Instruction) -> InstructionResult {
+  fn rst(&mut self, instruction: &Instruction) {
     let pc = self.registers.get(Register::PC);
 
     self.stack16(pc + instruction.bytes as u16);
 
     self.registers.set(Register::PC, (self.memory_bus.read(pc) - 0xC7) as u16);
-    return InstructionResult { cycles: instruction.cycles[0] }
   }
 
-  fn jr(&mut self, instruction: &Instruction) -> InstructionResult {
+  fn jr(&mut self, instruction: &Instruction) {
     let pc = self.registers.get(Register::PC);
+    let offset = self.read_e8();
 
     if instruction.total_operands == 2 {
       if !self.is_condition_true(&instruction.operands[0]) {
           self.registers.set(Register::PC, pc + instruction.bytes as u16);
-          return InstructionResult { cycles: instruction.cycles[1] }
+          return;
       }
     }
 
-    self.registers.set(Register::PC, pc.wrapping_add(instruction.bytes as u16).wrapping_add(self.read_e8()));
-    return InstructionResult { cycles: instruction.cycles[0] }
+    self.registers.set(Register::PC, pc.wrapping_add(instruction.bytes as u16).wrapping_add(offset));
+    self.memory_bus.tick(4);
   }
 
-  fn di(&mut self, instruction: &Instruction) -> InstructionResult {
+  fn di(&mut self, instruction: &Instruction) {
     self.ime = false;
     self.pending_ime_set = false;
     let pc = self.registers.get(Register::PC);
     self.registers.set(Register::PC, pc + instruction.bytes as u16);
-
-    InstructionResult { cycles: instruction.cycles[0] }
   }
 
-  fn ei(&mut self, instruction: &Instruction) -> InstructionResult {
+  fn ei(&mut self, instruction: &Instruction) {
     self.pending_ime_set = true;
     let pc = self.registers.get(Register::PC);
     self.registers.set(Register::PC, pc + instruction.bytes as u16);
-
-    InstructionResult { cycles: instruction.cycles[0] }
   }
 
-  fn ld(&mut self, instruction: &Instruction) -> InstructionResult {
+  fn ld(&mut self, instruction: &Instruction) {
     let pc = self.registers.get(Register::PC);
     
     let (mut value, register_bytes) = self.read_operand(&instruction.operands[1], false);
@@ -400,6 +420,17 @@ impl CPU {
       self.set_add8_carry_flag(value, offset, 0);
 
       value = value.overflowing_add(offset).0;
+
+      self.memory_bus.tick(4);
+    } else {
+      match instruction.operands[0].register {
+        Some(Register::SP) => {
+          if !matches!(instruction.operands[1].register, None) && instruction.operands[1].immediate {
+            self.memory_bus.tick(4);
+          }
+        },
+        _ => {}
+      }
     }
 
     self.write_operand(&instruction.operands[0], value, register_bytes, false);
@@ -415,22 +446,18 @@ impl CPU {
     }
 
     self.registers.set(Register::PC, pc + instruction.bytes as u16);
-
-    return InstructionResult { cycles: instruction.cycles[0] };
   }
 
-  fn ldh(&mut self, instruction: &Instruction) -> InstructionResult {
+  fn ldh(&mut self, instruction: &Instruction) {
     let pc = self.registers.get(Register::PC);
     
     let (value, register_bytes) = self.read_operand(&instruction.operands[1], true);
     self.write_operand(&instruction.operands[0], value, register_bytes, true);
 
     self.registers.set(Register::PC, pc + instruction.bytes as u16);
-
-    return InstructionResult { cycles: instruction.cycles[0] };
   }
 
-  fn inc(&mut self, instruction: &Instruction) -> InstructionResult {
+  fn inc(&mut self, instruction: &Instruction) {
     let pc = self.registers.get(Register::PC);
 
     let (value, register_bytes) = self.read_operand(&instruction.operands[0], false);
@@ -441,14 +468,20 @@ impl CPU {
       self.set_add8_half_carry_flag(value, 1, 0);
     }
 
+    if instruction.operands[0].immediate {
+      match instruction.operands[0].register {
+        Some(Register::AF) | Some(Register::BC) | Some(Register::DE) | Some(Register::HL)
+          | Some(Register::SP) => self.memory_bus.tick(4),
+        _ => {}
+      };
+    }
+
     self.write_operand(&instruction.operands[0], new_value, register_bytes, false);
 
     self.registers.set(Register::PC, pc + instruction.bytes as u16);
-
-    return InstructionResult { cycles: instruction.cycles[0] };
   }
 
-  fn dec(&mut self, instruction: &Instruction) -> InstructionResult {
+  fn dec(&mut self, instruction: &Instruction) {
     let pc = self.registers.get(Register::PC);
 
     let (value, register_bytes) = self.read_operand(&instruction.operands[0], false);
@@ -459,59 +492,63 @@ impl CPU {
       self.set_sub8_half_carry_flag(value, 1, 0);
     }
 
+    if instruction.operands[0].immediate {
+      match instruction.operands[0].register {
+        Some(Register::AF) | Some(Register::BC) | Some(Register::DE) | Some(Register::HL)
+          | Some(Register::SP) => self.memory_bus.tick(4),
+        _ => {}
+      };
+    }
+
     self.write_operand(&instruction.operands[0], new_value, register_bytes, false);
 
     self.registers.set(Register::PC, pc + instruction.bytes as u16);
-
-    return InstructionResult { cycles: instruction.cycles[0] };
   }
 
-  fn push(&mut self, instruction: &Instruction) -> InstructionResult {
+  fn push(&mut self, instruction: &Instruction) {
     let pc = self.registers.get(Register::PC);
     let register = instruction.operands[0].register.unwrap();
 
+    self.memory_bus.tick(4);
+
     self.stack16(self.registers.get(register));
     self.registers.set(Register::PC, pc + instruction.bytes as u16);
-
-    return InstructionResult { cycles: instruction.cycles[0] }
   }
 
-  fn pop(&mut self, instruction: &Instruction) -> InstructionResult {
+  fn pop(&mut self, instruction: &Instruction) {
     let pc = self.registers.get(Register::PC);
     let register = instruction.operands[0].register.unwrap();
     let value = self.pop16();
 
     self.registers.set(register, value);
     self.registers.set(Register::PC, pc + instruction.bytes as u16);
-
-    return InstructionResult { cycles: instruction.cycles[0] };
   }
 
-  fn ret(&mut self, instruction: &Instruction) -> InstructionResult {
+  fn ret(&mut self, instruction: &Instruction) {
     let pc = self.registers.get(Register::PC);
 
     if instruction.total_operands == 1 {
+      self.memory_bus.tick(4);
+
       if !self.is_condition_true(&instruction.operands[0]) {
         self.registers.set(Register::PC, pc + instruction.bytes as u16);
-        return InstructionResult { cycles: instruction.cycles[1] };
+        return;
       }
     }
 
     let value = self.pop16();
     self.registers.set(Register::PC, value);
-
-    return InstructionResult { cycles: instruction.cycles[0] };
+    self.memory_bus.tick(4);
   }
 
-  fn reti(&mut self, instruction: &Instruction) -> InstructionResult {
+  fn reti(&mut self) {
     let value = self.pop16();
     self.registers.set(Register::PC, value);
     self.pending_ime_set = true;
-
-    return InstructionResult { cycles: instruction.cycles[0] };
+    self.memory_bus.tick(4);
   }
 
-  fn or(&mut self, instruction: &Instruction) -> InstructionResult {
+  fn or(&mut self, instruction: &Instruction) {
     let pc = self.registers.get(Register::PC);
     let value1 = self.registers.get(Register::A);
     let value2 = self.read_operand(&instruction.operands[1], false).0;
@@ -523,11 +560,9 @@ impl CPU {
     self.registers.set_subtract(false);
     self.registers.set_half_carry(false);
     self.registers.set_carry(false);
-
-    return InstructionResult { cycles: instruction.cycles[0] }
   }
 
-  fn add(&mut self, instruction: &Instruction) -> InstructionResult {
+  fn add(&mut self, instruction: &Instruction) {
     let pc = self.registers.get(Register::PC);
 
     let (value1, _) = self.read_operand(&instruction.operands[0], false);
@@ -548,14 +583,20 @@ impl CPU {
       self.set_add16_carry_flag(value1, value2);
     }
 
+    if instruction.operands[0].immediate {
+      match instruction.operands[0].register {
+        Some(Register::AF) | Some(Register::BC) | Some(Register::DE) | Some(Register::HL) => self.memory_bus.tick(4),
+        Some(Register::SP) => self.memory_bus.tick(8),
+        _ => {}
+      };
+    }
+
     self.write_operand(&instruction.operands[0], new_value, register_bytes, false);
 
     self.registers.set(Register::PC, pc + instruction.bytes as u16);
-
-    return InstructionResult { cycles: instruction.cycles[0] }
   }
 
-  fn sub(&mut self, instruction: &Instruction) -> InstructionResult {
+  fn sub(&mut self, instruction: &Instruction) {
     let pc = self.registers.get(Register::PC);
 
     let (value1, _) = self.read_operand(&instruction.operands[0], false);
@@ -570,11 +611,9 @@ impl CPU {
     self.write_operand(&instruction.operands[0], new_value, 1, false);
 
     self.registers.set(Register::PC, pc + instruction.bytes as u16);
-
-    return InstructionResult { cycles: instruction.cycles[0] }
   }
 
-  fn cp(&mut self, instruction: &Instruction) -> InstructionResult {
+  fn cp(&mut self, instruction: &Instruction) {
     let pc = self.registers.get(Register::PC);
 
     let (value1, _) = self.read_operand(&instruction.operands[0], false);
@@ -586,11 +625,9 @@ impl CPU {
     self.set_sub8_carry_flag(value1, value2, 0);
 
     self.registers.set(Register::PC, pc + instruction.bytes as u16);
-
-    return InstructionResult { cycles: instruction.cycles[0] }
   }
 
-  fn and(&mut self, instruction: &Instruction) -> InstructionResult {
+  fn and(&mut self, instruction: &Instruction) {
     let pc = self.registers.get(Register::PC);
 
     let (value1, _) = self.read_operand(&instruction.operands[0], false);
@@ -605,11 +642,9 @@ impl CPU {
     self.write_operand(&instruction.operands[0], new_value, 1, false);
 
     self.registers.set(Register::PC, pc + instruction.bytes as u16);
-
-    return InstructionResult { cycles: instruction.cycles[0] }
   }
 
-  fn xor(&mut self, instruction: &Instruction) -> InstructionResult {
+  fn xor(&mut self, instruction: &Instruction) {
     let pc = self.registers.get(Register::PC);
 
     let (value1, _) = self.read_operand(&instruction.operands[0], false);
@@ -624,11 +659,9 @@ impl CPU {
     self.write_operand(&instruction.operands[0], new_value, 1, false);
 
     self.registers.set(Register::PC, pc + instruction.bytes as u16);
-
-    return InstructionResult { cycles: instruction.cycles[0] }
   }
 
-  fn srl(&mut self, instruction: &Instruction) -> InstructionResult {
+  fn srl(&mut self, instruction: &Instruction) {
     let pc = self.registers.get(Register::PC);
 
     let (value, _) = self.read_operand(&instruction.operands[0], false);
@@ -641,11 +674,9 @@ impl CPU {
     self.write_operand(&instruction.operands[0], value >> 1, 1, false);
 
     self.registers.set(Register::PC, pc + instruction.bytes as u16);
-
-    return InstructionResult { cycles: instruction.cycles[0] }
   }
 
-  fn sra(&mut self, instruction: &Instruction) -> InstructionResult {
+  fn sra(&mut self, instruction: &Instruction) {
     let pc = self.registers.get(Register::PC);
 
     let (value, _) = self.read_operand(&instruction.operands[0], false);
@@ -659,11 +690,9 @@ impl CPU {
     self.write_operand(&instruction.operands[0], new_value, 1, false);
 
     self.registers.set(Register::PC, pc + instruction.bytes as u16);
-
-    return InstructionResult { cycles: instruction.cycles[0] }
   }
 
-  fn sla(&mut self, instruction: &Instruction) -> InstructionResult {
+  fn sla(&mut self, instruction: &Instruction) {
     let pc = self.registers.get(Register::PC);
 
     let (value, _) = self.read_operand(&instruction.operands[0], false);
@@ -677,11 +706,9 @@ impl CPU {
     self.write_operand(&instruction.operands[0], new_value, 1, false);
 
     self.registers.set(Register::PC, pc + instruction.bytes as u16);
-
-    return InstructionResult { cycles: instruction.cycles[0] }
   }
 
-  fn rrc(&mut self, instruction: &Instruction) -> InstructionResult {
+  fn rrc(&mut self, instruction: &Instruction) {
     let pc = self.registers.get(Register::PC);
 
     let value;
@@ -709,11 +736,9 @@ impl CPU {
     }
 
     self.registers.set(Register::PC, pc + instruction.bytes as u16);
-
-    return InstructionResult { cycles: instruction.cycles[0] }
   }
 
-  fn rr(&mut self, instruction: &Instruction) -> InstructionResult {
+  fn rr(&mut self, instruction: &Instruction) {
     let pc = self.registers.get(Register::PC);
 
     let value;
@@ -741,11 +766,9 @@ impl CPU {
     }
 
     self.registers.set(Register::PC, pc + instruction.bytes as u16);
-
-    return InstructionResult { cycles: instruction.cycles[0] }
   }
 
-  fn rl(&mut self, instruction: &Instruction) -> InstructionResult {
+  fn rl(&mut self, instruction: &Instruction) {
     let pc = self.registers.get(Register::PC);
 
     let value;
@@ -773,11 +796,9 @@ impl CPU {
     }
 
     self.registers.set(Register::PC, pc + instruction.bytes as u16);
-
-    return InstructionResult { cycles: instruction.cycles[0] }
   }
 
-  fn rlc(&mut self, instruction: &Instruction) -> InstructionResult {
+  fn rlc(&mut self, instruction: &Instruction) {
     let pc = self.registers.get(Register::PC);
 
     let value;
@@ -805,11 +826,9 @@ impl CPU {
     }
 
     self.registers.set(Register::PC, pc + instruction.bytes as u16);
-
-    return InstructionResult { cycles: instruction.cycles[0] }
   }
 
-  fn adc(&mut self, instruction: &Instruction) -> InstructionResult {
+  fn adc(&mut self, instruction: &Instruction) {
     let pc = self.registers.get(Register::PC);
 
     let (value1, _) = self.read_operand(&instruction.operands[0], false);
@@ -830,11 +849,9 @@ impl CPU {
     self.write_operand(&instruction.operands[0], new_value, 1, false);
 
     self.registers.set(Register::PC, pc + instruction.bytes as u16);
-
-    return InstructionResult { cycles: instruction.cycles[0] }
   }
 
-  fn daa(&mut self, instruction: &Instruction) -> InstructionResult {
+  fn daa(&mut self, instruction: &Instruction) {
     let mut a = self.registers.get(Register::A) as u8;
     let mut adjust: u8 = 0;
     let mut carry = self.registers.carry();
@@ -865,19 +882,15 @@ impl CPU {
     self.registers.set(Register::A, a as u16);
     let pc = self.registers.get(Register::PC);
     self.registers.set(Register::PC, pc + instruction.bytes as u16);
-
-    InstructionResult { cycles: instruction.cycles[0] }
   }
 
-  fn halt(&mut self, instruction: &Instruction) -> InstructionResult {
+  fn halt(&mut self, instruction: &Instruction) {
     self.halted = true;
     let pc = self.registers.get(Register::PC);
     self.registers.set(Register::PC, pc + instruction.bytes as u16);
-
-    InstructionResult { cycles: instruction.cycles[0] }
   }
 
-  fn swap(&mut self, instruction: &Instruction) -> InstructionResult {
+  fn swap(&mut self, instruction: &Instruction) {
     let (value, _) = self.read_operand(&instruction.operands[0], false);
     let new_value = ((value << 4) | (value >> 4)) & 0xFF;
     self.write_operand(&instruction.operands[0], new_value, 1, false);
@@ -889,11 +902,9 @@ impl CPU {
     self.registers.set_subtract(false);
     self.registers.set_half_carry(false);
     self.registers.set_carry(false);
-
-    InstructionResult { cycles: instruction.cycles[0] }
   }
 
-  fn sbc(&mut self, instruction: &Instruction) -> InstructionResult {
+  fn sbc(&mut self, instruction: &Instruction) {
     let pc = self.registers.get(Register::PC);
 
     let (value1, _) = self.read_operand(&instruction.operands[0], false);
@@ -914,11 +925,9 @@ impl CPU {
     self.write_operand(&instruction.operands[0], new_value, 1, false);
 
     self.registers.set(Register::PC, pc + instruction.bytes as u16);
-
-    InstructionResult { cycles: instruction.cycles[0] }
   }
 
-  fn cpl(&mut self, instruction: &Instruction) -> InstructionResult {
+  fn cpl(&mut self, instruction: &Instruction) {
     let pc = self.registers.get(Register::PC);
     let a = self.registers.get(Register::A);
 
@@ -927,33 +936,27 @@ impl CPU {
 
     self.registers.set_subtract(true);
     self.registers.set_half_carry(true);
-
-    InstructionResult { cycles: instruction.cycles[0] }
   }
 
-  fn scf(&mut self, instruction: &Instruction) -> InstructionResult {
+  fn scf(&mut self, instruction: &Instruction) {
     let pc = self.registers.get(Register::PC);
 
     self.registers.set_subtract(false);
     self.registers.set_half_carry(false);
     self.registers.set_carry(true);
     self.registers.set(Register::PC, pc + instruction.bytes as u16);
-
-    InstructionResult { cycles: instruction.cycles[0] }
   }
 
-  fn ccf(&mut self, instruction: &Instruction) -> InstructionResult {
+  fn ccf(&mut self, instruction: &Instruction) {
     let pc = self.registers.get(Register::PC);
 
     self.registers.set_subtract(false);
     self.registers.set_half_carry(false);
     self.registers.set_carry(!self.registers.carry());
     self.registers.set(Register::PC, pc + instruction.bytes as u16);
-
-    InstructionResult { cycles: instruction.cycles[0] }
   }
 
-  fn bit(&mut self, instruction: &Instruction) -> InstructionResult {
+  fn bit(&mut self, instruction: &Instruction) {
     let pc = self.registers.get(Register::PC);
 
     let bit = match instruction.operands[0].name {
@@ -975,11 +978,9 @@ impl CPU {
     self.registers.set_subtract(false);
     self.registers.set_half_carry(true);
     self.registers.set(Register::PC, pc + instruction.bytes as u16);
-
-    InstructionResult { cycles: instruction.cycles[0] }
   }
 
-  fn res(&mut self, instruction: &Instruction) -> InstructionResult {
+  fn res(&mut self, instruction: &Instruction) {
     let pc = self.registers.get(Register::PC);
 
     let bit = match instruction.operands[0].name {
@@ -998,11 +999,9 @@ impl CPU {
     let (value, register_bytes) = self.read_operand(&instruction.operands[1], false);
     self.write_operand(&instruction.operands[1], value & mask, register_bytes, false);
     self.registers.set(Register::PC, pc + instruction.bytes as u16);
-
-    InstructionResult { cycles: instruction.cycles[0] }
   }
 
-  fn set(&mut self, instruction: &Instruction) -> InstructionResult {
+  fn set(&mut self, instruction: &Instruction) {
     let pc = self.registers.get(Register::PC);
 
     let bit = match instruction.operands[0].name {
@@ -1021,15 +1020,11 @@ impl CPU {
     let (value, register_bytes) = self.read_operand(&instruction.operands[1], false);
     self.write_operand(&instruction.operands[1], value | mask, register_bytes, false);
     self.registers.set(Register::PC, pc + instruction.bytes as u16);
-
-    InstructionResult { cycles: instruction.cycles[0] }
   }
 
-  fn stop(&mut self, instruction: &Instruction) -> InstructionResult {
+  fn stop(&mut self, instruction: &Instruction) {
     let pc = self.registers.get(Register::PC);
     self.registers.set(Register::PC, pc + instruction.bytes as u16);
-
-    InstructionResult { cycles: instruction.cycles[0] }
   }
 }
 

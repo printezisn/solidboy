@@ -5,7 +5,8 @@ pub struct MemoryBus {
   rom_bank: u8,
   ram_enabled: bool,
   memory: [u8; 0x7FFF + 1],
-  timer: Timer
+  timer: Timer,
+  total_cycles: u8
 }
 
 impl MemoryBus {
@@ -15,7 +16,8 @@ impl MemoryBus {
       rom_bank: 1,
       ram_enabled: false,
       memory: [0; 0x7FFF + 1],
-      timer: Timer::new()
+      timer: Timer::new(),
+      total_cycles: 0
     }
   }
 
@@ -58,14 +60,15 @@ impl MemoryBus {
         }
       }
     }
+
+    self.tick(4);
   }
 
-  pub fn read(&self, address: u16) -> u8 {
-    match address {
+  pub fn read(&mut self, address: u16) -> u8 {
+    let result = match address {
       0x0000..=0x3FFF => self.rom[address as usize],
       0x4000..=0x7FFF => self.rom[((self.rom_bank as u16) * 0x4000 + (address as u16) - 0x4000) as usize],
       0xA000..=0xBFFF => {
-        println!("{:?}", address);
         if self.ram_enabled {
           return self.memory[(address - 0x8000) as usize];
         }
@@ -77,7 +80,10 @@ impl MemoryBus {
       0xFF06 => self.timer.tma(),
       0xFF07 => self.timer.tac(),
       _ => self.memory[(address - 0x8000) as usize]
-    }
+    };
+
+    self.tick(4);
+    result
   }
 
   pub fn if_flag(&self) -> u8 {
@@ -96,7 +102,16 @@ impl MemoryBus {
     self.memory[0xFFFF - 0x8000] = value;
   }
 
+  pub fn reset_total_cycles(&mut self) {
+    self.total_cycles = 0;
+  }
+
+  pub fn total_cycles(&self) -> u8 {
+    self.total_cycles
+  }
+
   pub fn tick(&mut self, cycles: u8) {
+    self.total_cycles += cycles;
     if self.timer.tick(cycles).request_interrupt {
       self.set_if_flag(self.if_flag() | 0x04);
     }
