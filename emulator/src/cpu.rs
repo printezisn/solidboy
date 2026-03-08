@@ -39,12 +39,12 @@ impl CPU {
 
   fn print_instruction(&self, instruction: &Instruction) {
     let mut result = Vec::<String>::new();
+    let high = matches!(instruction.mnemonic, Mnemonic::LDH);
     let pc = self.registers.get(Register::PC);
 
     result.push(format!("{:?}", instruction.mnemonic));
     for i in 0..instruction.total_operands {
       let operand = instruction.operands[i as usize];
-      let high = matches!(instruction.mnemonic, Mnemonic::LDH);
       let value: u16;
 
       match operand.register {
@@ -109,7 +109,6 @@ impl CPU {
     if opcode == 0xCB {
       let cb_opcode = self.memory_bus.read(pc + 1);
       let cb_instruction = &CBPREFIXED_INSTRUCTIONS[cb_opcode as usize];
-      self.print_instruction(&cb_instruction);
 
       match cb_instruction.mnemonic {
         Mnemonic::SRL => self.srl(&cb_instruction),
@@ -132,7 +131,6 @@ impl CPU {
       }
     } else {
       let instruction = &PREFIXED_INSTRUCTIONS[opcode as usize];
-      self.print_instruction(&instruction);
       match instruction.mnemonic {
           Mnemonic::NOP => self.noop(&instruction),
           Mnemonic::JP => self.jp(&instruction),
