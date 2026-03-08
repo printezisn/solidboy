@@ -37,6 +37,17 @@ impl CPU {
     }
   }
 
+  fn print_instruction(&self, instruction: &Instruction) {
+    let mut result = Vec::<String>::new();
+
+    result.push(format!("{:?}", instruction.mnemonic));
+    for i in 0..instruction.total_operands {
+      result.push(format!("{:?}", instruction.operands[i as usize].name));
+    }
+
+    println!("{}", result.join(" "));
+  }
+
   pub fn execute_instruction(&mut self) -> InstructionResult {
     self.memory_bus.reset_total_cycles();
 
