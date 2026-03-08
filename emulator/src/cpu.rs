@@ -37,55 +37,6 @@ impl CPU {
     }
   }
 
-  fn print_instruction(&self, instruction: &Instruction) {
-    let mut result = Vec::<String>::new();
-    let high = matches!(instruction.mnemonic, Mnemonic::LDH);
-    let pc = self.registers.get(Register::PC);
-
-    result.push(format!("{:?}", instruction.mnemonic));
-    for i in 0..instruction.total_operands {
-      let operand = instruction.operands[i as usize];
-      let value: u16;
-
-      match operand.register {
-        Some(register) => {
-          if operand.immediate {
-            value = self.registers.get(register);
-          } else {
-            let address = self.sanitize_address(self.registers.get(register), high);
-            value = self.memory_bus.read_without_tick(address) as u16;
-          }
-        },
-        None => {
-          match operand.name {
-            OperandName::A8 => {
-              let address = self.memory_bus.read_without_tick(pc + 1) as u16;
-              value = self.memory_bus.read_without_tick(self.sanitize_address(address, high)) as u16;
-            },
-            OperandName::E8 => {
-              value = self.memory_bus.read_without_tick(pc + 1) as i8 as i16 as u16;
-            },
-            _ => {
-              if !operand.immediate {
-                value = (self.memory_bus.read_without_tick(pc + 1) as u16) | ((self.memory_bus.read_without_tick(pc + 2) as u16) << 8);
-              } else if operand.bytes == 1 {
-                let address = self.memory_bus.read_without_tick(pc + 1) as u16;
-                value = self.sanitize_address(address, high);
-              } else {
-                let address = (self.memory_bus.read_without_tick(pc + 1) as u16) | ((self.memory_bus.read_without_tick(pc + 2) as u16) << 8);
-                value = self.sanitize_address(address, high);
-              }
-            }
-          };
-        }
-      }
-
-      result.push(format!("{:?} (0x{:04X})", operand.name, value));
-    }
-
-    println!("{} PC=0x{:04X}", result.join(" "), pc);
-  }
-
   pub fn execute_instruction(&mut self) -> InstructionResult {
     self.memory_bus.reset_total_cycles();
 
@@ -174,7 +125,30 @@ impl CPU {
       }
     }
 
+    self.check_external_ram_test_results();
+
     InstructionResult { cycles: self.memory_bus.total_cycles() }
+  }
+
+  fn check_external_ram_test_results(&self) {
+    if self.memory_bus.read_without_tick(0xA001) != 0xDE {
+      return;
+    }
+    if self.memory_bus.read_without_tick(0xA002) != 0xB0 {
+      return;
+    }
+    if self.memory_bus.read_without_tick(0xA003) != 0x61 {
+      return;
+    }
+    if self.memory_bus.read_without_tick(0xA000) != 0x80 {
+      return;
+    }
+    
+    let mut index = 0xA004;
+    while self.memory_bus.read_without_tick(index) != 0x00 {
+      print!("{}", self.memory_bus.read_without_tick(index) as char);
+      index += 1;
+    }
   }
 
   fn interrupt(&mut self) {

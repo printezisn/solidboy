@@ -101,7 +101,6 @@ pub enum OperandName {
   NONE,
 }
 
-#[derive(Copy, Clone)]
 pub struct Operand {
   pub name: OperandName,
   pub register: Option<Register>,
@@ -111,7 +110,6 @@ pub struct Operand {
   pub decrement: bool,
 }
 
-#[derive(Copy, Clone)]
 pub struct Instruction {
   pub code: &'static str,
   pub mnemonic: Mnemonic,
