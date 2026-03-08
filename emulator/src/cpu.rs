@@ -2779,8 +2779,8 @@ mod tests {
 
     assert_eq!(sp, INITIAL_SP);
     assert_eq!(cpu.registers.get(Register::PC), 0x1234);
-    assert_eq!(cpu.ime, true);
-    assert_eq!(cpu.pending_ime_set, false);
+    assert_eq!(cpu.ime, false);
+    assert_eq!(cpu.pending_ime_set, true);
 
     assert_eq!(result.cycles, 16);
     assert_eq!(cpu.registers.zero(), INITIAL_ZERO_FLAG);
@@ -2801,8 +2801,8 @@ mod tests {
 
     assert_eq!(sp, INITIAL_SP);
     assert_eq!(cpu.registers.get(Register::PC), 0x5678);
-    assert_eq!(cpu.ime, true);
-    assert_eq!(cpu.pending_ime_set, false);
+    assert_eq!(cpu.ime, false);
+    assert_eq!(cpu.pending_ime_set, true);
 
     assert_eq!(result.cycles, 16);
   }
@@ -2816,8 +2816,8 @@ mod tests {
     let result = cpu.execute_instruction();
 
     assert_eq!(cpu.registers.get(Register::PC), 0x0000);
-    assert_eq!(cpu.ime, true);
-    assert_eq!(cpu.pending_ime_set, false);
+    assert_eq!(cpu.ime, false);
+    assert_eq!(cpu.pending_ime_set, true);
 
     assert_eq!(result.cycles, 16);
   }
@@ -2831,8 +2831,8 @@ mod tests {
     let result = cpu.execute_instruction();
 
     assert_eq!(cpu.registers.get(Register::PC), 0xFFFF);
-    assert_eq!(cpu.ime, true);
-    assert_eq!(cpu.pending_ime_set, false);
+    assert_eq!(cpu.ime, false);
+    assert_eq!(cpu.pending_ime_set, true);
 
     assert_eq!(result.cycles, 16);
   }
@@ -2845,8 +2845,8 @@ mod tests {
 
     let result = cpu.execute_instruction();
 
-    assert_eq!(cpu.ime, true);
-    assert_eq!(cpu.pending_ime_set, false);
+    assert_eq!(cpu.ime, false);
+    assert_eq!(cpu.pending_ime_set, true);
     assert_eq!(result.cycles, 16);
   }
 
