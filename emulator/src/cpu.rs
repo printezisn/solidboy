@@ -119,7 +119,7 @@ impl CPU {
         _ => panic!("Unknown opcode: {:02X} {:?}", opcode, instruction.mnemonic)
       };
 
-      if self.pending_ime_set && !matches!(instruction.mnemonic, Mnemonic::EI) {
+      if self.pending_ime_set && !matches!(instruction.mnemonic, Mnemonic::EI) && !matches!(instruction.mnemonic, Mnemonic::RETI) {
         self.ime = true;
         self.pending_ime_set = false;
       }

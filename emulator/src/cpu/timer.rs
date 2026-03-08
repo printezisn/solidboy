@@ -1,6 +1,5 @@
 pub struct Timer {
   counter: u16,
-  div: u8,
   tima: u8,
   tma: u8,
   tac: u8,
@@ -16,7 +15,6 @@ impl Timer {
   pub fn new() -> Timer {
     Timer { 
       counter: 0,
-      div: 0,
       tima: 0,
       tma: 0,
       tac: 0,
@@ -26,11 +24,11 @@ impl Timer {
   }
 
   pub fn div(&self) -> u8 {
-    self.div
+    (self.counter >> 8) as u8
   }
 
   pub fn reset_div(&mut self) {
-    self.div = 0;
+    self.counter = 0;
   }
 
   pub fn tima(&self) -> u8 {
@@ -39,6 +37,7 @@ impl Timer {
 
   pub fn set_tima(&mut self, value: u8) {
     self.tima = value;
+    self.reload_delay = 0;
   }
 
   pub fn tma(&self) -> u8 {
@@ -76,7 +75,6 @@ impl Timer {
 
     let old_counter = self.counter;
     self.counter = self.counter.wrapping_add(1);
-    self.div = (self.counter >> 8) as u8;
 
     if self.reload_delay > 0 {
       self.reload_delay -= 1;
