@@ -436,8 +436,6 @@ impl CPU {
           self.registers.set(Register::PC, pc + instruction.bytes as u16);
           return;
       }
-    } else if offset == 0xFFFE {
-      std::process::exit(0);
     }
 
     self.registers.set(Register::PC, pc.wrapping_add(instruction.bytes as u16).wrapping_add(offset));
