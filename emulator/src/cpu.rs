@@ -39,13 +39,51 @@ impl CPU {
 
   fn print_instruction(&self, instruction: &Instruction) {
     let mut result = Vec::<String>::new();
+    let pc = self.registers.get(Register::PC);
 
     result.push(format!("{:?}", instruction.mnemonic));
     for i in 0..instruction.total_operands {
-      result.push(format!("{:?}", instruction.operands[i as usize].name));
+      let operand = instruction.operands[i as usize];
+      let high = matches!(instruction.mnemonic, Mnemonic::LDH);
+      let value: u16;
+
+      match operand.register {
+        Some(register) => {
+          if operand.immediate {
+            value = self.registers.get(register);
+          } else {
+            let address = self.sanitize_address(self.registers.get(register), high);
+            value = self.memory_bus.read_without_tick(address) as u16;
+          }
+        },
+        None => {
+          match operand.name {
+            OperandName::A8 => {
+              let address = self.memory_bus.read_without_tick(pc + 1) as u16;
+              value = self.memory_bus.read_without_tick(self.sanitize_address(address, high)) as u16;
+            },
+            OperandName::E8 => {
+              value = self.memory_bus.read_without_tick(pc + 1) as i8 as i16 as u16;
+            },
+            _ => {
+              if !operand.immediate {
+                value = (self.memory_bus.read_without_tick(pc + 1) as u16) | ((self.memory_bus.read_without_tick(pc + 2) as u16) << 8);
+              } else if operand.bytes == 1 {
+                let address = self.memory_bus.read_without_tick(pc + 1) as u16;
+                value = self.sanitize_address(address, high);
+              } else {
+                let address = (self.memory_bus.read_without_tick(pc + 1) as u16) | ((self.memory_bus.read_without_tick(pc + 2) as u16) << 8);
+                value = self.sanitize_address(address, high);
+              }
+            }
+          };
+        }
+      }
+
+      result.push(format!("{:?} (0x{:04X})", operand.name, value));
     }
 
-    println!("{}", result.join(" "));
+    println!("{} PC=0x{:04X}", result.join(" "), pc);
   }
 
   pub fn execute_instruction(&mut self) -> InstructionResult {
@@ -71,6 +109,7 @@ impl CPU {
     if opcode == 0xCB {
       let cb_opcode = self.memory_bus.read(pc + 1);
       let cb_instruction = &CBPREFIXED_INSTRUCTIONS[cb_opcode as usize];
+      self.print_instruction(&cb_instruction);
 
       match cb_instruction.mnemonic {
         Mnemonic::SRL => self.srl(&cb_instruction),
@@ -93,6 +132,7 @@ impl CPU {
       }
     } else {
       let instruction = &PREFIXED_INSTRUCTIONS[opcode as usize];
+      self.print_instruction(&instruction);
       match instruction.mnemonic {
           Mnemonic::NOP => self.noop(&instruction),
           Mnemonic::JP => self.jp(&instruction),
@@ -398,6 +438,8 @@ impl CPU {
           self.registers.set(Register::PC, pc + instruction.bytes as u16);
           return;
       }
+    } else if offset == 0xFFFE {
+      std::process::exit(0);
     }
 
     self.registers.set(Register::PC, pc.wrapping_add(instruction.bytes as u16).wrapping_add(offset));

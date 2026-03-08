@@ -64,8 +64,8 @@ impl MemoryBus {
     self.tick(4);
   }
 
-  pub fn read(&mut self, address: u16) -> u8 {
-    let result = match address {
+  pub fn read_without_tick(&self, address: u16) -> u8 {
+    match address {
       0x0000..=0x3FFF => self.rom[address as usize],
       0x4000..=0x7FFF => self.rom[((self.rom_bank as u16) * 0x4000 + (address as u16) - 0x4000) as usize],
       0xA000..=0xBFFF => {
@@ -80,7 +80,11 @@ impl MemoryBus {
       0xFF06 => self.timer.tma(),
       0xFF07 => self.timer.tac(),
       _ => self.memory[(address - 0x8000) as usize]
-    };
+    }
+  }
+
+  pub fn read(&mut self, address: u16) -> u8 {
+    let result = self.read_without_tick(address);
 
     self.tick(4);
     result
