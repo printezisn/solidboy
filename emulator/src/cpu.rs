@@ -28,13 +28,32 @@ pub struct InstructionResult {
 
 impl CPU {
   pub fn new(rom: Vec<u8>) -> Self {
-    CPU {
+    let mut cpu = CPU {
       registers: Registers::new(),
       memory_bus: MemoryBus::new(rom),
       ime: false,
       pending_ime_set: false,
       halted: false
-    }
+    };
+
+    match cpu.memory_bus.model_type() {
+      memory_bus::ModelType::Color => {
+        cpu.registers.set(Register::A, 0x11);
+        cpu.registers.set_zero(true);
+        cpu.registers.set_subtract(false);
+        cpu.registers.set_half_carry(false);
+        cpu.registers.set_carry(false);
+        cpu.registers.set(Register::B, 0x00);
+        cpu.registers.set(Register::C, 0x00);
+        cpu.registers.set(Register::D, 0xFF);
+        cpu.registers.set(Register::E, 0x56);
+        cpu.registers.set(Register::H, 0x00);
+        cpu.registers.set(Register::L, 0x0D);
+      },
+      _ => {}
+    };
+
+    cpu
   }
 
   pub fn memory_bus(&self) -> &MemoryBus {
@@ -1052,6 +1071,16 @@ impl CPU {
   fn stop(&mut self, instruction: &Instruction) {
     let pc = self.registers.get(Register::PC);
     self.registers.set(Register::PC, pc + instruction.bytes as u16);
+
+    if self.memory_bus.key1() & 0x01 != 0 {
+      self.memory_bus.set_key1(self.memory_bus.key1() & !0x01);
+      let double_speed = (self.memory_bus.key1() & 0x80) != 0;
+      if double_speed {
+        self.memory_bus.set_key1(self.memory_bus.key1() & !0x80);
+      } else {
+        self.memory_bus.set_key1(self.memory_bus.key1() | 0x80);
+      }
+    }
   }
 }
 
@@ -1068,6 +1097,16 @@ mod tests {
 
   fn create_cpu(bytes: Vec<u8>) -> CPU {
     let mut rom = vec![0x00; 0xFFFF + 1];
+    for i in 0..bytes.len() {
+      rom[INITIAL_PC as usize + i] = bytes[i];
+    }
+
+    CPU::new(rom)
+  }
+
+  fn create_gbc_cpu(bytes: Vec<u8>) -> CPU {
+    let mut rom = vec![0x00; 0xFFFF + 1];
+    rom[0x0143] = 0xC0; // GBC model
     for i in 0..bytes.len() {
       rom[INITIAL_PC as usize + i] = bytes[i];
     }
@@ -6178,5 +6217,44 @@ mod tests {
     assert_eq!(cpu.registers.subtract(), INITIAL_SUBTRACT_FLAG);
     assert_eq!(cpu.registers.half_carry(), INITIAL_HALF_CARRY_FLAG);
     assert_eq!(cpu.registers.carry(), INITIAL_CARRY_FLAG);
+  }
+
+  #[test]
+  pub fn test_stop_speed_switch_prepare() {
+    let mut cpu = create_gbc_cpu(vec![0x10, 0x00]);
+    cpu.memory_bus.set_key1(0x01); // set prepare bit (bit 0)
+
+    let result = cpu.execute_instruction();
+
+    assert_eq!(cpu.registers.get(Register::PC), INITIAL_PC + 2);
+    assert_eq!(result.cycles, 4);
+    // After STOP: clear bit 0, since bit 7 was 0, set bit 7
+    assert_eq!(cpu.memory_bus.key1(), 0x80);
+  }
+
+  #[test]
+  pub fn test_stop_speed_switch_toggle() {
+    let mut cpu = create_gbc_cpu(vec![0x10, 0x00]);
+    cpu.memory_bus.set_key1(0x81); // set prepare bit and speed bit (bits 0 and 7)
+
+    let result = cpu.execute_instruction();
+
+    assert_eq!(cpu.registers.get(Register::PC), INITIAL_PC + 2);
+    assert_eq!(result.cycles, 4);
+    // After STOP: clear bit 0, since bit 7 was 1, clear bit 7
+    assert_eq!(cpu.memory_bus.key1(), 0x00);
+  }
+
+  #[test]
+  pub fn test_stop_no_prepare() {
+    let mut cpu = create_gbc_cpu(vec![0x10, 0x00]);
+    cpu.memory_bus.set_key1(0x00); // no prepare
+
+    let result = cpu.execute_instruction();
+
+    assert_eq!(cpu.registers.get(Register::PC), INITIAL_PC + 2);
+    assert_eq!(result.cycles, 4);
+    // No change
+    assert_eq!(cpu.memory_bus.key1(), 0x00);
   }
 }

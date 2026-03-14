@@ -290,6 +290,14 @@ impl MemoryBus {
     self.ie_flag = value;
   }
 
+  pub fn key1(&self) -> u8 {
+    self.key1
+  }
+
+  pub fn set_key1(&mut self, value: u8) {
+    self.key1 = value;
+  }
+
   pub fn reset_total_cycles(&mut self) {
     self.total_cycles = 0;
   }
