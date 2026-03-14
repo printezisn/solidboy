@@ -13,5 +13,7 @@ fn main() {
     let rom = std::fs::read(args[1].clone()).unwrap();
     let mut emulator = Emulator::new(rom);
 
-    emulator.run();
+    loop {
+        emulator.execute();
+    }
 }

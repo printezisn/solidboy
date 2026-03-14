@@ -11,9 +11,11 @@ impl Emulator {
     }
   }
 
-  pub fn run(&mut self) {
-    loop {
-      self.cpu.execute_instruction();
-    }
+  pub fn cpu(&self) -> &CPU {
+    &self.cpu
+  }
+
+  pub fn execute(&mut self) {
+    self.cpu.execute_instruction();
   }
 }

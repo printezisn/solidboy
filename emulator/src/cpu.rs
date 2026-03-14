@@ -37,6 +37,10 @@ impl CPU {
     }
   }
 
+  pub fn memory_bus(&self) -> &MemoryBus {
+    &self.memory_bus
+  }
+
   pub fn execute_instruction(&mut self) -> InstructionResult {
     self.memory_bus.reset_total_cycles();
 

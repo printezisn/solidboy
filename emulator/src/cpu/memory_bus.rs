@@ -8,21 +8,38 @@ pub enum ModelType {
   Color
 }
 
+const VRAM_TOTAL_BANKS: usize = 2;
+const VRAM_SIZE: usize = 0x9FFF - 0x8000 + 1;
+
+const WRAM_TOTAL_BANKS: usize = 7;
+const WRAM_SIZE: usize = 0xCFFF - 0xC000 + 1;
+
+const OAM_SIZE: usize = 0xFE9F - 0xFE00 + 1;
+
+const HIGH_RAM_SIZE: usize = 0xFFFE - 0xFF80 + 1;
+
+const AUDIO_SIZE: usize = 0xFF26 - 0xFF10 + 1;
+const SERIAL_TRANSFER_SIZE: usize = 0xFF02 - 0xFF01 + 1;
+const WAVE_PATTERN_SIZE: usize = 0xFF3F - 0xFF30 + 1;
+const LCD_SIZE: usize = 0xFF4B - 0xFF40 + 1;
+const VRAM_DMA_SIZE: usize = 0xFF55 - 0xFF51 + 1;
+const BG_OBJ_PALETTES_SIZE: usize = 0xFF6B - 0xFF68 + 1;
+
 pub struct MemoryBus {
   mbc: MBC,
 
-  vram: [u8; 16384],
+  vram: [u8; VRAM_SIZE * VRAM_TOTAL_BANKS],
   vram_bank: u8,
 
-  wram: [u8; 32768],
+  wram: [u8; WRAM_SIZE * (WRAM_TOTAL_BANKS + 1)],
   wram_bank: u8,
 
-  oam: [u8; 160],
+  oam: [u8; OAM_SIZE],
 
-  high_ram: [u8; 127],
+  high_ram: [u8; HIGH_RAM_SIZE],
 
   joypad_input: u8,
-  serial_transfer: [u8; 2],
+  serial_transfer: [u8; SERIAL_TRANSFER_SIZE],
   if_flag: u8,
   ie_flag: u8,
   key0: u8,
@@ -31,11 +48,11 @@ pub struct MemoryBus {
   ir_port: u8,
   object_priority_mode: u8,
   
-  audio: [u8; 23],
-  wave_pattern: [u8; 16],
-  lcd: [u8; 12],
-  vram_dma: [u8; 5],
-  bg_obj_palettes: [u8; 4],
+  audio: [u8; AUDIO_SIZE],
+  wave_pattern: [u8; WAVE_PATTERN_SIZE],
+  lcd: [u8; LCD_SIZE],
+  vram_dma: [u8; VRAM_DMA_SIZE],
+  bg_obj_palettes: [u8; BG_OBJ_PALETTES_SIZE],
 
   timer: Timer,
   total_cycles: u8
@@ -46,18 +63,18 @@ impl MemoryBus {
     MemoryBus {
       mbc: MBC::new(rom),
 
-      vram: [0; 16384],
+      vram: [0; VRAM_SIZE * VRAM_TOTAL_BANKS],
       vram_bank: 0,
 
-      wram: [0; 32768],
-      wram_bank: 0,
+      wram: [0; WRAM_SIZE * (WRAM_TOTAL_BANKS + 1)],
+      wram_bank: 1,
 
-      oam: [0; 160],
+      oam: [0; OAM_SIZE],
 
-      high_ram: [0; 127],
+      high_ram: [0; HIGH_RAM_SIZE],
 
       joypad_input: 0,
-      serial_transfer: [0; 2],
+      serial_transfer: [0; SERIAL_TRANSFER_SIZE],
       if_flag: 0,
       ie_flag: 0,
       key0: 0,
@@ -66,11 +83,11 @@ impl MemoryBus {
       ir_port: 0,
       object_priority_mode: 0,
 
-      audio: [0; 23],
-      wave_pattern: [0; 16],
-      lcd: [0; 12],
-      vram_dma: [0; 5],
-      bg_obj_palettes: [0; 4],
+      audio: [0; AUDIO_SIZE],
+      wave_pattern: [0; WAVE_PATTERN_SIZE],
+      lcd: [0; LCD_SIZE],
+      vram_dma: [0; VRAM_DMA_SIZE],
+      bg_obj_palettes: [0; BG_OBJ_PALETTES_SIZE],
       
       timer: Timer::new(),
       total_cycles: 0
@@ -90,13 +107,15 @@ impl MemoryBus {
 
     match address {
       0x8000..=0x9FFF => {
-        self.vram[(self.vram_bank as u16 * 0x2000 + address - 0x8000) as usize] = value;
-      }
+        let bank: usize = if matches!(self.model_type(), ModelType::Color) { self.vram_bank as usize } else { 0 };
+        self.vram[bank * VRAM_SIZE + address as usize - 0x8000] = value;
+      },
       0xC000..=0xCFFF => {
         self.wram[(address - 0xC000) as usize] = value;
       },
       0xD000..=0xDFFF => {
-        self.wram[(self.wram_bank as u16 * 0x1000 + address - 0xD000) as usize] = value;
+        let bank: usize = if matches!(self.model_type(), ModelType::Color) { self.wram_bank as usize } else { 1 };
+        self.wram[bank * WRAM_SIZE + address as usize - 0xD000] = value;
       },
       0xFE00..=0xFE9F => {
         self.oam[(address - 0xFE00) as usize] = value;
@@ -105,12 +124,9 @@ impl MemoryBus {
       0xFF00 => {
         self.joypad_input = value;
       },
-      0xFF01 => {
-        self.serial_transfer[0] = value;
-      },
-      0xFF02 => {
-        self.serial_transfer[1] = value;
-        if value == 0x81 {
+      0xFF01..=0xFF02 => {
+        self.serial_transfer[address as usize - 0xFF01] = value;
+        if address == 0xFF02 && value == 0x81 {
           print!("{}", self.serial_transfer[0] as char);
         }
       },
@@ -196,9 +212,15 @@ impl MemoryBus {
     };
 
     match address {
-      0x8000..=0x9FFF => self.vram[(self.vram_bank as u16 * 0x2000 + address - 0x8000) as usize],
+      0x8000..=0x9FFF => {
+        let bank: usize = if matches!(self.model_type(), ModelType::Color) { self.vram_bank as usize } else { 0 };
+        self.vram[bank * VRAM_SIZE + address as usize - 0x8000]
+      },
       0xC000..=0xCFFF => self.wram[(address - 0xC000) as usize],
-      0xD000..=0xDFFF => self.wram[(self.wram_bank as u16 * 0x1000 + address - 0xD000) as usize],
+      0xD000..=0xDFFF => {
+        let bank: usize = if matches!(self.model_type(), ModelType::Color) { self.wram_bank as usize } else { 1 };
+        self.wram[bank * WRAM_SIZE + address as usize - 0xD000]
+      },
       0xFE00..=0xFE9F => self.oam[(address - 0xFE00) as usize],
       0xFEA0..=0xFEFF => { 0x00 },
       0xFF00 => self.joypad_input,
