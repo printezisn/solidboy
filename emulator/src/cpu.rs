@@ -37,7 +37,7 @@ impl CPU {
     };
 
     match cpu.memory_bus.model_type() {
-      memory_bus::ModelType::Color => {
+      memory_bus::types::ModelType::Color => {
         cpu.registers.set(Register::A, 0x11);
         cpu.registers.set_zero(true);
         cpu.registers.set_subtract(false);
@@ -1072,7 +1072,7 @@ impl CPU {
     let pc = self.registers.get(Register::PC);
     self.registers.set(Register::PC, pc + instruction.bytes as u16);
 
-    if self.memory_bus.key1() & 0x01 != 0 {
+    if matches!(self.memory_bus.model_type(), memory_bus::types::ModelType::Color) && self.memory_bus.key1() & 0x01 != 0 {
       self.memory_bus.set_key1(self.memory_bus.key1() & !0x01);
       let double_speed = (self.memory_bus.key1() & 0x80) != 0;
       if double_speed {

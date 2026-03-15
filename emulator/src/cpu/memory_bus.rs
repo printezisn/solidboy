@@ -1,41 +1,29 @@
 mod mbc;
+mod ppu;
+mod audio;
+pub mod types;
 
 use super::timer::Timer;
 use mbc::MBC;
-
-pub enum ModelType {
-  DMG,
-  Color
-}
-
-const VRAM_TOTAL_BANKS: usize = 2;
-const VRAM_SIZE: usize = 0x9FFF - 0x8000 + 1;
+use ppu::PPU;
+use audio::Audio;
+use types::ModelType;
 
 const WRAM_TOTAL_BANKS: usize = 7;
 const WRAM_SIZE: usize = 0xCFFF - 0xC000 + 1;
 
-const OAM_SIZE: usize = 0xFE9F - 0xFE00 + 1;
-
 const HIGH_RAM_SIZE: usize = 0xFFFE - 0xFF80 + 1;
 
-const AUDIO_SIZE: usize = 0xFF26 - 0xFF10 + 1;
 const SERIAL_TRANSFER_SIZE: usize = 0xFF02 - 0xFF01 + 1;
-const WAVE_PATTERN_SIZE: usize = 0xFF3F - 0xFF30 + 1;
-const LCD_SIZE: usize = 0xFF4B - 0xFF40 + 1;
-const VRAM_DMA_SIZE: usize = 0xFF55 - 0xFF51 + 1;
-const BG_OBJ_PALETTES_SIZE: usize = 0xFF6B - 0xFF68 + 1;
 
 pub struct MemoryBus {
   mbc: MBC,
-
-  vram: [u8; VRAM_SIZE * VRAM_TOTAL_BANKS],
-  vram_bank: u8,
+  ppu: PPU,
+  audio: Audio,
+  timer: Timer,
 
   wram: [u8; WRAM_SIZE * (WRAM_TOTAL_BANKS + 1)],
   wram_bank: u8,
-
-  oam: [u8; OAM_SIZE],
-
   high_ram: [u8; HIGH_RAM_SIZE],
 
   joypad_input: u8,
@@ -46,31 +34,26 @@ pub struct MemoryBus {
   key1: u8,
   boot_rom_mapping_control: u8,
   ir_port: u8,
-  object_priority_mode: u8,
   
-  audio: [u8; AUDIO_SIZE],
-  wave_pattern: [u8; WAVE_PATTERN_SIZE],
-  lcd: [u8; LCD_SIZE],
-  vram_dma: [u8; VRAM_DMA_SIZE],
-  bg_obj_palettes: [u8; BG_OBJ_PALETTES_SIZE],
-
-  timer: Timer,
-  total_cycles: u8
+  total_cycles: u8,
+  model_type: ModelType
 }
 
 impl MemoryBus {
   pub fn new(rom: Vec<u8>) -> Self {
+    let model_type = match rom[0x0143] {
+      0xC0 => ModelType::Color,
+      _ => ModelType::DMG
+    };
+
     MemoryBus {
       mbc: MBC::new(rom),
-
-      vram: [0; VRAM_SIZE * VRAM_TOTAL_BANKS],
-      vram_bank: 0,
+      ppu: PPU::new(model_type.clone()),
+      audio: Audio::new(),
+      timer: Timer::new(),
 
       wram: [0; WRAM_SIZE * (WRAM_TOTAL_BANKS + 1)],
       wram_bank: 1,
-
-      oam: [0; OAM_SIZE],
-
       high_ram: [0; HIGH_RAM_SIZE],
 
       joypad_input: 0,
@@ -81,16 +64,9 @@ impl MemoryBus {
       key1: 0,
       boot_rom_mapping_control: 0,
       ir_port: 0,
-      object_priority_mode: 0,
-
-      audio: [0; AUDIO_SIZE],
-      wave_pattern: [0; WAVE_PATTERN_SIZE],
-      lcd: [0; LCD_SIZE],
-      vram_dma: [0; VRAM_DMA_SIZE],
-      bg_obj_palettes: [0; BG_OBJ_PALETTES_SIZE],
       
-      timer: Timer::new(),
-      total_cycles: 0
+      total_cycles: 0,
+      model_type
     }
   }
 
@@ -105,20 +81,23 @@ impl MemoryBus {
       return;
     }
 
+    if self.ppu.write(address, value) {
+      self.tick(4);
+      return;
+    }
+
+    if self.audio.write(address, value) {
+      self.tick(4);
+      return;
+    }
+
     match address {
-      0x8000..=0x9FFF => {
-        let bank: usize = if matches!(self.model_type(), ModelType::Color) { self.vram_bank as usize } else { 0 };
-        self.vram[bank * VRAM_SIZE + address as usize - 0x8000] = value;
-      },
       0xC000..=0xCFFF => {
         self.wram[(address - 0xC000) as usize] = value;
       },
       0xD000..=0xDFFF => {
-        let bank: usize = if matches!(self.model_type(), ModelType::Color) { self.wram_bank as usize } else { 1 };
+        let bank: usize = if matches!(self.model_type, ModelType::Color) { self.wram_bank as usize } else { 1 };
         self.wram[bank * WRAM_SIZE + address as usize - 0xD000] = value;
-      },
-      0xFE00..=0xFE9F => {
-        self.oam[(address - 0xFE00) as usize] = value;
       },
       0xFEA0..=0xFEFF => {},
       0xFF00 => {
@@ -145,43 +124,20 @@ impl MemoryBus {
       0xFF0F => {
         self.if_flag = value;
       },
-      0xFF10..=0xFF26 => {
-        self.audio[(address - 0xFF10) as usize] = value;
-      },
-      0xFF30..=0xFF3F => {
-        self.wave_pattern[(address - 0xFF30) as usize] = value;
-      },
-      0xFF40..=0xFF4B => {
-        self.lcd[(address - 0xFF40) as usize] = value;
-      },
       0xFF4C => {
         self.key0 = value;
       },
       0xFF4D => {
         self.key1 = value;
       },
-      0xFF4F => {
-        if matches!(self.model_type(), ModelType::Color) {
-          self.vram_bank = value & 0x01;
-        }
-      },
       0xFF50 => {
         self.boot_rom_mapping_control = value;
-      },
-      0xFF51..=0xFF55 => {
-        self.vram_dma[(address - 0xFF51) as usize] = value;
       },
       0xFF56 => {
         self.ir_port = value;
       },
-      0xFF68..=0xFF6B => {
-        self.bg_obj_palettes[(address - 0xFF68) as usize] = value;
-      },
-      0xFF6C => {
-        self.object_priority_mode = value;
-      },
       0xFF70 => {
-        if matches!(self.model_type(), ModelType::Color) {
+        if matches!(self.model_type, ModelType::Color) {
           self.wram_bank = value & 0x07;
           if self.wram_bank == 0 {
             self.wram_bank = 1;
@@ -211,17 +167,22 @@ impl MemoryBus {
       _ => {}
     };
 
+    match self.ppu.read(address) {
+      Some(result) => { return result; },
+      _ => {}
+    }
+
+    match self.audio.read(address) {
+      Some(result) => { return result; },
+      _ => {}
+    }
+
     match address {
-      0x8000..=0x9FFF => {
-        let bank: usize = if matches!(self.model_type(), ModelType::Color) { self.vram_bank as usize } else { 0 };
-        self.vram[bank * VRAM_SIZE + address as usize - 0x8000]
-      },
       0xC000..=0xCFFF => self.wram[(address - 0xC000) as usize],
       0xD000..=0xDFFF => {
-        let bank: usize = if matches!(self.model_type(), ModelType::Color) { self.wram_bank as usize } else { 1 };
+        let bank: usize = if matches!(self.model_type, ModelType::Color) { self.wram_bank as usize } else { 1 };
         self.wram[bank * WRAM_SIZE + address as usize - 0xD000]
       },
-      0xFE00..=0xFE9F => self.oam[(address - 0xFE00) as usize],
       0xFEA0..=0xFEFF => { 0x00 },
       0xFF00 => self.joypad_input,
       0xFF01..=0xFF02 => self.serial_transfer[(address - 0xFF01) as usize],
@@ -230,25 +191,12 @@ impl MemoryBus {
       0xFF06 => self.timer.tma(),
       0xFF07 => self.timer.tac(),
       0xFF0F => self.if_flag,
-      0xFF10..=0xFF26 => self.audio[(address - 0xFF10) as usize],
-      0xFF30..=0xFF3F => self.wave_pattern[(address - 0xFF30) as usize],
-      0xFF40..=0xFF4B => self.lcd[(address - 0xFF40) as usize],
       0xFF4C => self.key0,
       0xFF4D => self.key1,
-      0xFF4F =>  {
-        if matches!(self.model_type(), ModelType::Color) {
-          return 0xFE | self.vram_bank;
-        }
-
-        return 0xFF;
-      },
       0xFF50 => self.boot_rom_mapping_control,
-      0xFF51..=0xFF55 => self.vram_dma[(address - 0xFF51) as usize],
       0xFF56 => self.ir_port,
-      0xFF68..=0xFF6B => self.bg_obj_palettes[(address - 0xFF68) as usize],
-      0xFF6C => self.object_priority_mode,
       0xFF70 => {
-        if matches!(self.model_type(), ModelType::Color) {
+        if matches!(self.model_type, ModelType::Color) {
           return self.wram_bank;
         }
 
@@ -268,10 +216,7 @@ impl MemoryBus {
   }
 
   pub fn model_type(&self) -> ModelType {
-    match self.mbc.read(0x0143) {
-      Some(0xC0) => ModelType::Color,
-      _ => ModelType::DMG
-    }
+    self.model_type
   }
 
   pub fn if_flag(&self) -> u8 {
