@@ -96,7 +96,7 @@ impl CPU {
         Mnemonic::BIT => self.bit(&cb_instruction),
         Mnemonic::RES => self.res(&cb_instruction),
         Mnemonic::SET => self.set(&cb_instruction),
-        _ => panic!("Unknown CB-prefixed opcode: {:02X} {:?}", cb_opcode, cb_instruction.mnemonic)
+        _ => console_error!("Unknown CB-prefixed opcode: {:02X} {:?}", cb_opcode, cb_instruction.mnemonic)
       };
 
       if self.pending_ime_set {
@@ -139,7 +139,7 @@ impl CPU {
           Mnemonic::SCF => self.scf(&instruction),
           Mnemonic::CCF => self.ccf(&instruction),
           Mnemonic::STOP => self.stop(&instruction),
-        _ => panic!("Unknown opcode: {:02X} {:?}", opcode, instruction.mnemonic)
+        _ => console_error!("Unknown opcode: {:02X} {:?}", opcode, instruction.mnemonic)
       };
 
       if self.pending_ime_set && !matches!(instruction.mnemonic, Mnemonic::EI) && !matches!(instruction.mnemonic, Mnemonic::RETI) {
@@ -169,7 +169,7 @@ impl CPU {
     
     let mut index = 0xA004;
     while self.memory_bus.read_without_tick(index) != 0x00 {
-      print!("{}", self.memory_bus.read_without_tick(index) as char);
+      console_log!("{}", self.memory_bus.read_without_tick(index) as char);
       index += 1;
     }
   }
@@ -236,7 +236,7 @@ impl CPU {
   fn pop16(&mut self) -> u16 {
     let sp = self.registers.get(Register::SP);
     if sp >= 0xFFFE {
-      panic!("Invalid pop operation")
+      console_error!("Invalid pop operation")
     }
 
     let low = self.memory_bus.read(sp) as u16;
@@ -261,7 +261,7 @@ impl CPU {
       OperandName::Z => self.registers.zero(),
       OperandName::NC => !self.registers.carry(),
       OperandName::C => self.registers.carry(),
-      _ => panic!("Invalid condition operand {:?}", operand.name)
+      _ => console_error!("Invalid condition operand {:?}", operand.name)
     }
   } 
 
@@ -346,7 +346,7 @@ impl CPU {
       },
       None => {
         if operand.immediate {
-          panic!("Cannot write to an immediate operand");
+          console_error!("Cannot write to an immediate operand");
         }
 
         let address = match operand.name {

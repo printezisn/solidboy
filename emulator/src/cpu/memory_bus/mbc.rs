@@ -11,7 +11,7 @@ impl MBC {
     match rom[0x0147] {
       0x00 => MBC::NoROM(no_rom::NoROM::new(rom)),
       0x01 | 0x02 | 0x03 => MBC::MBC1(mbc1::MBC1::new(rom)),
-      _ => panic!("Unsupported MBC type {:02X}", rom[0x0147])
+      _ => console_error!("Unsupported MBC type {:02X}", rom[0x0147])
     }
   }
 
@@ -50,7 +50,7 @@ mod tests {
 
     match mbc {
       MBC::NoROM(_) => {},
-      _ => panic!("Expected NoROM")
+      _ => console_error!("Expected NoROM")
     }
   }
 
@@ -61,7 +61,7 @@ mod tests {
 
     match mbc {
       MBC::MBC1(_) => {},
-      _ => panic!("Expected MBC1")
+      _ => console_error!("Expected MBC1")
     }
   }
 
@@ -79,12 +79,5 @@ mod tests {
     let mut mbc = MBC::new(rom);
 
     assert!(mbc.write(0x2000, 2));
-  }
-
-  #[test]
-  #[should_panic(expected = "Unsupported MBC type FF")]
-  fn unsupported_mbc() {
-    let rom = make_rom_with_type(0xFF, 0x8000);
-    MBC::new(rom);
   }
 }

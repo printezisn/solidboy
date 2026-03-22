@@ -106,7 +106,7 @@ impl MemoryBus {
       0xFF01..=0xFF02 => {
         self.serial_transfer[address as usize - 0xFF01] = value;
         if address == 0xFF02 && value == 0x81 {
-          print!("{}", self.serial_transfer[0] as char);
+          console_log!("{}", self.serial_transfer[0] as char);
         }
       },
       0xFF04 => {
@@ -150,7 +150,7 @@ impl MemoryBus {
       0xFFFF => {
         self.ie_flag = value;
       }
-      _ => panic!("Invalid write to address {:02X}", address)
+      _ => console_error!("Invalid write to address {:02X}", address)
     }
 
     self.tick(4);
@@ -204,7 +204,7 @@ impl MemoryBus {
       },
       0xFF80..=0xFFFE => self.high_ram[(address - 0xFF80) as usize],
       0xFFFF => self.ie_flag,
-      _ => panic!("Invalid read from address {:02X}", address)
+      _ => console_error!("Invalid read from address {:02X}", address)
     }
   }
 
