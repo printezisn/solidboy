@@ -40,6 +40,8 @@ jobs:
             ~/.cargo/git
             emulator/target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/emulator/Cargo.lock') }}
+      - name: Set up wasm-pack
+        run: cargo install wasm-pack
 
       - name: Run emulator tests
         run: cargo test --manifest-path ./emulator/Cargo.toml
