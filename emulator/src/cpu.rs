@@ -169,7 +169,7 @@ impl CPU {
     
     let mut index = 0xA004;
     while self.memory_bus.read_without_tick(index) != 0x00 {
-      console_log!("{}", self.memory_bus.read_without_tick(index) as char);
+      console_render!("{}", self.memory_bus.read_without_tick(index) as char);
       index += 1;
     }
   }

@@ -12,6 +12,7 @@ export default defineConfig({
   build: {
     lib: {
       entry: ['src/index.js', 'src/templates.js'],
+      formats: ['es'],
       name: 'solidboy-emulator',
     },
     copyPublicDir: true,

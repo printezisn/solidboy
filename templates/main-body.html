@@ -4,9 +4,9 @@
 </header>
 <main class="container">
   <div class="device">
-    <div class="screen-container">
-      <div class="insert-rom-container">
-        <span class="upload-icon"></span>
+    <div class="screen-container" id="screen-container">
+      <div class="insert-rom-container" id="insert-rom-container">
+        <span class="upload-icon" aria-hidden="true"></span>
         <label id="insert-rom-label">Insert your ROM</label>
         <input
           type="file"
@@ -82,6 +82,28 @@
           ></button>
           <span>A</span>
         </div>
+      </div>
+    </div>
+    <div class="settings">
+      <button type="button" class="console-button" id="console-button">
+        <span class="terminal-icon" aria-hidden="true"></span>
+        Console
+      </button>
+      <button type="button" class="sound-button" id="sound-button">
+        <span class="volume-icon" aria-hidden="true"></span>
+        Mute
+      </button>
+    </div>
+    <div class="console-modal" id="console-modal">
+      <div class="overlay" id="console-modal-overlay"></div>
+      <div class="console-container">
+        <button
+          type="button"
+          aria-label="Close"
+          class="x-icon console-close-button"
+          id="console-close-button"
+        ></button>
+        <pre class="console" id="console"></pre>
       </div>
     </div>
   </div>

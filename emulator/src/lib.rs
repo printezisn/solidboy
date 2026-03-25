@@ -1,14 +1,30 @@
+use wasm_bindgen::prelude::*;
+
+#[wasm_bindgen(js_namespace = window)]
+extern "C" {
+    fn append_emulator_message(msg: &str);
+    fn set_emulator_message(msg: &str);
+    fn set_emulator_error(err: &str);
+}
+
 #[macro_export]
 macro_rules! console_log {
     ($($t:tt)*) => (
-        web_sys::console::log_1(&format!($($t)*).into())
+        crate::append_emulator_message(&format!($($t)*));
+    )
+}
+
+#[macro_export]
+macro_rules! console_render {
+    ($($t:tt)*) => (
+        crate::set_emulator_message(&format!($($t)*));
     )
 }
 
 #[macro_export]
 macro_rules! console_error {
     ($($t:tt)*) => {{
-        web_sys::console::error_1(&format!($($t)*).into());
+        crate::set_emulator_error(&format!($($t)*));
         panic!("Aborting due to error...");
     }}
 }
@@ -16,7 +32,6 @@ macro_rules! console_error {
 mod cpu;
 mod emulator;
 
-use wasm_bindgen::prelude::*;
 use std::cell::RefCell;
 
 use emulator::Emulator;
