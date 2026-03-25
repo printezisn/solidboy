@@ -3,3 +3,4 @@ pnpm format
 pnpm lint
 pnpm build:prod
 git update-index --again
+git add ./dist

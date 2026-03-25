@@ -1,3 +1,5 @@
+@use 'sass:math';
+
 @function relative-size($size) {
-  @return '#{$size / 16}rem';
+  @return '#{math.div($size, 16)}rem';
 }
