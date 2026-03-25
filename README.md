@@ -1,64 +1,98 @@
 # Solidboy Emulator
 
-A Game Boy emulator written in Rust (Currently in progress).
+A Game Boy emulator written in Rust (work in progress) with a WASM frontend using Vite.
 
-## Building and Running
+## Prerequisites
 
-### Prerequisites
-
+- Node.js >= 24
+- pnpm
 - Rust (edition 2024 or later)
+- wasm-pack
 
-### Build
+## Local development
 
-```bash
-cargo build --release
-```
-
-### Run
+1. Install dependencies:
 
 ```bash
-cargo run -- path/to/game.gb
+pnpm install
 ```
 
-Replace `path/to/game.gb` with the path to a Game Boy ROM file.
+2. Build the WASM binding + UI and run dev server:
+
+```bash
+pnpm start:dev
+```
+
+3. Preview production build locally:
+
+```bash
+pnpm start:prod
+```
+
+## Production build
+
+Build the Rust emulator as optimized WebAssembly and produce a production web bundle:
+
+```bash
+pnpm build:prod
+```
+
+This executes:
+
+- `wasm-pack build ./emulator --target bundler --release`
+- `pnpm i --force ./emulator/pkg`
+- `vite build`
+
+## Running tests
+
+Run Rust tests in the emulator crate:
+
+```bash
+cargo test --manifest-path ./emulator/Cargo.toml
+```
+
+Run full repo pre-commit checks (from `.husky/pre-commit`):
+
+```bash
+cargo test --manifest-path ./emulator/Cargo.toml
+pnpm format
+pnpm lint
+pnpm build:prod
+git update-index --again
+```
+
+## Build commands (scripts)
+
+- `pnpm build:wasm` - build Rust WASM package and refresh symlinked package
+- `pnpm build:prod` - wasm + Vite production bundle
+- `pnpm format` - format source files with Prettier
+- `pnpm lint` - static lint checks via ESLint
 
 ## Architecture
 
 The emulator consists of several components:
 
-- **CPU**: Handles instruction execution, registers, and flags.
-- **Memory Bus**: Manages memory access, including ROM, RAM, and I/O.
-- **Timer**: Handles timing-related operations.
-- **Instructions**: Implements the Game Boy instruction set.
+- **CPU**: instruction execution, registers, flags
+- **Memory Bus**: ROM, RAM, I/O, MBC handling
+- **Timer**: cycle timing and interrupts
+- **Instructions**: full Game Boy instruction set
 
 ### CPU
 
-The CPU module includes:
-
-- Registers: 8-bit and 16-bit registers (A, B, C, D, E, F, H, L, SP, PC)
-- Instruction decoding and execution
-- Interrupt handling (IME, halted state)
+- 8-bit / 16-bit registers (A, B, C, D, E, F, H, L, SP, PC)
+- decoding/execution
+- interrupts (IME, halted state)
 
 ### Memory Bus
 
-The Memory Bus handles:
-
 - ROM loading and banking
-- MBC (Memory Bank Controller) support for NoROM and MBC1
+- MBC support (NoROM, MBC1)
 - RAM and VRAM access
-- I/O registers
+- I/O register handling
 
-### Instructions
+### Supported features
 
-Implements the full Game Boy instruction set, including:
-
-- Standard instructions (LD, ADD, etc.)
-- Prefixed instructions (CB prefix for bit operations)
-- Control flow (JMP, CALL, RET)
-
-## Supported Features
-
-- Basic instruction set execution
-- Memory banking (NoROM, MBC1)
-- Timer functionality
-- Register and flag management
+- CPU instruction execution
+- memory banking (NoROM, MBC1)
+- timer and interrupts
+- WASM front-end via Vite
