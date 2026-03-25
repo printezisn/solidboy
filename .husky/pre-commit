@@ -1,0 +1,5 @@
+cargo test --manifest-path ./emulator/Cargo.toml
+pnpm format
+pnpm lint
+pnpm build:prod
+git update-index --again

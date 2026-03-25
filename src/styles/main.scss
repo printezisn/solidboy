@@ -1,7 +1,7 @@
-@use "functions" as f;
-@use "titles";
-@use "container";
-@use "device";
+@use 'functions' as f;
+@use 'titles';
+@use 'container';
+@use 'device';
 
 :root {
   --color-primary: hsl(212, 32%, 8%);
@@ -107,7 +107,7 @@ body > footer {
       align-items: center;
 
       &::after {
-        content: "|";
+        content: '|';
       }
     }
 
