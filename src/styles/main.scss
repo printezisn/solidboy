@@ -49,8 +49,14 @@ body {
 
 body {
   min-block-size: 100vb;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  grid-template-columns: 100%;
+  padding-block-end: var(--spacing-4);
+
+  & > * {
+    inline-size: 100%;
+  }
 }
 
 p,
@@ -80,15 +86,9 @@ svg {
 
 body > header {
   text-align: center;
-  flex-grow: 0;
-}
-
-main {
-  flex-grow: 1;
 }
 
 body > footer {
-  flex-grow: 0;
   text-align: center;
 
   ul {
