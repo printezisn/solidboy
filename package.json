@@ -1,0 +1,22 @@
+{
+  "name": "solidboy-emulator",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:wasm": "wasm-pack build ./emulator --target bundler && pnpm i --force ./emulator/pkg",
+    "build:prod": "pnpm build:wasm && vite build",
+    "start:dev": "pnpm build:wasm && vite --port 3000",
+    "start:prod": "pnpm build:wasm && vite preview --port 4000"
+  },
+  "devDependencies": {
+    "emulator-lib": "link:emulator/pkg",
+    "feather-icons": "^4.29.2",
+    "sass": "^1.98.0",
+    "vite": "^8.0.1",
+    "vite-plugin-wasm": "^3.6.0"
+  },
+  "dependencies": {
+    "solidboy-emulator": "link:emulator/pkg"
+  }
+}

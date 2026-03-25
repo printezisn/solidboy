@@ -33,11 +33,11 @@ pub fn init_emulator(rom: Vec<u8>) {
 }
 
 #[wasm_bindgen]
-pub fn execute() {
+pub fn execute() -> u8 {
     EMULATOR.with(|e| {
         match e.borrow_mut().as_mut() {
             Some(em) => em.execute(),
-            _ => {}
+            _ => 0
         }
-    });
+    })
 }

@@ -1,0 +1,7 @@
+@use "functions" as f;
+
+.container {
+  max-inline-size: #{f.relative-size(768)};
+  margin: auto;
+  padding: var(--spacing-4);
+}

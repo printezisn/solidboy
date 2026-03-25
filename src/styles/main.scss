@@ -1,0 +1,118 @@
+@use "functions" as f;
+@use "titles";
+@use "container";
+@use "device";
+
+:root {
+  --color-primary: hsl(212, 32%, 8%);
+  --color-primary-white: hsl(212, 32%, 98%);
+  --color-primary-black: hsl(212, 32%, 6%);
+  --color-primary-mid: hsl(212, 32%, 10%);
+  --color-primary-light: hsl(212, 32%, 12%);
+  --color-shadow-white: hsla(212, 32%, 98%, 0.2);
+  --color-shadow-black: hsla(212, 32%, 6%, 0.8);
+  --color-primary-grey-light: hsl(212, 0%, 70%);
+  --color-secondary: hsl(285, 72%, 50%);
+  --color-secondary-light: hsl(285, 72%, 65%);
+  --font-family-text: Helvetica, sans-serif;
+  --font-family-title: Helvetica, sans-serif;
+
+  @for $i from 0 to 20 {
+    --font-size-#{$i + 1}: #{f.relative-size(12 + $i * 2)};
+    --line-height-#{$i + 1}: #{f.relative-size((12 + $i * 2) * 1.5)};
+  }
+
+  @for $i from 0 to 20 {
+    --spacing-#{$i + 1}: #{f.relative-size(4 + $i * 4)};
+  }
+
+  --border-radius-large: 16px;
+  --border-radius-medium: 8px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font: inherit;
+}
+
+html,
+body {
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+  background-color: var(--color-primary);
+  color: var(--color-primary-white);
+  font-family: var(--font-family-text);
+  line-height: 0;
+}
+
+body {
+  min-block-size: 100vb;
+  display: flex;
+  flex-direction: column;
+}
+
+p,
+a {
+  font-size: var(--font-size-3);
+  line-height: var(--line-height-3);
+}
+
+a {
+  color: var(--color-secondary-light);
+
+  &:hover {
+    text-decoration: none;
+  }
+}
+
+button {
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+svg {
+  inline-size: 1em;
+  block-size: 1em;
+}
+
+body > header {
+  text-align: center;
+  flex-grow: 0;
+}
+
+main {
+  flex-grow: 1;
+}
+
+body > footer {
+  flex-grow: 0;
+  text-align: center;
+
+  ul {
+    list-style: none;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    gap: var(--spacing-2);
+
+    li {
+      display: flex;
+      flex-direction: row;
+      gap: var(--spacing-2);
+      justify-content: center;
+      align-items: center;
+
+      &::after {
+        content: "|";
+      }
+    }
+
+    li:last-child::after {
+      content: unset;
+    }
+  }
+}

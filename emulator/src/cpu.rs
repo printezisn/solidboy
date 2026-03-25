@@ -23,7 +23,7 @@ pub struct CPU {
 }
 
 pub struct InstructionResult {
-  cycles: u8
+  pub cycles: u8
 }
 
 impl CPU {

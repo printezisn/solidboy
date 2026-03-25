@@ -15,7 +15,7 @@ impl Emulator {
     &self.cpu
   }
 
-  pub fn execute(&mut self) {
-    self.cpu.execute_instruction();
+  pub fn execute(&mut self) -> u8 {
+    self.cpu.execute_instruction().cycles
   }
 }

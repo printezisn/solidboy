@@ -1,0 +1,173 @@
+@use "functions" as f;
+
+.device {
+  background-color: var(--color-primary-light);
+  padding: var(--spacing-4);
+  margin: auto;
+  inline-size: fit-content;
+  max-inline-size: 100%;
+  border-radius: var(--border-radius-large);
+  box-shadow: 0 0 5px 0 var(--color-shadow-white);
+
+  .screen-container {
+    inline-size: #{f.relative-size(480)};
+    max-inline-size: 100%;
+    aspect-ratio: 10 / 9;
+    background-color: var(--color-primary-mid);
+    border-radius: var(--border-radius-large);
+    position: relative;
+
+    .insert-rom-container {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: var(--spacing-4);
+
+      svg {
+        font-size: var(--font-size-10);
+      }
+
+      input {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        cursor: pointer;
+        opacity: 0;
+      }
+    }
+  }
+
+  .controls {
+    margin-block-start: var(--spacing-4);
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--spacing-4);
+
+    .direction-container {
+      display: inline-block;
+      inline-size: #{f.relative-size(85)};
+      block-size: #{f.relative-size(85)};
+      position: relative;
+      margin: auto;
+
+      .up-direction {
+        inline-size: #{f.relative-size(15)};
+        block-size: #{f.relative-size(35)};
+        background-color: var(--color-primary-black);
+        border-radius: var(--border-radius-medium);
+        position: absolute;
+        inset-block-start: 0;
+        inset-inline-start: 50%;
+        transform: translateX(-50%);
+        box-shadow: 0 0 5px 0 var(--color-shadow-black);
+      }
+
+      .down-direction {
+        inline-size: #{f.relative-size(15)};
+        block-size: #{f.relative-size(35)};
+        background-color: var(--color-primary-black);
+        border-radius: var(--border-radius-medium);
+        position: absolute;
+        inset-block-end: 0;
+        inset-inline-start: 50%;
+        transform: translateX(-50%);
+        box-shadow: 0 0 5px 0 var(--color-shadow-black);
+      }
+
+      .left-direction {
+        inline-size: #{f.relative-size(35)};
+        block-size: #{f.relative-size(15)};
+        background-color: var(--color-primary-black);
+        border-radius: var(--border-radius-medium);
+        position: absolute;
+        inset-block-start: 50%;
+        inset-inline-start: 0;
+        transform: translateY(-50%);
+        box-shadow: 0 0 5px 0 var(--color-shadow-black);
+      }
+
+      .right-direction {
+        inline-size: #{f.relative-size(35)};
+        block-size: #{f.relative-size(15)};
+        background-color: var(--color-primary-black);
+        border-radius: var(--border-radius-medium);
+        position: absolute;
+        inset-block-start: 50%;
+        inset-inline-end: 0;
+        transform: translateY(-50%);
+        box-shadow: 0 0 5px 0 var(--color-shadow-black);
+      }
+    }
+
+    .menu-container {
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+      gap: var(--spacing-4);
+      margin: auto;
+
+      .select-container,
+      .start-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: var(--spacing-4);
+
+        button {
+          inline-size: #{f.relative-size(35)};
+          block-size: #{f.relative-size(10)};
+          background-color: var(--color-primary-black);
+          border-radius: var(--border-radius-medium);
+          box-shadow: 0 0 5px 0 var(--color-shadow-black);
+        }
+
+        span {
+          font-size: var(--font-size-1);
+          color: var(--color-primary-grey-light);
+        }
+      }
+    }
+
+    .buttons-container {
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+      gap: var(--spacing-4);
+      margin: auto;
+
+      .a-button-container,
+      .b-button-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: var(--spacing-4);
+
+        button {
+          inline-size: #{f.relative-size(35)};
+          block-size: #{f.relative-size(35)};
+          background: radial-gradient(
+            var(--color-secondary-light),
+            var(--color-secondary)
+          );
+          border-radius: 50%;
+          box-shadow: 0 0 5px 0 var(--color-shadow-black);
+        }
+
+        span {
+          font-size: var(--font-size-1);
+          color: var(--color-primary-grey-light);
+        }
+      }
+    }
+  }
+}
