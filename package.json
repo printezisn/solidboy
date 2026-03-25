@@ -7,13 +7,14 @@
     "node": ">=20"
   },
   "scripts": {
-    "build:wasm": "wasm-pack build ./emulator --target bundler && pnpm i --force ./emulator/pkg",
-    "build:prod": "pnpm build:wasm && vite build",
+    "build:wasm:dev": "wasm-pack build ./emulator --target bundler && pnpm i --force ./emulator/pkg",
+    "build:wasm:prod": "wasm-pack build ./emulator --target bundler --release && pnpm i --force ./emulator/pkg",
+    "build:prod": "pnpm build:wasm:prod && vite build",
     "format": "prettier ./src --write",
     "lint": "eslint ./src",
     "lint:fix": "eslint ./src --fix",
-    "start:dev": "pnpm build:wasm && vite --port 3000",
-    "start:prod": "pnpm build:wasm && vite preview --port 4000",
+    "start:dev": "pnpm build:wasm:dev && vite --port 3000",
+    "start:prod": "pnpm build:wasm:prod && vite preview --port 4000",
     "prepare": "husky"
   },
   "devDependencies": {
