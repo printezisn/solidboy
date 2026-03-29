@@ -1,7 +1,6 @@
 mod registers;
 mod instructions;
 mod memory_bus;
-mod timer;
 
 use registers::Registers;
 use registers::Register;
@@ -148,30 +147,7 @@ impl CPU {
       }
     }
 
-    self.check_external_ram_test_results();
-
     InstructionResult { cycles: self.memory_bus.total_cycles() }
-  }
-
-  fn check_external_ram_test_results(&self) {
-    if self.memory_bus.read_without_tick(0xA001) != 0xDE {
-      return;
-    }
-    if self.memory_bus.read_without_tick(0xA002) != 0xB0 {
-      return;
-    }
-    if self.memory_bus.read_without_tick(0xA003) != 0x61 {
-      return;
-    }
-    if self.memory_bus.read_without_tick(0xA000) != 0x80 {
-      return;
-    }
-    
-    let mut index = 0xA004;
-    while self.memory_bus.read_without_tick(index) != 0x00 {
-      console_render!("{}", self.memory_bus.read_without_tick(index) as char);
-      index += 1;
-    }
   }
 
   fn interrupt(&mut self) {

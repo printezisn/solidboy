@@ -7,10 +7,6 @@ pub struct Timer {
   reload_delay: u8
 }
 
-pub struct TimerTickResult {
-  pub request_interrupt: bool
-}
-
 impl Timer {
   pub fn new() -> Timer {
     Timer { 
@@ -56,18 +52,14 @@ impl Timer {
     self.tac = value;
   }
 
-  pub fn tick(&mut self, cycles: u8) -> TimerTickResult {
-    let mut request_interrupt = false;
-
+  pub fn tick(&mut self, if_flag: &mut u8, cycles: u8) {
     for _ in 0..cycles {
       if self.single_tick() {
-        request_interrupt = true;
+        *if_flag |= 0x04;
       }
     }
 
     self.previous_tma = self.tma;
-
-    TimerTickResult { request_interrupt }
   }
 
   fn single_tick(&mut self) -> bool {
@@ -123,9 +115,10 @@ mod timer {
   #[test]
   fn test_div_increment() {
     let mut timer = create_timer();
+    let mut if_flag: u8 = 0;
 
     for _ in 0..20 {
-      timer.tick(50);
+      timer.tick(&mut if_flag, 50);
     }
 
     assert_eq!(timer.div(), 3);
@@ -134,87 +127,93 @@ mod timer {
   #[test]
   fn test_tima_disabled_no_increment() {
     let mut timer = create_timer();
+    let mut if_flag: u8 = 0;
     timer.set_tac(0x00);
     timer.set_tima(0x00);
 
     for _ in 0..2 {
-      timer.tick(128);
+      timer.tick(&mut if_flag, 128);
     }
 
     assert_eq!(timer.tima(), 0x00);
+    assert_eq!(if_flag & 0x04, 0);
   }
 
   #[test]
   fn test_tima_increment_frequency_1024() {
     let mut timer = create_timer();
+    let mut if_flag: u8 = 0;
     timer.set_tac(0x04);
     timer.set_tima(0x00);
 
     for _ in 0..2 {
-      timer.tick(255);
+      timer.tick(&mut if_flag, 255);
     }
-    timer.tick(2);
+    timer.tick(&mut if_flag, 2);
     assert_eq!(timer.tima(), 0x00);
 
     for _ in 0..2 {
-      timer.tick(255);
+      timer.tick(&mut if_flag, 255);
     }
-    timer.tick(2);
+    timer.tick(&mut if_flag, 2);
     assert_eq!(timer.tima(), 0x01);
 
     for _ in 0..4 {
-      timer.tick(255);
+      timer.tick(&mut if_flag, 255);
     }
-    timer.tick(4);
+    timer.tick(&mut if_flag, 4);
     assert_eq!(timer.tima(), 0x02);
   }
 
   #[test]
   fn test_tima_increment_frequency_16() {
     let mut timer = create_timer();
+    let mut if_flag: u8 = 0;
     timer.set_tac(0x04 | 0x01);
     timer.set_tima(0x00);
 
-    timer.tick(8);
+    timer.tick(&mut if_flag, 8);
     assert_eq!(timer.tima(), 0x00);
 
-    timer.tick(8);
+    timer.tick(&mut if_flag, 8);
     assert_eq!(timer.tima(), 0x01);
 
-    timer.tick(16);
+    timer.tick(&mut if_flag, 16);
     assert_eq!(timer.tima(), 0x02);
   }
 
   #[test]
   fn test_tima_increment_frequency_64() {
     let mut timer = create_timer();
+    let mut if_flag: u8 = 0;
     timer.set_tac(0x04 | 0x02);
     timer.set_tima(0x00);
 
-    timer.tick(32);
+    timer.tick(&mut if_flag, 32);
     assert_eq!(timer.tima(), 0x00);
 
-    timer.tick(32);
+    timer.tick(&mut if_flag, 32);
     assert_eq!(timer.tima(), 0x01);
 
-    timer.tick(64);
+    timer.tick(&mut if_flag, 64);
     assert_eq!(timer.tima(), 0x02);
   }
 
   #[test]
   fn test_tima_increment_frequency_256() {
     let mut timer = create_timer();
+    let mut if_flag: u8 = 0;
     timer.set_tac(0x04 | 0x03);
     timer.set_tima(0x00);
 
-    timer.tick(128);
+    timer.tick(&mut if_flag, 128);
     assert_eq!(timer.tima(), 0x00);
 
-    timer.tick(128);
+    timer.tick(&mut if_flag, 128);
     assert_eq!(timer.tima(), 0x01);
 
     for _ in 0..2 {
-      timer.tick(128);
+      timer.tick(&mut if_flag, 128);
     }
     assert_eq!(timer.tima(), 0x02);
   }
@@ -222,115 +221,123 @@ mod timer {
   #[test]
   fn test_tima_overflow_triggers_reload() {
     let mut timer = create_timer();
+    let mut if_flag: u8 = 0;
     timer.set_tac(0x04 | 0x01);
     timer.set_tima(0xFF);
     timer.set_tma(0x42);
 
-    timer.tick(16);
+    timer.tick(&mut if_flag, 16);
     assert_eq!(timer.tima(), 0x00);
 
-    timer.tick(3);
+    timer.tick(&mut if_flag, 3);
     assert_eq!(timer.tima(), 0x00);
 
-    timer.tick(1);
+    timer.tick(&mut if_flag, 1);
     assert_eq!(timer.tima(), 0x42);
+    assert_eq!(if_flag & 0x04, 0x04);
   }
 
   #[test]
   fn test_overflow_interrupt_request() {
     let mut timer = create_timer();
+    let mut if_flag: u8 = 0;
     timer.set_tac(0x04 | 0x01);
     timer.set_tima(0xFF);
     timer.set_tma(0x00);
 
-    let result = timer.tick(16);
-    assert_eq!(result.request_interrupt, false);
+    timer.tick(&mut if_flag, 16);
+    assert_eq!(if_flag & 0x04, 0);
 
-    let result = timer.tick(4);
-    assert_eq!(result.request_interrupt, true);
+    timer.tick(&mut if_flag, 4);
+    assert_eq!(if_flag & 0x04, 0x04);
   }
 
   #[test]
   fn test_multiple_overflows_in_one_tick() {
     let mut timer = create_timer();
+    let mut if_flag: u8 = 0;
     timer.set_tac(0x04 | 0x01);
     timer.set_tima(0xFF);
     timer.set_tma(0xFF);
 
-    let result = timer.tick(32);
-    assert_eq!(result.request_interrupt, true);
+    timer.tick(&mut if_flag, 32);
+    assert_eq!(if_flag & 0x04, 0x04);
   }
 
   #[test]
   fn test_tac_frequency_change() {
     let mut timer = create_timer();
+    let mut if_flag: u8 = 0;
     timer.set_tac(0x04 | 0x01);
     timer.set_tima(0x00);
 
-    timer.tick(16);
+    timer.tick(&mut if_flag, 16);
     assert_eq!(timer.tima(), 0x01);
 
     timer.set_tac(0x04);
     timer.set_tima(0x00);
 
-    timer.tick(32);
+    timer.tick(&mut if_flag, 32);
     assert_eq!(timer.tima(), 0x00);
   }
 
   #[test]
   fn test_timer_disable_midway() {
     let mut timer = create_timer();
+    let mut if_flag: u8 = 0;
     timer.set_tac(0x04 | 0x01);
     timer.set_tima(0x00);
 
-    timer.tick(8);
+    timer.tick(&mut if_flag, 8);
     
     timer.set_tac(0x00);
     
-    timer.tick(16);
+    timer.tick(&mut if_flag, 16);
     assert_eq!(timer.tima(), 0x00);
   }
 
   #[test]
   fn test_reload_delay_exact_timing() {
     let mut timer = create_timer();
+    let mut if_flag: u8 = 0;
     timer.set_tac(0x04 | 0b01);
     timer.set_tima(0xFF);
     timer.set_tma(0x99);
 
-    timer.tick(16);
+    timer.tick(&mut if_flag, 16);
     assert_eq!(timer.tima(), 0x00);
 
-    timer.tick(1);
+    timer.tick(&mut if_flag, 1);
     assert_eq!(timer.tima(), 0x00);
 
-    timer.tick(1);
+    timer.tick(&mut if_flag, 1);
     assert_eq!(timer.tima(), 0x00);
 
-    timer.tick(1);
+    timer.tick(&mut if_flag, 1);
     assert_eq!(timer.tima(), 0x00);
 
-    timer.tick(1);
+    timer.tick(&mut if_flag, 1);
     assert_eq!(timer.tima(), 0x99);
   }
 
   #[test]
   fn test_tima_rollover_sequence() {
     let mut timer = create_timer();
+    let mut if_flag: u8 = 0;
     timer.set_tac(0x04 | 0x01);
     timer.set_tima(0xFE);
     timer.set_tma(0xFE);
 
-    timer.tick(16);
+    timer.tick(&mut if_flag, 16);
     assert_eq!(timer.tima(), 0xFF);
 
-    timer.tick(16);
+    timer.tick(&mut if_flag, 16);
     assert_eq!(timer.tima(), 0x00);
 
-    timer.tick(4);
+    timer.tick(&mut if_flag, 4);
     assert_eq!(timer.tima(), 0xFE);
 
-    timer.tick(16);
+    timer.tick(&mut if_flag, 16);
     assert_eq!(timer.tima(), 0xFF);
   }
 }

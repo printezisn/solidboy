@@ -1,31 +1,31 @@
 use wasm_bindgen::prelude::*;
 
-#[wasm_bindgen(js_namespace = window)]
+#[wasm_bindgen]
 extern "C" {
-    fn append_emulator_message(msg: &str);
-    fn set_emulator_message(msg: &str);
-    fn set_emulator_error(err: &str);
+    fn emulator_console_log(msg: &str);
+    fn emulator_console_error(err: &str);
+    fn render_frame_buffer(frame_buffer_ptr: *const u8, length: usize);
 }
 
 #[macro_export]
 macro_rules! console_log {
     ($($t:tt)*) => (
-        crate::append_emulator_message(&format!($($t)*));
-    )
-}
-
-#[macro_export]
-macro_rules! console_render {
-    ($($t:tt)*) => (
-        crate::set_emulator_message(&format!($($t)*));
+        crate::emulator_console_log(&format!($($t)*));
     )
 }
 
 #[macro_export]
 macro_rules! console_error {
     ($($t:tt)*) => {{
-        crate::set_emulator_error(&format!($($t)*));
+        crate::emulator_console_error(&format!($($t)*));
         panic!("Aborting due to error...");
+    }}
+}
+
+#[macro_export]
+macro_rules! render_frame_buffer {
+    ($($t:tt)*) => {{
+        crate::render_frame_buffer($($t)*);
     }}
 }
 

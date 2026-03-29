@@ -1,9 +1,10 @@
 mod mbc;
 mod ppu;
 mod audio;
+mod timer;
 pub mod types;
 
-use super::timer::Timer;
+use timer::Timer;
 use mbc::MBC;
 use ppu::PPU;
 use audio::Audio;
@@ -81,7 +82,7 @@ impl MemoryBus {
       return;
     }
 
-    if self.ppu.write(address, value) {
+    if self.ppu.write(address, value, &mut self.if_flag) {
       self.tick(4);
       return;
     }
@@ -253,9 +254,16 @@ impl MemoryBus {
 
   pub fn tick(&mut self, cycles: u8) {
     self.total_cycles += cycles;
-    if self.timer.tick(cycles).request_interrupt {
-      self.set_if_flag(self.if_flag() | 0x04);
-    }
+    self.timer.tick(&mut self.if_flag, cycles);
+
+    let real_speed: u8 =
+      if matches!(self.model_type(), ModelType::Color) && (self.key1() & 0x80) != 0 {
+        cycles / 2
+      } else {
+        cycles
+      };
+
+    self.ppu.tick(&mut self.if_flag, real_speed);
   }
 }
 

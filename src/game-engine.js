@@ -26,20 +26,17 @@ const onFrame = () => {
 };
 
 export const initGameEngine = () => {
-  window.append_emulator_message = (str) => {
+  window.emulator_console_log = (str) => {
     consoleMessage += str || '';
     debugConsole.innerHTML = consoleMessage;
   };
 
-  window.set_emulator_message = (str) => {
-    consoleMessage = str || '';
-    debugConsole.innerHTML = consoleMessage;
-  };
-
-  window.set_emulator_error = (str) => {
+  window.emulator_console_error = (str) => {
     consoleMessage = '<span class="error-message">' + (str || '') + '</span>';
     debugConsole.innerHTML = consoleMessage;
   };
+
+  window.render_frame_buffer = (frame_buffer_ptr, length) => {};
 
   document.getElementById('rom-file').addEventListener('change', (e) => {
     const file = e.target.files[0];
