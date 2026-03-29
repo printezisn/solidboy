@@ -110,6 +110,7 @@ pub struct Operand {
     pub decrement: bool,
 }
 
+#[allow(dead_code)]
 pub struct Instruction {
     pub code: &'static str,
     pub mnemonic: Mnemonic,

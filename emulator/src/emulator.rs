@@ -9,10 +9,6 @@ impl Emulator {
         Emulator { cpu: CPU::new(rom) }
     }
 
-    pub fn cpu(&self) -> &CPU {
-        &self.cpu
-    }
-
     pub fn execute(&mut self) -> u8 {
         self.cpu.execute_instruction().cycles
     }

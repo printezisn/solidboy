@@ -5,6 +5,7 @@ pub enum Register {
     C,
     D,
     E,
+    #[allow(dead_code)]
     F,
     H,
     L,

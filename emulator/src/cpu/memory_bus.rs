@@ -246,6 +246,7 @@ impl MemoryBus {
         self.ie_flag
     }
 
+    #[allow(dead_code)]
     pub fn set_ie_flag(&mut self, value: u8) {
         self.ie_flag = value;
     }
