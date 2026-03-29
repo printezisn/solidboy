@@ -195,13 +195,22 @@ impl PPU {
 
         match self.dots {
             0..=79 => {
-                self.mode = 2;
+                if self.mode != 1 {
+                  self.mode = 2;
+                }
             }
             80..=251 => {
+              if self.mode != 1 {
                 self.mode = 3;
+                if self.dots == 80 && self.ly < 144 {
+                    self.render_scanline();
+                }
+              }
             }
             252..=455 => {
+              if self.mode != 1 {
                 self.mode = 0;
+              }
             }
             456 => {
                 self.dots = 0;
@@ -221,6 +230,57 @@ impl PPU {
         }
 
         self.update_stat_state(if_flag);
+    }
+
+    fn render_scanline(&mut self) {
+      let bg_timemap_base: u16 = if self.lcdc & 0x08 != 0 { 0x1C00 } else { 0x1800 };
+      let tile_row = (self.ly / 8) as u16;
+      let inner_tile_row = (self.ly % 8) as u16;
+
+      for x in 0..160 {
+        let tile_col = x / 8;
+        let inner_tile_col = x % 8;
+
+        let tilemap_address = bg_timemap_base + tile_row * 32 + tile_col;
+        let tile_index = self.vram[tilemap_address as usize];
+        let tile_data_address =
+          if self.lcdc & 0x10 != 0 {
+            (tile_index as u16) * 16
+          } else {
+            0x1000 + ((tile_index as i8 as i16) * 16) as u16
+          };
+        
+        let inner_row_address = tile_data_address + inner_tile_row * 2;
+        let color_index = self.calculate_pixel_color_index(inner_row_address, inner_tile_col);
+        let (a, r, g, b) = self.calculate_dmg_color(color_index);
+        let frame_buffer_index = (self.ly as usize * 160 + x as usize) * 4;
+
+        self.frame_buffer[frame_buffer_index] = r;
+        self.frame_buffer[frame_buffer_index + 1] = g;
+        self.frame_buffer[frame_buffer_index + 2] = b;
+        self.frame_buffer[frame_buffer_index + 3] = a;
+      }
+    }
+
+    fn calculate_pixel_color_index(&self, row_address: u16, x: u16) -> u8 {
+      let byte0 = self.vram[row_address as usize];
+      let byte1 = self.vram[row_address as usize + 1];
+      let low_bit = (byte0 >> (7 - x)) & 0x01;
+      let high_bit = (byte1 >> (7 - x)) & 0x01;
+      
+      (high_bit << 1) | low_bit
+    }
+
+    fn calculate_dmg_color(&self, color_index: u8) -> (u8, u8, u8, u8) {
+      let shade = (self.dmg_bgp >> (color_index * 2)) & 0x03;
+
+      match shade {
+          0 => (255, 255, 255, 255),
+          1 => (170, 170, 170, 255),
+          2 => (85, 85, 85, 255),
+          3 => (0, 0, 0, 255),
+          _ => unreachable!()
+      }
     }
 
     fn update_stat_state(&mut self, if_flag: &mut u8) {

@@ -110,9 +110,6 @@ impl MemoryBus {
             }
             0xFF01..=0xFF02 => {
                 self.serial_transfer[address as usize - 0xFF01] = value;
-                if address == 0xFF02 && value == 0x81 {
-                    console_log!("{}", self.serial_transfer[0] as char);
-                }
             }
             0xFF04 => {
                 self.timer.reset_div();
