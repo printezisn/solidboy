@@ -13,6 +13,7 @@ struct Sprite {
     y: u8,
     tile_index: u8,
     attributes: u8,
+    priority: u8
 }
 
 pub struct PPU {
@@ -321,6 +322,10 @@ impl PPU {
     }
 
     fn render_sprites(&mut self) {
+        if self.lcdc & 0x02 == 0 {
+            return;
+        }
+
         let sprite_height = if self.lcdc & 0x04 != 0 { 16 } else { 8 };
         
         for sprite in &self.sprites {
@@ -396,11 +401,17 @@ impl PPU {
             let y = self.oam[base] as i16 - 16;
             let ly = self.ly as i16;
             if ly >= y && ly < y + sprite_height as i16 {
-                self.sprites.push(Sprite { y: sprite_y, x: sprite_x, tile_index, attributes });
+                self.sprites.push(Sprite { y: sprite_y, x: sprite_x, tile_index, attributes, priority: i as u8 });
             }
         }
 
-        self.sprites.sort_by_key(|s| s.x);
+        self.sprites.sort_by(|a, b| {
+            if a.x == b.x {
+                b.priority.cmp(&a.priority)
+            } else {
+                b.x.cmp(&a.x)
+            }
+        });
     }
 
     fn calculate_pixel_color_index(&self, row_address: u16, x: u16) -> u8 {
@@ -430,7 +441,7 @@ impl PPU {
             if self.stat & 0x40 != 0 {
                 *if_flag |= 0x02;
             }
-        } else {
+        } else if self.ly != self.lyc {
             self.stat &= !0x04;
         }
 
@@ -454,16 +465,16 @@ impl PPU {
         mode1_trigger: bool,
         mode0_trigger: bool,
     ) {
-        if self.stat & 0x40 == 0 && ly_trigger {
+        if self.stat & 0x40 == 0 && ly_trigger && self.ly == self.lyc {
             *if_flag |= 0x02;
         }
-        if self.stat & 0x20 == 0 && mode2_tigger {
+        if self.stat & 0x20 == 0 && mode2_tigger && self.mode == 2 {
             *if_flag |= 0x02;
         }
-        if self.stat & 0x10 == 0 && mode1_trigger {
+        if self.stat & 0x10 == 0 && mode1_trigger && self.mode == 1 {
             *if_flag |= 0x02;
         }
-        if self.stat & 0x08 == 0 && mode0_trigger {
+        if self.stat & 0x08 == 0 && mode0_trigger && self.mode == 0 {
             *if_flag |= 0x02;
         }
 
