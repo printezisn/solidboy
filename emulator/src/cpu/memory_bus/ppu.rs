@@ -29,6 +29,7 @@ pub struct PPU {
     object_priority_mode: u8,
     model_type: ModelType,
     dots: u16,
+    window_line: u8,
     mode: u8,
     frame_buffer: [u8; FRAME_BUFFER_ROWS * FRAME_BUFFER_COLS * 4],
 }
@@ -56,6 +57,7 @@ impl PPU {
             object_priority_mode: 0,
             model_type,
             dots: 0,
+            window_line: 0,
             mode: 2,
             frame_buffer: [0; FRAME_BUFFER_ROWS * FRAME_BUFFER_COLS * 4],
         }
@@ -117,10 +119,10 @@ impl PPU {
             0xFF41 => {
                 self.update_stat_triggers(
                     if_flag,
-                    self.stat & 0x40 != 0,
-                    self.stat & 0x20 != 0,
-                    self.stat & 0x10 != 0,
-                    self.stat & 0x08 != 0,
+                    value & 0x40 != 0,
+                    value & 0x20 != 0,
+                    value & 0x10 != 0,
+                    value & 0x08 != 0,
                 );
             }
             0xFF42 => {
@@ -220,6 +222,7 @@ impl PPU {
                     *if_flag |= 0x01;
                 } else if self.ly == 154 {
                     self.ly = 0;
+                    self.window_line = 0;
                     self.mode = 0;
                     render_frame_buffer!(self.frame_buffer.as_ptr(), self.frame_buffer.len());
                 }
@@ -233,17 +236,44 @@ impl PPU {
     }
 
     fn render_scanline(&mut self) {
-        let bg_timemap_base: u16 = if self.lcdc & 0x08 != 0 {
-            0x1C00
-        } else {
-            0x1800
-        };
-        let y = self.ly.wrapping_add(self.scy);
-        let tile_row = (y / 8) as u16;
-        let inner_tile_row = (y % 8) as u16;
+        let window_enabled = self.lcdc & 0x20 != 0 && self.ly >= self.wy;
+        let mut window_drawn = false;
 
         for i in 0u8..160 {
-            let x = i.wrapping_add(self.scx) as u16;
+            let use_window = window_enabled && i + 7 >= self.wx;
+            if use_window {
+                window_drawn = true;
+            }
+
+            if self.lcdc & 0x01 == 0 {
+                let frame_buffer_index = (self.ly as usize * 160 + i as usize) * 4;
+
+                self.frame_buffer[frame_buffer_index] = 255;
+                self.frame_buffer[frame_buffer_index + 1] = 255;
+                self.frame_buffer[frame_buffer_index + 2] = 255;
+                self.frame_buffer[frame_buffer_index + 3] = 255;
+                continue;
+            }
+
+            let timemap_base_bit = if use_window { 0x40 } else { 0x08 };
+            let bg_timemap_base: u16 = if self.lcdc & timemap_base_bit != 0 {
+                0x1C00
+            } else {
+                0x1800
+            };
+
+            let x = if use_window {
+                (i + 7 - self.wx) as u16
+            } else {
+                i.wrapping_add(self.scx) as u16
+            };
+            let y = if use_window {
+                self.window_line as u16
+            } else {
+                self.ly.wrapping_add(self.scy) as u16
+            };
+            let tile_row = (y / 8) as u16;
+            let inner_tile_row = (y % 8) as u16;
             let tile_col = x / 8;
             let inner_tile_col = x % 8;
 
@@ -252,18 +282,22 @@ impl PPU {
             let tile_data_address = if self.lcdc & 0x10 != 0 {
                 (tile_index as u16) * 16
             } else {
-                0x1000 + ((tile_index as i8 as i16) * 16) as u16
+                0x1000u16.wrapping_add(((tile_index as i8 as i16) * 16) as u16)
             };
 
             let inner_row_address = tile_data_address + inner_tile_row * 2;
             let color_index = self.calculate_pixel_color_index(inner_row_address, inner_tile_col);
-            let (a, r, g, b) = self.calculate_dmg_color(color_index);
+            let (r, g, b, a) = self.calculate_dmg_color(color_index);
             let frame_buffer_index = (self.ly as usize * 160 + i as usize) * 4;
 
             self.frame_buffer[frame_buffer_index] = r;
             self.frame_buffer[frame_buffer_index + 1] = g;
             self.frame_buffer[frame_buffer_index + 2] = b;
             self.frame_buffer[frame_buffer_index + 3] = a;
+        }
+
+        if window_drawn {
+            self.window_line += 1;
         }
     }
 
@@ -820,6 +854,248 @@ mod tests {
             assert_eq!(ppu.frame_buffer[index + 1], 255); // G
             assert_eq!(ppu.frame_buffer[index + 2], 255); // B
             assert_eq!(ppu.frame_buffer[index + 3], 255); // A
+        }
+    }
+
+    #[test]
+    fn test_render_scanline_with_scrolling() {
+        let mut ppu = PPU::new(ModelType::DMG);
+        ppu.lcdc = 0x80 | 0x01; // LCD enabled, BG enabled
+        ppu.dmg_bgp = 0x00; // All pixels white
+        ppu.ly = 0;
+        ppu.scx = 8; // Scroll 8 pixels right
+        ppu.scy = 0;
+
+        // Create a tile with alternating pattern at tile 0
+        // This will help verify scrolling is working
+        ppu.vram[0] = 0b10101010; // Low bits
+        ppu.vram[1] = 0b01010101; // High bits
+
+        ppu.render_scanline();
+
+        // With scx=8, we should see the tile pattern shifted
+        // The first 8 pixels should come from the next tile (which is empty, so white)
+        // Pixels 8-15 should show the pattern from tile 0
+        for x in 0..8 {
+            let offset = x * 4;
+            // Should be white (default tile data is 0)
+            assert_eq!(ppu.frame_buffer[offset], 255);
+            assert_eq!(ppu.frame_buffer[offset + 1], 255);
+            assert_eq!(ppu.frame_buffer[offset + 2], 255);
+            assert_eq!(ppu.frame_buffer[offset + 3], 255);
+        }
+    }
+
+    #[test]
+    fn test_render_scanline_with_window() {
+        let mut ppu = PPU::new(ModelType::DMG);
+        ppu.lcdc = 0x80 | 0x01 | 0x20; // LCD enabled, BG enabled, window enabled
+        ppu.dmg_bgp = 0x00;
+        ppu.ly = 0;
+        ppu.wy = 0; // Window starts at line 0
+        ppu.wx = 10; // Window starts at pixel 10 (wx - 7 = 3, but window logic uses i + 7 >= wx)
+
+        // Create different patterns for BG and window tiles
+        // BG tile 0: all white
+        // Window tile 0: all black (set palette to make it black)
+        ppu.dmg_bgp = 0b11_11_11_11; // All colors map to black
+
+        ppu.render_scanline();
+
+        // First 10 pixels should be from BG (black due to palette)
+        // Pixels 10-159 should be from window (also black)
+        for x in 0..160 {
+            let offset = x * 4;
+            assert_eq!(ppu.frame_buffer[offset], 0); // R - black
+            assert_eq!(ppu.frame_buffer[offset + 1], 0); // G
+            assert_eq!(ppu.frame_buffer[offset + 2], 0); // B
+            assert_eq!(ppu.frame_buffer[offset + 3], 255); // A
+        }
+    }
+
+    #[test]
+    fn test_render_scanline_window_not_visible() {
+        let mut ppu = PPU::new(ModelType::DMG);
+        ppu.lcdc = 0x80 | 0x01 | 0x20; // LCD enabled, BG enabled, window enabled
+        ppu.dmg_bgp = 0x00; // White palette
+        ppu.ly = 0;
+        ppu.wy = 10; // Window starts at line 10, so not visible on line 0
+        ppu.wx = 10;
+
+        ppu.render_scanline();
+
+        // All pixels should be white (BG only, no window)
+        for x in 0..160 {
+            let offset = x * 4;
+            assert_eq!(ppu.frame_buffer[offset], 255); // R
+            assert_eq!(ppu.frame_buffer[offset + 1], 255); // G
+            assert_eq!(ppu.frame_buffer[offset + 2], 255); // B
+            assert_eq!(ppu.frame_buffer[offset + 3], 255); // A
+        }
+    }
+
+    #[test]
+    fn test_render_scanline_8800_tile_addressing() {
+        let mut ppu = PPU::new(ModelType::DMG);
+        ppu.lcdc = 0x80 | 0x01; // LCD enabled, BG enabled, 8800 addressing mode
+        ppu.dmg_bgp = 0b11_11_11_11; // All black palette
+        ppu.ly = 0;
+        ppu.scx = 0;
+        ppu.scy = 0;
+
+        // In 8800 mode, tile index is signed: 0x80-0xFF = -128 to -1, 0x00-0x7F = 0-127
+        // Use tile index 0 for simplicity (address = 0x1000 + 0 * 16 = 0x1000)
+        ppu.vram[0x1800] = 0x00; // Tile index in tilemap
+
+        // Set tile data at address 0x1000
+        ppu.vram[0x1000] = 0xFF; // Low byte all 1s
+        ppu.vram[0x1001] = 0xFF; // High byte all 1s
+
+        ppu.render_scanline();
+
+        // All pixels should be black (color index 3 -> black with our palette)
+        for x in 0..8 { // Check first 8 pixels of the tile
+            let offset = x * 4;
+            assert_eq!(ppu.frame_buffer[offset], 0); // R
+            assert_eq!(ppu.frame_buffer[offset + 1], 0); // G
+            assert_eq!(ppu.frame_buffer[offset + 2], 0); // B
+            assert_eq!(ppu.frame_buffer[offset + 3], 255); // A
+        }
+    }
+
+    #[test]
+    fn test_render_scanline_8000_tile_addressing() {
+        let mut ppu = PPU::new(ModelType::DMG);
+        ppu.lcdc = 0x80 | 0x01 | 0x10; // LCD enabled, BG enabled, 8000 addressing mode
+        ppu.dmg_bgp = 0b11_11_11_11; // All black palette
+        ppu.ly = 0;
+        ppu.scx = 0;
+        ppu.scy = 0;
+
+        // In 8000 mode, tile index is unsigned: address = index * 16
+        ppu.vram[0x1800] = 0x00; // Tile index 0
+
+        // Set tile data at address 0 * 16 = 0
+        ppu.vram[0] = 0xFF; // Low byte all 1s
+        ppu.vram[1] = 0xFF; // High byte all 1s
+
+        ppu.render_scanline();
+
+        // All pixels should be black (color index 3 -> black with our palette)
+        for x in 0..8 { // Check first 8 pixels of the tile
+            let offset = x * 4;
+            assert_eq!(ppu.frame_buffer[offset], 0); // R
+            assert_eq!(ppu.frame_buffer[offset + 1], 0); // G
+            assert_eq!(ppu.frame_buffer[offset + 2], 0); // B
+            assert_eq!(ppu.frame_buffer[offset + 3], 255); // A
+        }
+    }
+
+    #[test]
+    fn test_render_scanline_alternate_tilemap() {
+        let mut ppu = PPU::new(ModelType::DMG);
+        ppu.lcdc = 0x80 | 0x01 | 0x08 | 0x10; // LCD enabled, BG enabled, alternate tilemap (0x1C00), 8000 addressing
+        ppu.dmg_bgp = 0b11_11_11_11; // All black palette
+        ppu.ly = 0;
+        ppu.scx = 0;
+        ppu.scy = 0;
+
+        // Use alternate tilemap at 0x1C00
+        ppu.vram[0x1C00] = 0x00; // Tile index 0
+
+        // Set tile data at address 0 * 16 = 0 (8000 mode)
+        ppu.vram[0] = 0xFF; // Low byte all 1s
+        ppu.vram[1] = 0xFF; // High byte all 1s
+
+        ppu.render_scanline();
+
+        // All pixels should be black
+        for x in 0..8 {
+            let offset = x * 4;
+            assert_eq!(ppu.frame_buffer[offset], 0);
+            assert_eq!(ppu.frame_buffer[offset + 1], 0);
+            assert_eq!(ppu.frame_buffer[offset + 2], 0);
+            assert_eq!(ppu.frame_buffer[offset + 3], 255);
+        }
+    }
+
+    #[test]
+    fn test_render_scanline_bg_disabled() {
+        let mut ppu = PPU::new(ModelType::DMG);
+        ppu.lcdc = 0x80; // LCD enabled, BG disabled
+        ppu.ly = 0;
+
+        ppu.render_scanline();
+
+        // All pixels should be white (255, 255, 255, 255)
+        for x in 0..160 {
+            let offset = x * 4;
+            assert_eq!(ppu.frame_buffer[offset], 255);
+            assert_eq!(ppu.frame_buffer[offset + 1], 255);
+            assert_eq!(ppu.frame_buffer[offset + 2], 255);
+            assert_eq!(ppu.frame_buffer[offset + 3], 255);
+        }
+    }
+
+    #[test]
+    fn test_window_line_increment() {
+        let mut ppu = PPU::new(ModelType::DMG);
+        ppu.lcdc = 0x80 | 0x01 | 0x20; // LCD enabled, BG enabled, window enabled
+        ppu.dmg_bgp = 0x00;
+        ppu.ly = 0;
+        ppu.wy = 0;
+        ppu.wx = 0; // Window visible from pixel 0
+
+        assert_eq!(ppu.window_line, 0);
+        ppu.render_scanline();
+        assert_eq!(ppu.window_line, 1); // Window was drawn, line should increment
+
+        ppu.ly = 1;
+        ppu.render_scanline();
+        assert_eq!(ppu.window_line, 2);
+    }
+
+    #[test]
+    fn test_window_line_no_increment_when_not_drawn() {
+        let mut ppu = PPU::new(ModelType::DMG);
+        ppu.lcdc = 0x80 | 0x01 | 0x20; // LCD enabled, BG enabled, window enabled
+        ppu.dmg_bgp = 0x00;
+        ppu.ly = 0;
+        ppu.wy = 10; // Window not visible on line 0
+        ppu.wx = 0;
+
+        assert_eq!(ppu.window_line, 0);
+        ppu.render_scanline();
+        assert_eq!(ppu.window_line, 0); // Window not drawn, line should not increment
+    }
+
+    #[test]
+    fn test_render_scanline_complex_pattern() {
+        let mut ppu = PPU::new(ModelType::DMG);
+        ppu.lcdc = 0x80 | 0x01 | 0x10; // LCD enabled, BG enabled, 8000 addressing
+        // Palette: 0b11_10_01_00 -> color 0=white, 1=light gray, 2=dark gray, 3=black
+        ppu.dmg_bgp = 0b11100100;
+        ppu.ly = 0;
+        ppu.scx = 0;
+        ppu.scy = 0;
+
+        // Create a checkerboard pattern in tile 0
+        // Row 0: alternating colors 0 and 1
+        ppu.vram[0] = 0b10101010; // Low bits: 1,0,1,0,1,0,1,0
+        ppu.vram[1] = 0b01010101; // High bits: 0,1,0,1,0,1,0,1
+        // This creates: color 2,0,2,0,2,0,2,0 (high=0,low=1 -> 1; high=1,low=0 -> 2)
+
+        ppu.render_scanline();
+
+        // Check the pattern: pixels should alternate between light gray (170) and dark gray (85)
+        let expected_colors = [170, 85, 170, 85, 170, 85, 170, 85]; // light gray, dark gray, ...
+        for x in 0..8 {
+            let offset = x * 4;
+            let expected = expected_colors[x];
+            assert_eq!(ppu.frame_buffer[offset], expected); // R
+            assert_eq!(ppu.frame_buffer[offset + 1], expected); // G
+            assert_eq!(ppu.frame_buffer[offset + 2], expected); // B
+            assert_eq!(ppu.frame_buffer[offset + 3], 255); // A
         }
     }
 }
