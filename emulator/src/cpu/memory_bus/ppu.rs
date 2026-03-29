@@ -196,21 +196,21 @@ impl PPU {
         match self.dots {
             0..=79 => {
                 if self.mode != 1 {
-                  self.mode = 2;
+                    self.mode = 2;
                 }
             }
             80..=251 => {
-              if self.mode != 1 {
-                self.mode = 3;
-                if self.dots == 80 && self.ly < 144 {
-                    self.render_scanline();
+                if self.mode != 1 {
+                    self.mode = 3;
+                    if self.dots == 80 && self.ly < 144 {
+                        self.render_scanline();
+                    }
                 }
-              }
             }
             252..=455 => {
-              if self.mode != 1 {
-                self.mode = 0;
-              }
+                if self.mode != 1 {
+                    self.mode = 0;
+                }
             }
             456 => {
                 self.dots = 0;
@@ -233,54 +233,59 @@ impl PPU {
     }
 
     fn render_scanline(&mut self) {
-      let bg_timemap_base: u16 = if self.lcdc & 0x08 != 0 { 0x1C00 } else { 0x1800 };
-      let tile_row = (self.ly / 8) as u16;
-      let inner_tile_row = (self.ly % 8) as u16;
+        let bg_timemap_base: u16 = if self.lcdc & 0x08 != 0 {
+            0x1C00
+        } else {
+            0x1800
+        };
+        let y = self.ly.wrapping_add(self.scy);
+        let tile_row = (y / 8) as u16;
+        let inner_tile_row = (y % 8) as u16;
 
-      for x in 0..160 {
-        let tile_col = x / 8;
-        let inner_tile_col = x % 8;
+        for i in 0u8..160 {
+            let x = i.wrapping_add(self.scx) as u16;
+            let tile_col = x / 8;
+            let inner_tile_col = x % 8;
 
-        let tilemap_address = bg_timemap_base + tile_row * 32 + tile_col;
-        let tile_index = self.vram[tilemap_address as usize];
-        let tile_data_address =
-          if self.lcdc & 0x10 != 0 {
-            (tile_index as u16) * 16
-          } else {
-            0x1000 + ((tile_index as i8 as i16) * 16) as u16
-          };
-        
-        let inner_row_address = tile_data_address + inner_tile_row * 2;
-        let color_index = self.calculate_pixel_color_index(inner_row_address, inner_tile_col);
-        let (a, r, g, b) = self.calculate_dmg_color(color_index);
-        let frame_buffer_index = (self.ly as usize * 160 + x as usize) * 4;
+            let tilemap_address = bg_timemap_base + tile_row * 32 + tile_col;
+            let tile_index = self.vram[tilemap_address as usize];
+            let tile_data_address = if self.lcdc & 0x10 != 0 {
+                (tile_index as u16) * 16
+            } else {
+                0x1000 + ((tile_index as i8 as i16) * 16) as u16
+            };
 
-        self.frame_buffer[frame_buffer_index] = r;
-        self.frame_buffer[frame_buffer_index + 1] = g;
-        self.frame_buffer[frame_buffer_index + 2] = b;
-        self.frame_buffer[frame_buffer_index + 3] = a;
-      }
+            let inner_row_address = tile_data_address + inner_tile_row * 2;
+            let color_index = self.calculate_pixel_color_index(inner_row_address, inner_tile_col);
+            let (a, r, g, b) = self.calculate_dmg_color(color_index);
+            let frame_buffer_index = (self.ly as usize * 160 + i as usize) * 4;
+
+            self.frame_buffer[frame_buffer_index] = r;
+            self.frame_buffer[frame_buffer_index + 1] = g;
+            self.frame_buffer[frame_buffer_index + 2] = b;
+            self.frame_buffer[frame_buffer_index + 3] = a;
+        }
     }
 
     fn calculate_pixel_color_index(&self, row_address: u16, x: u16) -> u8 {
-      let byte0 = self.vram[row_address as usize];
-      let byte1 = self.vram[row_address as usize + 1];
-      let low_bit = (byte0 >> (7 - x)) & 0x01;
-      let high_bit = (byte1 >> (7 - x)) & 0x01;
-      
-      (high_bit << 1) | low_bit
+        let byte0 = self.vram[row_address as usize];
+        let byte1 = self.vram[row_address as usize + 1];
+        let low_bit = (byte0 >> (7 - x)) & 0x01;
+        let high_bit = (byte1 >> (7 - x)) & 0x01;
+
+        (high_bit << 1) | low_bit
     }
 
     fn calculate_dmg_color(&self, color_index: u8) -> (u8, u8, u8, u8) {
-      let shade = (self.dmg_bgp >> (color_index * 2)) & 0x03;
+        let shade = (self.dmg_bgp >> (color_index * 2)) & 0x03;
 
-      match shade {
-          0 => (255, 255, 255, 255),
-          1 => (170, 170, 170, 255),
-          2 => (85, 85, 85, 255),
-          3 => (0, 0, 0, 255),
-          _ => unreachable!()
-      }
+        match shade {
+            0 => (255, 255, 255, 255),
+            1 => (170, 170, 170, 255),
+            2 => (85, 85, 85, 255),
+            3 => (0, 0, 0, 255),
+            _ => unreachable!(),
+        }
     }
 
     fn update_stat_state(&mut self, if_flag: &mut u8) {
@@ -623,5 +628,198 @@ mod tests {
         ppu.tick(&mut if_flag, 201); // ly=10
         assert_eq!(ppu.ly, 10);
         assert_eq!(if_flag, 0); // No interrupt
+    }
+
+    #[test]
+    fn test_calculate_dmg_color_shade_white() {
+        let mut ppu = PPU::new(ModelType::DMG);
+        // Set palette to map color_index 0 to shade 0 (white)
+        ppu.dmg_bgp = 0b00_00_00_00;
+        let (r, g, b, a) = ppu.calculate_dmg_color(0);
+        assert_eq!((r, g, b, a), (255, 255, 255, 255));
+    }
+
+    #[test]
+    fn test_calculate_dmg_color_shade_light_gray() {
+        let mut ppu = PPU::new(ModelType::DMG);
+        // Set palette to map color_index 0 to shade 1 (light gray)
+        ppu.dmg_bgp = 0b00_00_00_01;
+        let (r, g, b, a) = ppu.calculate_dmg_color(0);
+        assert_eq!((r, g, b, a), (170, 170, 170, 255));
+    }
+
+    #[test]
+    fn test_calculate_dmg_color_shade_dark_gray() {
+        let mut ppu = PPU::new(ModelType::DMG);
+        // Set palette to map color_index 0 to shade 2 (dark gray)
+        ppu.dmg_bgp = 0b00_00_00_10;
+        let (r, g, b, a) = ppu.calculate_dmg_color(0);
+        assert_eq!((r, g, b, a), (85, 85, 85, 255));
+    }
+
+    #[test]
+    fn test_calculate_dmg_color_shade_black() {
+        let mut ppu = PPU::new(ModelType::DMG);
+        // Set palette to map color_index 0 to shade 3 (black)
+        ppu.dmg_bgp = 0b00_00_00_11;
+        let (r, g, b, a) = ppu.calculate_dmg_color(0);
+        assert_eq!((r, g, b, a), (0, 0, 0, 255));
+    }
+
+    #[test]
+    fn test_calculate_dmg_color_with_custom_palette() {
+        let mut ppu = PPU::new(ModelType::DMG);
+        // Palette: 0b11_10_01_00
+        // color_index 0 -> bits [1:0] = 00 -> shade 0 (white)
+        // color_index 1 -> bits [3:2] = 01 -> shade 1 (light gray)
+        // color_index 2 -> bits [5:4] = 10 -> shade 2 (dark gray)
+        // color_index 3 -> bits [7:6] = 11 -> shade 3 (black)
+        ppu.dmg_bgp = 0b11_10_01_00;
+
+        let (r, g, b, a) = ppu.calculate_dmg_color(0);
+        assert_eq!((r, g, b, a), (255, 255, 255, 255)); // shade 0 -> white
+
+        let (r, g, b, a) = ppu.calculate_dmg_color(1);
+        assert_eq!((r, g, b, a), (170, 170, 170, 255)); // shade 1 -> light gray
+
+        let (r, g, b, a) = ppu.calculate_dmg_color(2);
+        assert_eq!((r, g, b, a), (85, 85, 85, 255)); // shade 2 -> dark gray
+
+        let (r, g, b, a) = ppu.calculate_dmg_color(3);
+        assert_eq!((r, g, b, a), (0, 0, 0, 255)); // shade 3 -> black
+    }
+
+    #[test]
+    fn test_calculate_pixel_color_index_single_bit() {
+        let mut ppu = PPU::new(ModelType::DMG);
+        // Set tile data at VRAM address 0
+        // Byte 0 (low bits): 0b10101010
+        // Byte 1 (high bits): 0b01010101
+        ppu.vram[0] = 0b10101010;
+        ppu.vram[1] = 0b01010101;
+
+        // At x=0: low=1, high=0 -> color_index=1
+        let color_index = ppu.calculate_pixel_color_index(0, 0);
+        assert_eq!(color_index, 1);
+
+        // At x=1: low=0, high=1 -> color_index=2
+        let color_index = ppu.calculate_pixel_color_index(0, 1);
+        assert_eq!(color_index, 2);
+
+        // At x=2: low=1, high=0 -> color_index=1
+        let color_index = ppu.calculate_pixel_color_index(0, 2);
+        assert_eq!(color_index, 1);
+
+        // At x=7: low=0, high=1 -> color_index=2
+        let color_index = ppu.calculate_pixel_color_index(0, 7);
+        assert_eq!(color_index, 2);
+    }
+
+    #[test]
+    fn test_calculate_pixel_color_index_all_zeros() {
+        let ppu = PPU::new(ModelType::DMG);
+        // All bytes are 0
+        for x in 0..8 {
+            let color_index = ppu.calculate_pixel_color_index(0, x as u16);
+            assert_eq!(color_index, 0);
+        }
+    }
+
+    #[test]
+    fn test_calculate_pixel_color_index_all_ones() {
+        let mut ppu = PPU::new(ModelType::DMG);
+        ppu.vram[0] = 0xFF;
+        ppu.vram[1] = 0xFF;
+        // All pixels should be color_index=3 (high=1, low=1)
+        for x in 0..8 {
+            let color_index = ppu.calculate_pixel_color_index(0, x as u16);
+            assert_eq!(color_index, 3);
+        }
+    }
+
+    #[test]
+    fn test_render_scanline_basic() {
+        let mut ppu = PPU::new(ModelType::DMG);
+        ppu.lcdc = 0x80 | 0x01; // LCD enabled, BG enabled
+        ppu.dmg_bgp = 0x00; // All pixels white
+        ppu.ly = 0;
+        ppu.scx = 0;
+        ppu.scy = 0;
+
+        // Initialize with some pattern - tile 0 for entire first row
+        ppu.render_scanline();
+
+        // Verify that all 160 pixels of scanline 0 were rendered
+        // Each pixel should be white (255, 255, 255, 255) with palette 0x00
+        for x in 0..160 {
+            let offset = x * 4;
+            let r = ppu.frame_buffer[offset];
+            let g = ppu.frame_buffer[offset + 1];
+            let b = ppu.frame_buffer[offset + 2];
+            let a = ppu.frame_buffer[offset + 3];
+            // With default palette (0x00), all colors map to shade 0 (white)
+            assert!(
+                r == 255 && g == 255 && b == 255 && a == 255,
+                "Pixel {} should be white, got ({}, {}, {}, {})",
+                x,
+                r,
+                g,
+                b,
+                a
+            );
+        }
+    }
+
+    #[test]
+    fn test_render_scanline_fills_frame_buffer() {
+        let mut ppu = PPU::new(ModelType::DMG);
+        ppu.lcdc = 0x80 | 0x01; // LCD enabled, BG enabled
+        ppu.dmg_bgp = 0x00; // All pixels map to color 0 (white)
+        ppu.ly = 0;
+        ppu.scx = 0;
+        ppu.scy = 0;
+
+        ppu.render_scanline();
+
+        // Verify that 160 pixels were written (160 pixels * 4 bytes = 640 bytes)
+        // All should be white (255, 255, 255, 255)
+        for x in 0..160 {
+            let index = x * 4;
+            assert_eq!(ppu.frame_buffer[index], 255); // R
+            assert_eq!(ppu.frame_buffer[index + 1], 255); // G
+            assert_eq!(ppu.frame_buffer[index + 2], 255); // B
+            assert_eq!(ppu.frame_buffer[index + 3], 255); // A
+        }
+    }
+
+    #[test]
+    fn test_frame_buffer_size() {
+        let ppu = PPU::new(ModelType::DMG);
+        // Frame buffer should be 160*144*4 = 92160 bytes
+        let expected_size = 160 * 144 * 4;
+        assert_eq!(ppu.frame_buffer.len(), expected_size);
+    }
+
+    #[test]
+    fn test_render_scanline_different_ly() {
+        let mut ppu = PPU::new(ModelType::DMG);
+        ppu.lcdc = 0x80 | 0x01;
+        ppu.dmg_bgp = 0x00;
+        ppu.ly = 50; // Different scanline
+        ppu.scx = 0;
+        ppu.scy = 0;
+
+        ppu.render_scanline();
+
+        // Check that pixels are written to correct scanline offset
+        // For ly=50, the offset should be 50*160*4
+        let scanline_offset = 50 * 160 * 4;
+        for x in 0..160 {
+            let index = scanline_offset + x * 4;
+            assert_eq!(ppu.frame_buffer[index], 255); // R
+            assert_eq!(ppu.frame_buffer[index + 1], 255); // G
+            assert_eq!(ppu.frame_buffer[index + 2], 255); // B
+            assert_eq!(ppu.frame_buffer[index + 3], 255); // A
+        }
     }
 }
