@@ -8,6 +8,13 @@ const BG_OBJ_PALETTES_SIZE: usize = 0xFF6B - 0xFF68 + 1;
 const FRAME_BUFFER_ROWS: usize = 160;
 const FRAME_BUFFER_COLS: usize = 144;
 
+struct Sprite {
+    x: u8,
+    y: u8,
+    tile_index: u8,
+    attributes: u8,
+}
+
 pub struct PPU {
     vram: [u8; VRAM_SIZE * VRAM_TOTAL_BANKS],
     vram_bank: u8,
@@ -31,7 +38,9 @@ pub struct PPU {
     dots: u16,
     window_line: u8,
     mode: u8,
+    sprites: Vec<Sprite>,
     frame_buffer: [u8; FRAME_BUFFER_ROWS * FRAME_BUFFER_COLS * 4],
+    frame_buffer_color_indices: [u8; FRAME_BUFFER_ROWS * FRAME_BUFFER_COLS]
 }
 
 impl PPU {
@@ -59,7 +68,9 @@ impl PPU {
             dots: 0,
             window_line: 0,
             mode: 2,
+            sprites: Vec::new(),
             frame_buffer: [0; FRAME_BUFFER_ROWS * FRAME_BUFFER_COLS * 4],
+            frame_buffer_color_indices: [0; FRAME_BUFFER_ROWS * FRAME_BUFFER_COLS],
         }
     }
 
@@ -193,6 +204,10 @@ impl PPU {
             return;
         }
 
+        if self.dots == 0 && self.mode != 1 {
+            self.oam_scan();
+        }
+
         self.dots += 1;
 
         match self.dots {
@@ -252,11 +267,12 @@ impl PPU {
                 self.frame_buffer[frame_buffer_index + 1] = 255;
                 self.frame_buffer[frame_buffer_index + 2] = 255;
                 self.frame_buffer[frame_buffer_index + 3] = 255;
+                self.frame_buffer_color_indices[self.ly as usize * 160 + i as usize] = 0;
                 continue;
             }
 
             let timemap_base_bit = if use_window { 0x40 } else { 0x08 };
-            let bg_timemap_base: u16 = if self.lcdc & timemap_base_bit != 0 {
+            let timemap_base: u16 = if self.lcdc & timemap_base_bit != 0 {
                 0x1C00
             } else {
                 0x1800
@@ -277,28 +293,114 @@ impl PPU {
             let tile_col = x / 8;
             let inner_tile_col = x % 8;
 
-            let tilemap_address = bg_timemap_base + tile_row * 32 + tile_col;
+            let tilemap_address = timemap_base + tile_row * 32 + tile_col;
             let tile_index = self.vram[tilemap_address as usize];
             let tile_data_address = if self.lcdc & 0x10 != 0 {
                 (tile_index as u16) * 16
             } else {
-                0x1000u16.wrapping_add(((tile_index as i8 as i16) * 16) as u16)
+                (0x1000 + (tile_index as i8 as i16) * 16) as u16
             };
 
             let inner_row_address = tile_data_address + inner_tile_row * 2;
             let color_index = self.calculate_pixel_color_index(inner_row_address, inner_tile_col);
-            let (r, g, b, a) = self.calculate_dmg_color(color_index);
+            let (r, g, b, a) = self.calculate_dmg_color(self.dmg_bgp, color_index);
             let frame_buffer_index = (self.ly as usize * 160 + i as usize) * 4;
 
             self.frame_buffer[frame_buffer_index] = r;
             self.frame_buffer[frame_buffer_index + 1] = g;
             self.frame_buffer[frame_buffer_index + 2] = b;
             self.frame_buffer[frame_buffer_index + 3] = a;
+            self.frame_buffer_color_indices[self.ly as usize * 160 + i as usize] = color_index;
         }
 
         if window_drawn {
             self.window_line += 1;
         }
+
+        self.render_sprites();
+    }
+
+    fn render_sprites(&mut self) {
+        let sprite_height = if self.lcdc & 0x04 != 0 { 16 } else { 8 };
+        
+        for sprite in &self.sprites {
+            let mut tile_row = (self.ly as i16 - sprite.y as i16) as u16;
+
+            if sprite.attributes & 0x40 != 0 {
+                tile_row = sprite_height - 1 - tile_row;
+            }
+
+            let tile_index = if sprite_height == 16 {
+                if tile_row < 8 {
+                    sprite.tile_index & !0x01
+                } else {
+                    tile_row -= 8;
+                    sprite.tile_index | 0x01
+                }
+            } else {
+                sprite.tile_index
+            } as u16;
+
+            let tile_address = tile_index * 16 + tile_row * 2;
+            let byte0 = self.vram[tile_address as usize];
+            let byte1 = self.vram[tile_address as usize + 1];
+
+            for bit in 0..8u8 {
+                let screen_x = sprite.x as i16 + bit as i16;
+                
+                if screen_x < 0 || screen_x >= 160 {
+                    continue;
+                }
+
+                let flipped_bit = if sprite.attributes & 0x20 != 0 { bit } else { 7 - bit };
+                
+                let low  = (byte0 >> flipped_bit) & 0x01;
+                let high = (byte1 >> flipped_bit) & 0x01;
+                let color_index = (high << 1) | low;
+
+                if color_index == 0 {
+                    continue;
+                }
+
+                if sprite.attributes & 0x80 != 0 && self.frame_buffer_color_indices[self.ly as usize * 160 + screen_x as usize] != 0 {
+                    continue;
+                }
+
+                let palette = if sprite.attributes & 0x10 != 0 { self.obp1 } else { self.obp0 };
+                let (r, g, b, a) = self.calculate_dmg_color(palette, color_index);
+
+                let i = (self.ly as usize * 160 + screen_x as usize) * 4;
+                self.frame_buffer[i] = r;
+                self.frame_buffer[i + 1] = g;
+                self.frame_buffer[i + 2] = b;
+                self.frame_buffer[i + 3] = a;
+            }
+        }
+    }
+
+    fn oam_scan(&mut self) {
+        self.sprites.clear();
+        let sprite_height = if self.lcdc & 0x04 != 0 { 16 } else { 8 };
+
+        for i in 0..40 {
+            if self.sprites.len() == 10 {
+                break;
+            }
+
+            let base = i * 4;
+            let sprite_y = self.oam[base].wrapping_sub(16);
+            let sprite_x = self.oam[base + 1].wrapping_sub(8);
+            let tile_index = self.oam[base + 2];
+            let attributes = self.oam[base + 3];
+
+            let y = self.oam[base] as i16 - 16;
+            let ly = self.ly as i16;
+            if ly >= y && ly < y + sprite_height as i16 {
+                self.sprites.push(Sprite { y: sprite_y, x: sprite_x, tile_index, attributes });
+            }
+        }
+
+        self.sprites.sort_by_key(|s| s.x);
     }
 
     fn calculate_pixel_color_index(&self, row_address: u16, x: u16) -> u8 {
@@ -310,8 +412,8 @@ impl PPU {
         (high_bit << 1) | low_bit
     }
 
-    fn calculate_dmg_color(&self, color_index: u8) -> (u8, u8, u8, u8) {
-        let shade = (self.dmg_bgp >> (color_index * 2)) & 0x03;
+    fn calculate_dmg_color(&self, palette: u8, color_index: u8) -> (u8, u8, u8, u8) {
+        let shade = (palette >> (color_index * 2)) & 0x03;
 
         match shade {
             0 => (255, 255, 255, 255),
@@ -669,7 +771,7 @@ mod tests {
         let mut ppu = PPU::new(ModelType::DMG);
         // Set palette to map color_index 0 to shade 0 (white)
         ppu.dmg_bgp = 0b00_00_00_00;
-        let (r, g, b, a) = ppu.calculate_dmg_color(0);
+        let (r, g, b, a) = ppu.calculate_dmg_color(ppu.dmg_bgp, 0);
         assert_eq!((r, g, b, a), (255, 255, 255, 255));
     }
 
@@ -678,7 +780,7 @@ mod tests {
         let mut ppu = PPU::new(ModelType::DMG);
         // Set palette to map color_index 0 to shade 1 (light gray)
         ppu.dmg_bgp = 0b00_00_00_01;
-        let (r, g, b, a) = ppu.calculate_dmg_color(0);
+        let (r, g, b, a) = ppu.calculate_dmg_color(ppu.dmg_bgp, 0);
         assert_eq!((r, g, b, a), (170, 170, 170, 255));
     }
 
@@ -687,7 +789,7 @@ mod tests {
         let mut ppu = PPU::new(ModelType::DMG);
         // Set palette to map color_index 0 to shade 2 (dark gray)
         ppu.dmg_bgp = 0b00_00_00_10;
-        let (r, g, b, a) = ppu.calculate_dmg_color(0);
+        let (r, g, b, a) = ppu.calculate_dmg_color(ppu.dmg_bgp, 0);
         assert_eq!((r, g, b, a), (85, 85, 85, 255));
     }
 
@@ -696,7 +798,7 @@ mod tests {
         let mut ppu = PPU::new(ModelType::DMG);
         // Set palette to map color_index 0 to shade 3 (black)
         ppu.dmg_bgp = 0b00_00_00_11;
-        let (r, g, b, a) = ppu.calculate_dmg_color(0);
+        let (r, g, b, a) = ppu.calculate_dmg_color(ppu.dmg_bgp, 0);
         assert_eq!((r, g, b, a), (0, 0, 0, 255));
     }
 
@@ -710,16 +812,16 @@ mod tests {
         // color_index 3 -> bits [7:6] = 11 -> shade 3 (black)
         ppu.dmg_bgp = 0b11_10_01_00;
 
-        let (r, g, b, a) = ppu.calculate_dmg_color(0);
+        let (r, g, b, a) = ppu.calculate_dmg_color(ppu.dmg_bgp, 0);
         assert_eq!((r, g, b, a), (255, 255, 255, 255)); // shade 0 -> white
 
-        let (r, g, b, a) = ppu.calculate_dmg_color(1);
+        let (r, g, b, a) = ppu.calculate_dmg_color(ppu.dmg_bgp, 1);
         assert_eq!((r, g, b, a), (170, 170, 170, 255)); // shade 1 -> light gray
 
-        let (r, g, b, a) = ppu.calculate_dmg_color(2);
+        let (r, g, b, a) = ppu.calculate_dmg_color(ppu.dmg_bgp, 2);
         assert_eq!((r, g, b, a), (85, 85, 85, 255)); // shade 2 -> dark gray
 
-        let (r, g, b, a) = ppu.calculate_dmg_color(3);
+        let (r, g, b, a) = ppu.calculate_dmg_color(ppu.dmg_bgp, 3);
         assert_eq!((r, g, b, a), (0, 0, 0, 255)); // shade 3 -> black
     }
 
