@@ -36,7 +36,7 @@ export const initGameEngine = () => {
     debugConsole.innerHTML = consoleMessage;
   };
 
-  window.render_frame_buffer = (frame_buffer_ptr, length) => {};
+  window.render_frame_buffer = () => {};
 
   document.getElementById('rom-file').addEventListener('change', (e) => {
     const file = e.target.files[0];

@@ -9,253 +9,284 @@ const FRAME_BUFFER_ROWS: usize = 160;
 const FRAME_BUFFER_COLS: usize = 144;
 
 pub struct PPU {
-  vram: [u8; VRAM_SIZE * VRAM_TOTAL_BANKS],
-  vram_bank: u8,
-  oam: [u8; OAM_SIZE],
-  lcdc: u8,
-  stat: u8,
-  scy: u8,
-  scx: u8,
-  ly: u8,
-  lyc: u8,
-  oam_dma_transfer: u8,
-  dmg_bgp: u8,
-  obp0: u8,
-  obp1: u8,
-  wy: u8,
-  wx: u8,
-  vram_dma: [u8; VRAM_DMA_SIZE],
-  bg_obj_palettes: [u8; BG_OBJ_PALETTES_SIZE],
-  object_priority_mode: u8,
-  model_type: ModelType,
-  dots: u16,
-  mode: u8,
-  frame_buffer: [u8; FRAME_BUFFER_ROWS * FRAME_BUFFER_COLS]
+    vram: [u8; VRAM_SIZE * VRAM_TOTAL_BANKS],
+    vram_bank: u8,
+    oam: [u8; OAM_SIZE],
+    lcdc: u8,
+    stat: u8,
+    scy: u8,
+    scx: u8,
+    ly: u8,
+    lyc: u8,
+    oam_dma_transfer: u8,
+    dmg_bgp: u8,
+    obp0: u8,
+    obp1: u8,
+    wy: u8,
+    wx: u8,
+    vram_dma: [u8; VRAM_DMA_SIZE],
+    bg_obj_palettes: [u8; BG_OBJ_PALETTES_SIZE],
+    object_priority_mode: u8,
+    model_type: ModelType,
+    dots: u16,
+    mode: u8,
+    frame_buffer: [u8; FRAME_BUFFER_ROWS * FRAME_BUFFER_COLS],
 }
 
 impl PPU {
-  pub fn new(model_type: ModelType) -> Self {
-    Self {
-      vram: [0; VRAM_SIZE * VRAM_TOTAL_BANKS],
-      vram_bank: 0,
-      oam: [0; OAM_SIZE],
-      lcdc: 0,
-      stat: 0,
-      scy: 0,
-      scx: 0,
-      ly: 0,
-      lyc: 0,
-      oam_dma_transfer: 0,
-      dmg_bgp: 0,
-      obp0: 0,
-      obp1: 0,
-      wy: 0,
-      wx: 0,
-      vram_dma: [0; VRAM_DMA_SIZE],
-      bg_obj_palettes: [0; BG_OBJ_PALETTES_SIZE],
-      object_priority_mode: 0,
-      model_type,
-      dots: 0,
-      mode: 2,
-      frame_buffer: [0; FRAME_BUFFER_ROWS * FRAME_BUFFER_COLS]
+    pub fn new(model_type: ModelType) -> Self {
+        Self {
+            vram: [0; VRAM_SIZE * VRAM_TOTAL_BANKS],
+            vram_bank: 0,
+            oam: [0; OAM_SIZE],
+            lcdc: 0,
+            stat: 0,
+            scy: 0,
+            scx: 0,
+            ly: 0,
+            lyc: 0,
+            oam_dma_transfer: 0,
+            dmg_bgp: 0,
+            obp0: 0,
+            obp1: 0,
+            wy: 0,
+            wx: 0,
+            vram_dma: [0; VRAM_DMA_SIZE],
+            bg_obj_palettes: [0; BG_OBJ_PALETTES_SIZE],
+            object_priority_mode: 0,
+            model_type,
+            dots: 0,
+            mode: 2,
+            frame_buffer: [0; FRAME_BUFFER_ROWS * FRAME_BUFFER_COLS],
+        }
     }
-  }
 
-  pub fn read(&self, address: u16) -> Option<u8> {
-    match address {
-      0x8000..=0x9FFF => {
-        let bank: usize = if matches!(self.model_type, ModelType::Color) { self.vram_bank as usize } else { 0 };
-        Some(self.vram[bank * VRAM_SIZE + address as usize - 0x8000])
-      },
-      0xFE00..=0xFE9F => Some(self.oam[(address - 0xFE00) as usize]),
-      0xFF40 => Some(self.lcdc),
-      0xFF41 => Some(self.lcdc),
-      0xFF42 => Some(self.scy),
-      0xFF43 => Some(self.scx),
-      0xFF44 => Some(self.ly),
-      0xFF45 => Some(self.lyc),
-      0xFF46 => Some(self.oam_dma_transfer),
-      0xFF47 => Some(self.dmg_bgp),
-      0xFF48 => Some(self.obp0),
-      0xFF49 => Some(self.obp1),
-      0xFF4A => Some(self.wy),
-      0xFF4B => Some(self.wx),
-      0xFF4F =>  {
-        if matches!(self.model_type, ModelType::Color) {
-          return Some(0xFE | self.vram_bank);
+    pub fn read(&self, address: u16) -> Option<u8> {
+        match address {
+            0x8000..=0x9FFF => {
+                let bank: usize = if matches!(self.model_type, ModelType::Color) {
+                    self.vram_bank as usize
+                } else {
+                    0
+                };
+                Some(self.vram[bank * VRAM_SIZE + address as usize - 0x8000])
+            }
+            0xFE00..=0xFE9F => Some(self.oam[(address - 0xFE00) as usize]),
+            0xFF40 => Some(self.lcdc),
+            0xFF41 => Some(self.lcdc),
+            0xFF42 => Some(self.scy),
+            0xFF43 => Some(self.scx),
+            0xFF44 => Some(self.ly),
+            0xFF45 => Some(self.lyc),
+            0xFF46 => Some(self.oam_dma_transfer),
+            0xFF47 => Some(self.dmg_bgp),
+            0xFF48 => Some(self.obp0),
+            0xFF49 => Some(self.obp1),
+            0xFF4A => Some(self.wy),
+            0xFF4B => Some(self.wx),
+            0xFF4F => {
+                if matches!(self.model_type, ModelType::Color) {
+                    return Some(0xFE | self.vram_bank);
+                }
+
+                return Some(0xFF);
+            }
+            0xFF51..=0xFF55 => Some(self.vram_dma[(address - 0xFF51) as usize]),
+            0xFF68..=0xFF6B => Some(self.bg_obj_palettes[(address - 0xFF68) as usize]),
+            0xFF6C => Some(self.object_priority_mode),
+            _ => None,
+        }
+    }
+
+    pub fn write(&mut self, address: u16, value: u8, if_flag: &mut u8) -> bool {
+        match address {
+            0x8000..=0x9FFF => {
+                let bank: usize = if matches!(self.model_type, ModelType::Color) {
+                    self.vram_bank as usize
+                } else {
+                    0
+                };
+                self.vram[bank * VRAM_SIZE + address as usize - 0x8000] = value;
+            }
+            0xFE00..=0xFE9F => {
+                self.oam[(address - 0xFE00) as usize] = value;
+            }
+            0xFF40 => {
+                self.lcdc = value;
+            }
+            0xFF41 => {
+                self.update_stat_triggers(
+                    if_flag,
+                    self.stat & 0x40 != 0,
+                    self.stat & 0x20 != 0,
+                    self.stat & 0x10 != 0,
+                    self.stat & 0x08 != 0,
+                );
+            }
+            0xFF42 => {
+                self.scy = value;
+            }
+            0xFF43 => {
+                self.scx = value;
+            }
+            0xFF44 => {
+                self.ly = value;
+                self.update_stat_state(if_flag);
+            }
+            0xFF45 => {
+                self.lyc = value;
+                self.update_stat_state(if_flag);
+            }
+            0xFF46 => {
+                self.oam_dma_transfer = value;
+            }
+            0xFF47 => {
+                self.dmg_bgp = value;
+            }
+            0xFF48 => {
+                self.obp0 = value;
+            }
+            0xFF49 => {
+                self.obp1 = value;
+            }
+            0xFF4A => {
+                self.wy = value;
+            }
+            0xFF4B => {
+                self.wx = value;
+            }
+            0xFF4F => {
+                if matches!(self.model_type, ModelType::Color) {
+                    self.vram_bank = value & 0x01;
+                }
+            }
+            0xFF51..=0xFF55 => {
+                self.vram_dma[(address - 0xFF51) as usize] = value;
+            }
+            0xFF68..=0xFF6B => {
+                self.bg_obj_palettes[(address - 0xFF68) as usize] = value;
+            }
+            0xFF6C => {
+                self.object_priority_mode = value;
+            }
+            _ => {
+                return false;
+            }
         }
 
-        return Some(0xFF);
-      },
-      0xFF51..=0xFF55 => Some(self.vram_dma[(address - 0xFF51) as usize]),
-      0xFF68..=0xFF6B => Some(self.bg_obj_palettes[(address - 0xFF68) as usize]),
-      0xFF6C => Some(self.object_priority_mode),
-      _ => None
+        true
     }
-  }
 
-  pub fn write(&mut self, address: u16, value: u8, if_flag: &mut u8) -> bool {
-    match address {
-      0x8000..=0x9FFF => {
-        let bank: usize = if matches!(self.model_type, ModelType::Color) { self.vram_bank as usize } else { 0 };
-        self.vram[bank * VRAM_SIZE + address as usize - 0x8000] = value;
-      },
-      0xFE00..=0xFE9F => {
-        self.oam[(address - 0xFE00) as usize] = value;
-      },
-      0xFF40 => {
-        self.lcdc = value;
-      },
-      0xFF41 => {
-        self.update_stat_triggers(
-          if_flag,
-          self.stat & 0x40 != 0,
-          self.stat & 0x20 != 0,
-          self.stat & 0x10 != 0,
-          self.stat & 0x08 != 0
-        );
-      },
-      0xFF42 => {
-        self.scy = value;
-      },
-      0xFF43 => {
-        self.scx = value;
-      },
-      0xFF44 => {
-        self.ly = value;
+    pub fn tick(&mut self, if_flag: &mut u8, cycles: u8) {
+        for _ in 0..cycles {
+            self.single_tick(if_flag);
+        }
+    }
+
+    fn single_tick(&mut self, if_flag: &mut u8) {
+        if self.lcdc & 0x80 == 0 {
+            self.ly = 0;
+            self.mode = 2;
+            self.dots = 0;
+            return;
+        }
+
+        self.dots += 1;
+
+        match self.dots {
+            0..=79 => {
+                self.mode = 2;
+            }
+            80..=251 => {
+                self.mode = 3;
+            }
+            252..=455 => {
+                self.mode = 0;
+            }
+            456 => {
+                self.dots = 0;
+                self.ly += 1;
+                if self.ly == 144 {
+                    self.mode = 1;
+                    *if_flag |= 0x01;
+                } else if self.ly == 154 {
+                    self.ly = 0;
+                    self.mode = 0;
+                    render_frame_buffer!(self.frame_buffer.as_ptr(), self.frame_buffer.len());
+                }
+            }
+            _ => {
+                console_error!("Invalid ppu state. Dots: {}", self.dots);
+            }
+        }
+
         self.update_stat_state(if_flag);
-      },
-      0xFF45 => {
-        self.lyc = value;
-        self.update_stat_state(if_flag);
-      },
-      0xFF46 => {
-        self.oam_dma_transfer = value;
-      },
-      0xFF47 => {
-        self.dmg_bgp = value;
-      },
-      0xFF48 => {
-        self.obp0 = value;
-      },
-      0xFF49 => {
-        self.obp1 = value;
-      },
-      0xFF4A => {
-        self.wy = value;
-      },
-      0xFF4B => {
-        self.wx = value;
-      },
-      0xFF4F => {
-        if matches!(self.model_type, ModelType::Color) {
-          self.vram_bank = value & 0x01;
+    }
+
+    fn update_stat_state(&mut self, if_flag: &mut u8) {
+        if self.ly == self.lyc && (self.stat & 0x04) == 0 {
+            self.stat |= 0x04;
+            if self.stat & 0x40 != 0 {
+                *if_flag |= 0x02;
+            }
+        } else {
+            self.stat &= !0x04;
         }
-      },
-      0xFF51..=0xFF55 => {
-        self.vram_dma[(address - 0xFF51) as usize] = value;
-      },
-      0xFF68..=0xFF6B => {
-        self.bg_obj_palettes[(address - 0xFF68) as usize] = value;
-      },
-      0xFF6C => {
-        self.object_priority_mode = value;
-      },
-      _ => {
-        return false;
-      }
-    }
 
-    true
-  }
-
-  pub fn tick(&mut self, if_flag: &mut u8, cycles: u8) {
-    for _ in 0..cycles {
-      self.single_tick(if_flag);
-    }
-  }
-
-  fn single_tick(&mut self, if_flag: &mut u8) {
-    if self.lcdc & 0x80 == 0 {
-      self.ly = 0;
-      self.mode = 2;
-      self.dots = 0;
-      return;
-    }
-
-    self.dots += 1;
-
-    match self.dots {
-      0..=79 => {
-        self.mode = 2;
-      }
-      80..=251 => {
-        self.mode = 3;
-      },
-      252..=455 => {
-        self.mode = 0;
-      },
-      456 => {
-        self.dots = 0;
-        self.ly += 1;
-        if self.ly == 144 {
-          self.mode = 1;
-          *if_flag |= 0x01;
-        } else if self.ly == 154 {
-          self.ly = 0;
-          self.mode = 0;
-          render_frame_buffer!(self.frame_buffer.as_ptr(), self.frame_buffer.len());
+        if self.stat & 0x03 != self.mode {
+            self.stat = (self.stat & !0x03) | self.mode;
+            if self.stat & 0x20 != 0 && self.mode == 2 {
+                *if_flag |= 0x02;
+            } else if self.stat & 0x10 != 0 && self.mode == 1 {
+                *if_flag |= 0x02;
+            } else if self.stat & 0x08 != 0 && self.mode == 0 {
+                *if_flag |= 0x02;
+            }
         }
-      },
-      _ => {
-        console_error!("Invalid ppu state. Dots: {}", self.dots);
-      }
     }
 
-    self.update_stat_state(if_flag);
-  }
+    fn update_stat_triggers(
+        &mut self,
+        if_flag: &mut u8,
+        ly_trigger: bool,
+        mode2_tigger: bool,
+        mode1_trigger: bool,
+        mode0_trigger: bool,
+    ) {
+        if self.stat & 0x40 == 0 && ly_trigger {
+            *if_flag |= 0x02;
+        }
+        if self.stat & 0x20 == 0 && mode2_tigger {
+            *if_flag |= 0x02;
+        }
+        if self.stat & 0x10 == 0 && mode1_trigger {
+            *if_flag |= 0x02;
+        }
+        if self.stat & 0x08 == 0 && mode0_trigger {
+            *if_flag |= 0x02;
+        }
 
-  fn update_stat_state(&mut self, if_flag: &mut u8) {
-    if self.ly == self.lyc && (self.stat & 0x04) == 0 {
-      self.stat |= 0x04;
-      if self.stat & 0x40 != 0 {
-        *if_flag |= 0x02;
-      }
-    } else {
-      self.stat &= !0x04;
+        self.stat = if ly_trigger {
+            self.stat | 0x40
+        } else {
+            self.stat & !0x40
+        };
+        self.stat = if mode2_tigger {
+            self.stat | 0x20
+        } else {
+            self.stat & !0x20
+        };
+        self.stat = if mode1_trigger {
+            self.stat | 0x10
+        } else {
+            self.stat & !0x10
+        };
+        self.stat = if mode0_trigger {
+            self.stat | 0x08
+        } else {
+            self.stat & !0x08
+        };
     }
-
-    if self.stat & 0x03 != self.mode {
-      self.stat = (self.stat & !0x03) | self.mode;
-      if self.stat & 0x20 != 0 && self.mode == 2 {
-        *if_flag |= 0x02;
-      } else if self.stat & 0x10 != 0 && self.mode == 1 {
-        *if_flag |= 0x02;
-      } else if self.stat & 0x08 != 0 && self.mode == 0 {
-        *if_flag |= 0x02;
-      }
-    }
-  }
-
-  fn update_stat_triggers(&mut self, if_flag: &mut u8, ly_trigger: bool, mode2_tigger: bool, mode1_trigger: bool, mode0_trigger: bool) {
-    if self.stat & 0x40 == 0 && ly_trigger {
-      *if_flag |= 0x02;
-    }
-    if self.stat & 0x20 == 0 && mode2_tigger {
-      *if_flag |= 0x02;
-    }
-    if self.stat & 0x10 == 0 && mode1_trigger {
-      *if_flag |= 0x02;
-    }
-    if self.stat & 0x08 == 0 && mode0_trigger {
-      *if_flag |= 0x02;
-    }
-
-    self.stat = if ly_trigger { self.stat | 0x40 } else { self.stat & !0x40 };
-    self.stat = if mode2_tigger { self.stat | 0x20 } else { self.stat & !0x20 };
-    self.stat = if mode1_trigger { self.stat | 0x10 } else { self.stat & !0x10 };
-    self.stat = if mode0_trigger { self.stat | 0x08 } else { self.stat & !0x08 };
-  }
 }
 
 #[cfg(test)]
