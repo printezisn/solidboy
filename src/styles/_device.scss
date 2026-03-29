@@ -38,6 +38,15 @@
         opacity: 0;
       }
     }
+
+    canvas {
+      position: absolute;
+      inset: 0;
+      inline-size: 100%;
+      block-size: 100%;
+      user-select: none;
+      pointer-events: none;
+    }
   }
 
   .controls {

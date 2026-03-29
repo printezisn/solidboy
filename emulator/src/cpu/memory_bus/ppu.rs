@@ -30,7 +30,7 @@ pub struct PPU {
     model_type: ModelType,
     dots: u16,
     mode: u8,
-    frame_buffer: [u8; FRAME_BUFFER_ROWS * FRAME_BUFFER_COLS],
+    frame_buffer: [u8; FRAME_BUFFER_ROWS * FRAME_BUFFER_COLS * 4],
 }
 
 impl PPU {
@@ -57,7 +57,7 @@ impl PPU {
             model_type,
             dots: 0,
             mode: 2,
-            frame_buffer: [0; FRAME_BUFFER_ROWS * FRAME_BUFFER_COLS],
+            frame_buffer: [0; FRAME_BUFFER_ROWS * FRAME_BUFFER_COLS * 4],
         }
     }
 

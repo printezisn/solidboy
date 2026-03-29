@@ -54,3 +54,8 @@ pub fn execute() -> u8 {
         _ => 0,
     })
 }
+
+#[wasm_bindgen]
+pub fn emulator_memory() -> JsValue {
+    wasm_bindgen::memory()
+}
