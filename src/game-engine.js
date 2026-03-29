@@ -25,9 +25,7 @@ const onFrame = () => {
 
   const diff = Math.max(MAX_FRAME_DIFF, now - lastFrameTime);
   let totalCycles = diff * CYCLES_PER_MILLI;
-  while (totalCycles > 0) {
-    totalCycles -= execute();
-  }
+  execute(totalCycles);
 
   lastFrameTime = now;
 

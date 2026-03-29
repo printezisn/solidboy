@@ -9,7 +9,10 @@ impl Emulator {
         Emulator { cpu: CPU::new(rom) }
     }
 
-    pub fn execute(&mut self) -> u8 {
-        self.cpu.execute_instruction().cycles
+    pub fn execute(&mut self, cycles: i32) {
+        let mut remaining_cycles = cycles;
+        while remaining_cycles > 0 {
+            remaining_cycles -= self.cpu.execute_instruction().cycles as i32;
+        }
     }
 }
