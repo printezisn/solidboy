@@ -17,11 +17,20 @@ const HIGH_RAM_SIZE: usize = 0xFFFE - 0xFF80 + 1;
 
 const SERIAL_TRANSFER_SIZE: usize = 0xFF02 - 0xFF01 + 1;
 
+struct DMA {
+    pub active: bool,
+    pub init_delay: u8,
+    pub pause: u8,
+    pub byte: u8,
+    pub source: u16
+}
+
 pub struct MemoryBus {
     mbc: MBC,
     ppu: PPU,
     audio: Audio,
     timer: Timer,
+    dma: DMA,
 
     wram: [u8; WRAM_SIZE * (WRAM_TOTAL_BANKS + 1)],
     wram_bank: u8,
@@ -35,6 +44,7 @@ pub struct MemoryBus {
     key1: u8,
     boot_rom_mapping_control: u8,
     ir_port: u8,
+    oam_dma_transfer: u8,
 
     total_cycles: u8,
     model_type: ModelType,
@@ -52,6 +62,7 @@ impl MemoryBus {
             ppu: PPU::new(model_type.clone()),
             audio: Audio::new(),
             timer: Timer::new(),
+            dma: DMA { active: false, init_delay: 0, pause: 0, byte: 0, source: 0 },
 
             wram: [0; WRAM_SIZE * (WRAM_TOTAL_BANKS + 1)],
             wram_bank: 1,
@@ -65,6 +76,7 @@ impl MemoryBus {
             key1: 0,
             boot_rom_mapping_control: 0,
             ir_port: 0,
+            oam_dma_transfer: 0,
 
             total_cycles: 0,
             model_type,
@@ -76,6 +88,10 @@ impl MemoryBus {
             0xE000..=0xFDFF => address - 0x2000,
             _ => address,
         };
+
+        if self.dma.active && (address < 0xFF80 || address > 0xFFFE) {
+            console_error!("Invalid write during OAM transfer. Address={:04X}, Progress={}%\n", address, self.dma.byte);
+        }
 
         if self.mbc.write(address, value) {
             self.tick(4);
@@ -126,6 +142,16 @@ impl MemoryBus {
             0xFF0F => {
                 self.if_flag = value;
             }
+            0xFF46 => {
+                self.oam_dma_transfer = value;
+                self.dma = DMA {
+                    active: false,
+                    init_delay: 0,
+                    pause: 0,
+                    byte: 0,
+                    source: (self.oam_dma_transfer as u16) << value
+                }
+            }
             0xFF4C => {
                 self.key0 = value;
             }
@@ -158,7 +184,7 @@ impl MemoryBus {
         self.tick(4);
     }
 
-    pub fn read_without_tick(&self, address: u16) -> u8 {
+    fn read_without_tick(&self, address: u16) -> u8 {
         let address = match address {
             0xE000..=0xFDFF => address - 0x2000,
             _ => address,
@@ -203,6 +229,7 @@ impl MemoryBus {
             0xFF06 => self.timer.tma(),
             0xFF07 => self.timer.tac(),
             0xFF0F => self.if_flag,
+            0xFF46 => self.oam_dma_transfer,
             0xFF4C => self.key0,
             0xFF4D => self.key1,
             0xFF50 => self.boot_rom_mapping_control,
@@ -221,6 +248,10 @@ impl MemoryBus {
     }
 
     pub fn read(&mut self, address: u16) -> u8 {
+        if self.dma.active && (address < 0xFF80 || address > 0xFFFE) {
+            console_error!("Invalid read during OAM transfer. Address={:04X}, Progress={}%\n", address, self.dma.byte);
+        }
+
         let result = self.read_without_tick(address);
 
         self.tick(4);
@@ -264,6 +295,39 @@ impl MemoryBus {
         self.total_cycles
     }
 
+    fn tick_dma(&mut self, cycles: u8) {
+        for _ in 0..cycles {
+            if !self.dma.active && self.dma.init_delay == 0 {
+                break;
+            }
+
+            if self.dma.init_delay > 0 {
+                self.dma.init_delay -= 1;
+                if self.dma.init_delay == 0 {
+                    self.dma.active = true;
+                }
+                continue;
+            }
+
+            if self.dma.pause > 0 {
+                self.dma.pause -= 1;
+                continue;
+            }
+
+            let source = self.dma.source + self.dma.byte as u16;
+            let destination = 0xFE00 + self.dma.byte as u16;
+            let value = self.read_without_tick(source);
+            self.ppu.write(destination, value, &mut self.if_flag);
+
+            self.dma.byte += 1;
+            if self.dma.byte == 160 {
+                self.dma.active = false;
+            } else {
+                self.dma.pause = 4;
+            }
+        }
+    }
+
     pub fn tick(&mut self, cycles: u8) {
         self.total_cycles += cycles;
         self.timer.tick(&mut self.if_flag, cycles);
@@ -276,6 +340,7 @@ impl MemoryBus {
             };
 
         self.ppu.tick(&mut self.if_flag, real_speed);
+        self.tick_dma(cycles);
     }
 }
 

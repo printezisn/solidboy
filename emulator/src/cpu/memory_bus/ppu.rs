@@ -26,7 +26,6 @@ pub struct PPU {
     scx: u8,
     ly: u8,
     lyc: u8,
-    oam_dma_transfer: u8,
     dmg_bgp: u8,
     obp0: u8,
     obp1: u8,
@@ -56,7 +55,6 @@ impl PPU {
             scx: 0,
             ly: 0,
             lyc: 0,
-            oam_dma_transfer: 0,
             dmg_bgp: 0,
             obp0: 0,
             obp1: 0,
@@ -71,7 +69,7 @@ impl PPU {
             mode: 2,
             sprites: Vec::new(),
             frame_buffer: [0; FRAME_BUFFER_ROWS * FRAME_BUFFER_COLS * 4],
-            frame_buffer_color_indices: [0; FRAME_BUFFER_ROWS * FRAME_BUFFER_COLS],
+            frame_buffer_color_indices: [0; FRAME_BUFFER_ROWS * FRAME_BUFFER_COLS]
         }
     }
 
@@ -92,7 +90,6 @@ impl PPU {
             0xFF43 => Some(self.scx),
             0xFF44 => Some(self.ly),
             0xFF45 => Some(self.lyc),
-            0xFF46 => Some(self.oam_dma_transfer),
             0xFF47 => Some(self.dmg_bgp),
             0xFF48 => Some(self.obp0),
             0xFF49 => Some(self.obp1),
@@ -150,9 +147,6 @@ impl PPU {
             0xFF45 => {
                 self.lyc = value;
                 self.update_stat_state(if_flag);
-            }
-            0xFF46 => {
-                self.oam_dma_transfer = value;
             }
             0xFF47 => {
                 self.dmg_bgp = value;
