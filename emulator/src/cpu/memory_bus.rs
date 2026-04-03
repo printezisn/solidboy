@@ -22,7 +22,7 @@ struct DMA {
     pub init_delay: u8,
     pub pause: u8,
     pub byte: u8,
-    pub source: u16
+    pub source: u16,
 }
 
 pub struct MemoryBus {
@@ -62,7 +62,13 @@ impl MemoryBus {
             ppu: PPU::new(model_type.clone()),
             audio: Audio::new(),
             timer: Timer::new(),
-            dma: DMA { active: false, init_delay: 0, pause: 0, byte: 0, source: 0 },
+            dma: DMA {
+                active: false,
+                init_delay: 0,
+                pause: 0,
+                byte: 0,
+                source: 0,
+            },
 
             wram: [0; WRAM_SIZE * (WRAM_TOTAL_BANKS + 1)],
             wram_bank: 1,
@@ -90,7 +96,11 @@ impl MemoryBus {
         };
 
         if self.dma.active && (address < 0xFF80 || address > 0xFFFE) {
-            console_error!("Invalid write during OAM transfer. Address={:04X}, Progress={}%\n", address, self.dma.byte);
+            console_error!(
+                "Invalid write during OAM transfer. Address={:04X}, Progress={}%\n",
+                address,
+                self.dma.byte
+            );
         }
 
         if self.mbc.write(address, value) {
@@ -149,7 +159,7 @@ impl MemoryBus {
                     init_delay: 0,
                     pause: 0,
                     byte: 0,
-                    source: (self.oam_dma_transfer as u16) << value
+                    source: (self.oam_dma_transfer as u16) << value,
                 }
             }
             0xFF4C => {
@@ -249,7 +259,11 @@ impl MemoryBus {
 
     pub fn read(&mut self, address: u16) -> u8 {
         if self.dma.active && (address < 0xFF80 || address > 0xFFFE) {
-            console_error!("Invalid read during OAM transfer. Address={:04X}, Progress={}%\n", address, self.dma.byte);
+            console_error!(
+                "Invalid read during OAM transfer. Address={:04X}, Progress={}%\n",
+                address,
+                self.dma.byte
+            );
         }
 
         let result = self.read_without_tick(address);

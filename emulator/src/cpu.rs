@@ -145,8 +145,7 @@ impl CPU {
                 _ => console_error!("Unknown opcode: {:02X} {:?}", opcode, instruction.mnemonic),
             };
 
-            if self.pending_ime_set && !matches!(instruction.mnemonic, Mnemonic::EI)
-            {
+            if self.pending_ime_set && !matches!(instruction.mnemonic, Mnemonic::EI) {
                 self.ime = true;
                 self.pending_ime_set = false;
             }

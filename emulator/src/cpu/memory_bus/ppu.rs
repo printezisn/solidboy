@@ -13,7 +13,7 @@ struct Sprite {
     y: u8,
     tile_index: u8,
     attributes: u8,
-    priority: u8
+    priority: u8,
 }
 
 pub struct PPU {
@@ -40,7 +40,7 @@ pub struct PPU {
     mode: u8,
     sprites: Vec<Sprite>,
     frame_buffer: [u8; FRAME_BUFFER_ROWS * FRAME_BUFFER_COLS * 4],
-    frame_buffer_color_indices: [u8; FRAME_BUFFER_ROWS * FRAME_BUFFER_COLS]
+    frame_buffer_color_indices: [u8; FRAME_BUFFER_ROWS * FRAME_BUFFER_COLS],
 }
 
 impl PPU {
@@ -69,7 +69,7 @@ impl PPU {
             mode: 2,
             sprites: Vec::new(),
             frame_buffer: [0; FRAME_BUFFER_ROWS * FRAME_BUFFER_COLS * 4],
-            frame_buffer_color_indices: [0; FRAME_BUFFER_ROWS * FRAME_BUFFER_COLS]
+            frame_buffer_color_indices: [0; FRAME_BUFFER_ROWS * FRAME_BUFFER_COLS],
         }
     }
 
@@ -321,7 +321,7 @@ impl PPU {
         }
 
         let sprite_height = if self.lcdc & 0x04 != 0 { 16 } else { 8 };
-        
+
         for sprite in &self.sprites {
             let mut tile_row = (self.ly as i16 - sprite.y as i16) as u16;
 
@@ -346,14 +346,18 @@ impl PPU {
 
             for bit in 0..8u8 {
                 let screen_x = sprite.x as i16 + bit as i16;
-                
+
                 if screen_x < 0 || screen_x >= 160 {
                     continue;
                 }
 
-                let flipped_bit = if sprite.attributes & 0x20 != 0 { bit } else { 7 - bit };
-                
-                let low  = (byte0 >> flipped_bit) & 0x01;
+                let flipped_bit = if sprite.attributes & 0x20 != 0 {
+                    bit
+                } else {
+                    7 - bit
+                };
+
+                let low = (byte0 >> flipped_bit) & 0x01;
                 let high = (byte1 >> flipped_bit) & 0x01;
                 let color_index = (high << 1) | low;
 
@@ -361,11 +365,18 @@ impl PPU {
                     continue;
                 }
 
-                if sprite.attributes & 0x80 != 0 && self.frame_buffer_color_indices[self.ly as usize * 160 + screen_x as usize] != 0 {
+                if sprite.attributes & 0x80 != 0
+                    && self.frame_buffer_color_indices[self.ly as usize * 160 + screen_x as usize]
+                        != 0
+                {
                     continue;
                 }
 
-                let palette = if sprite.attributes & 0x10 != 0 { self.obp1 } else { self.obp0 };
+                let palette = if sprite.attributes & 0x10 != 0 {
+                    self.obp1
+                } else {
+                    self.obp0
+                };
                 let (r, g, b, a) = self.calculate_dmg_color(palette, color_index);
 
                 let i = (self.ly as usize * 160 + screen_x as usize) * 4;
@@ -395,7 +406,13 @@ impl PPU {
             let y = self.oam[base] as i16 - 16;
             let ly = self.ly as i16;
             if ly >= y && ly < y + sprite_height as i16 {
-                self.sprites.push(Sprite { y: sprite_y, x: sprite_x, tile_index, attributes, priority: i as u8 });
+                self.sprites.push(Sprite {
+                    y: sprite_y,
+                    x: sprite_x,
+                    tile_index,
+                    attributes,
+                    priority: i as u8,
+                });
             }
         }
 
@@ -1061,7 +1078,8 @@ mod tests {
         ppu.render_scanline();
 
         // All pixels should be black (color index 3 -> black with our palette)
-        for x in 0..8 { // Check first 8 pixels of the tile
+        for x in 0..8 {
+            // Check first 8 pixels of the tile
             let offset = x * 4;
             assert_eq!(ppu.frame_buffer[offset], 0); // R
             assert_eq!(ppu.frame_buffer[offset + 1], 0); // G
@@ -1089,7 +1107,8 @@ mod tests {
         ppu.render_scanline();
 
         // All pixels should be black (color index 3 -> black with our palette)
-        for x in 0..8 { // Check first 8 pixels of the tile
+        for x in 0..8 {
+            // Check first 8 pixels of the tile
             let offset = x * 4;
             assert_eq!(ppu.frame_buffer[offset], 0); // R
             assert_eq!(ppu.frame_buffer[offset + 1], 0); // G
