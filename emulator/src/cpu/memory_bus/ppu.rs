@@ -85,7 +85,7 @@ impl PPU {
             }
             0xFE00..=0xFE9F => Some(self.oam[(address - 0xFE00) as usize]),
             0xFF40 => Some(self.lcdc),
-            0xFF41 => Some(self.lcdc),
+            0xFF41 => Some(self.stat),
             0xFF42 => Some(self.scy),
             0xFF43 => Some(self.scx),
             0xFF44 => Some(self.ly),
