@@ -95,14 +95,6 @@ impl MemoryBus {
             _ => address,
         };
 
-        if self.dma.active && (address < 0xFF80 || address > 0xFFFE) {
-            console_error!(
-                "Invalid write during OAM transfer. Address={:04X}, Progress={}%\n",
-                address,
-                self.dma.byte
-            );
-        }
-
         if self.mbc.write(address, value) {
             self.tick(4);
             return;
@@ -155,7 +147,7 @@ impl MemoryBus {
             0xFF46 => {
                 self.oam_dma_transfer = value;
                 self.dma = DMA {
-                    active: false,
+                    active: true,
                     init_delay: 0,
                     pause: 0,
                     byte: 0,
@@ -258,14 +250,6 @@ impl MemoryBus {
     }
 
     pub fn read(&mut self, address: u16) -> u8 {
-        if self.dma.active && (address < 0xFF80 || address > 0xFFFE) {
-            console_error!(
-                "Invalid read during OAM transfer. Address={:04X}, Progress={}%\n",
-                address,
-                self.dma.byte
-            );
-        }
-
         let result = self.read_without_tick(address);
 
         self.tick(4);
