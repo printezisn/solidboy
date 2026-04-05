@@ -10,10 +10,10 @@ pub struct Timer {
 impl Timer {
     pub fn new() -> Timer {
         Timer {
-            counter: 0,
+            counter: 0xAB,
             tima: 0,
             tma: 0,
-            tac: 0,
+            tac: 0xF8,
             previous_tma: 0,
             reload_delay: 0,
         }
@@ -115,6 +115,8 @@ mod timer {
     #[test]
     fn test_div_increment() {
         let mut timer = create_timer();
+        timer.counter = 0;
+
         let mut if_flag: u8 = 0;
 
         for _ in 0..20 {
@@ -168,6 +170,8 @@ mod timer {
     #[test]
     fn test_tima_increment_frequency_16() {
         let mut timer = create_timer();
+        timer.counter = 0;
+
         let mut if_flag: u8 = 0;
         timer.set_tac(0x04 | 0x01);
         timer.set_tima(0x00);
@@ -185,6 +189,8 @@ mod timer {
     #[test]
     fn test_tima_increment_frequency_64() {
         let mut timer = create_timer();
+        timer.counter = 0;
+
         let mut if_flag: u8 = 0;
         timer.set_tac(0x04 | 0x02);
         timer.set_tima(0x00);
@@ -202,6 +208,8 @@ mod timer {
     #[test]
     fn test_tima_increment_frequency_256() {
         let mut timer = create_timer();
+        timer.counter = 0;
+
         let mut if_flag: u8 = 0;
         timer.set_tac(0x04 | 0x03);
         timer.set_tima(0x00);
@@ -221,6 +229,8 @@ mod timer {
     #[test]
     fn test_tima_overflow_triggers_reload() {
         let mut timer = create_timer();
+        timer.counter = 0;
+
         let mut if_flag: u8 = 0;
         timer.set_tac(0x04 | 0x01);
         timer.set_tima(0xFF);
@@ -240,6 +250,8 @@ mod timer {
     #[test]
     fn test_overflow_interrupt_request() {
         let mut timer = create_timer();
+        timer.counter = 0;
+
         let mut if_flag: u8 = 0;
         timer.set_tac(0x04 | 0x01);
         timer.set_tima(0xFF);
@@ -284,6 +296,8 @@ mod timer {
     #[test]
     fn test_timer_disable_midway() {
         let mut timer = create_timer();
+        timer.counter = 0;
+
         let mut if_flag: u8 = 0;
         timer.set_tac(0x04 | 0x01);
         timer.set_tima(0x00);
@@ -299,6 +313,8 @@ mod timer {
     #[test]
     fn test_reload_delay_exact_timing() {
         let mut timer = create_timer();
+        timer.counter = 0;
+
         let mut if_flag: u8 = 0;
         timer.set_tac(0x04 | 0b01);
         timer.set_tima(0xFF);
@@ -323,6 +339,8 @@ mod timer {
     #[test]
     fn test_tima_rollover_sequence() {
         let mut timer = create_timer();
+        timer.counter = 0;
+
         let mut if_flag: u8 = 0;
         timer.set_tac(0x04 | 0x01);
         timer.set_tima(0xFE);

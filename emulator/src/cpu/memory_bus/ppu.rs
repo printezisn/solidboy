@@ -49,15 +49,15 @@ impl PPU {
             vram: [0; VRAM_SIZE * VRAM_TOTAL_BANKS],
             vram_bank: 0,
             oam: [0; OAM_SIZE],
-            lcdc: 0,
-            stat: 0,
+            lcdc: 0x91,
+            stat: 0x85,
             scy: 0,
             scx: 0,
             ly: 0,
             lyc: 0,
-            dmg_bgp: 0,
-            obp0: 0,
-            obp1: 0,
+            dmg_bgp: 0xFC,
+            obp0: 0xFF,
+            obp1: 0xFF,
             wy: 0,
             wx: 0,
             vram_dma: [0; VRAM_DMA_SIZE],
@@ -540,7 +540,9 @@ mod tests {
 
     #[test]
     fn test_new_dmg() {
-        let ppu = PPU::new(ModelType::DMG);
+        let mut ppu = PPU::new(ModelType::DMG);
+        ppu.lcdc = 0;
+        ppu.stat = 0;
         assert_eq!(ppu.vram_bank, 0);
         assert_eq!(ppu.object_priority_mode, 0);
         assert_eq!(ppu.model_type, ModelType::DMG);

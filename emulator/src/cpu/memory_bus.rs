@@ -82,7 +82,7 @@ impl MemoryBus {
             joypad_pressed_directions: 0x0F,
             joypad_pressed_buttons: 0x0F,
             serial_transfer: [0; SERIAL_TRANSFER_SIZE],
-            if_flag: 0,
+            if_flag: 0xE1,
             ie_flag: 0,
             key0: 0,
             key1: 0,
@@ -476,6 +476,8 @@ mod tests {
     fn oam_dma_transfer_copies_data() {
         let rom = make_rom(0x00, 0x00);
         let mut bus = MemoryBus::new(rom);
+        bus.ppu.write(0xFF40, 0, &mut bus.if_flag);
+
         bus.tick(252);
         bus.reset_total_cycles();
 
@@ -509,6 +511,7 @@ mod tests {
     fn oam_dma_transfer_from_vram() {
         let rom = make_rom(0x00, 0x00);
         let mut bus = MemoryBus::new(rom);
+        bus.ppu.write(0xFF40, 0, &mut bus.if_flag);
 
         // Set up source data in VRAM
         for i in 0..160 {
@@ -537,6 +540,7 @@ mod tests {
     fn oam_dma_transfer_partial_progress() {
         let rom = make_rom(0x00, 0x00);
         let mut bus = MemoryBus::new(rom);
+        bus.ppu.write(0xFF40, 0, &mut bus.if_flag);
 
         // Set up source data
         for i in 0..160 {
