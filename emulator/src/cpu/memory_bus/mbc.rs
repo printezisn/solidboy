@@ -1,10 +1,12 @@
 mod mbc1;
+mod mbc3;
 mod mbc5;
 mod no_rom;
 
 pub enum MBC {
     NoROM(no_rom::NoROM),
     MBC1(mbc1::MBC1),
+    MBC3(mbc3::MBC3),
     MBC5(mbc5::MBC5),
 }
 
@@ -13,6 +15,7 @@ impl MBC {
         match rom[0x0147] {
             0x00 => MBC::NoROM(no_rom::NoROM::new(rom)),
             0x01..=0x03 => MBC::MBC1(mbc1::MBC1::new(rom)),
+            0x0F..=0x13 => MBC::MBC3(mbc3::MBC3::new(rom)),
             0x19..=0x1E => MBC::MBC5(mbc5::MBC5::new(rom)),
             _ => console_error!("Unsupported MBC type {:02X}", rom[0x0147]),
         }
@@ -22,6 +25,7 @@ impl MBC {
         match self {
             MBC::NoROM(mbc) => mbc.read(address),
             MBC::MBC1(mbc) => mbc.read(address),
+            MBC::MBC3(mbc) => mbc.read(address),
             MBC::MBC5(mbc) => mbc.read(address),
         }
     }
@@ -30,6 +34,7 @@ impl MBC {
         match self {
             MBC::NoROM(mbc) => mbc.write(address, value),
             MBC::MBC1(mbc) => mbc.write(address, value),
+            MBC::MBC3(mbc) => mbc.write(address, value),
             MBC::MBC5(mbc) => mbc.write(address, value),
         }
     }
@@ -67,6 +72,17 @@ mod tests {
         match mbc {
             MBC::MBC1(_) => {}
             _ => console_error!("Expected MBC1"),
+        }
+    }
+
+    #[test]
+    fn new_mbc3() {
+        let rom = make_rom_with_type(0x0F, 0x8000);
+        let mbc = MBC::new(rom);
+
+        match mbc {
+            MBC::MBC3(_) => {}
+            _ => console_error!("Expected MBC3"),
         }
     }
 
