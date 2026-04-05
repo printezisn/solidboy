@@ -258,10 +258,10 @@ impl PPU {
             if self.lcdc & 0x01 == 0 {
                 let frame_buffer_index = (self.ly as usize * 160 + i as usize) * 4;
 
-                self.frame_buffer[frame_buffer_index] = 255;
-                self.frame_buffer[frame_buffer_index + 1] = 255;
-                self.frame_buffer[frame_buffer_index + 2] = 255;
-                self.frame_buffer[frame_buffer_index + 3] = 255;
+                self.frame_buffer[frame_buffer_index] = 0x9B;
+                self.frame_buffer[frame_buffer_index + 1] = 0xBC;
+                self.frame_buffer[frame_buffer_index + 2] = 0x0F;
+                self.frame_buffer[frame_buffer_index + 3] = 0xFF;
                 self.frame_buffer_color_indices[self.ly as usize * 160 + i as usize] = 0;
                 continue;
             }
@@ -438,10 +438,10 @@ impl PPU {
         let shade = (palette >> (color_index * 2)) & 0x03;
 
         match shade {
-            0 => (255, 255, 255, 255),
-            1 => (170, 170, 170, 255),
-            2 => (85, 85, 85, 255),
-            3 => (0, 0, 0, 255),
+            0 => (0x9B, 0xBC, 0x0F, 0xFF),
+            1 => (0x8B, 0xAC, 0x0F, 0xFF),
+            2 => (0x30, 0x62, 0x30, 0xFF),
+            3 => (0x0F, 0x38, 0x0F, 0xFF),
             _ => unreachable!(),
         }
     }
@@ -791,60 +791,60 @@ mod tests {
     #[test]
     fn test_calculate_dmg_color_shade_white() {
         let mut ppu = PPU::new(ModelType::DMG);
-        // Set palette to map color_index 0 to shade 0 (white)
+        // Set palette to map color_index 0 to shade 0
         ppu.dmg_bgp = 0b00_00_00_00;
         let (r, g, b, a) = ppu.calculate_dmg_color(ppu.dmg_bgp, 0);
-        assert_eq!((r, g, b, a), (255, 255, 255, 255));
+        assert_eq!((r, g, b, a), (0x9B, 0xBC, 0x0F, 0xFF));
     }
 
     #[test]
     fn test_calculate_dmg_color_shade_light_gray() {
         let mut ppu = PPU::new(ModelType::DMG);
-        // Set palette to map color_index 0 to shade 1 (light gray)
+        // Set palette to map color_index 0 to shade 1
         ppu.dmg_bgp = 0b00_00_00_01;
         let (r, g, b, a) = ppu.calculate_dmg_color(ppu.dmg_bgp, 0);
-        assert_eq!((r, g, b, a), (170, 170, 170, 255));
+        assert_eq!((r, g, b, a), (0x8B, 0xAC, 0x0F, 0xFF));
     }
 
     #[test]
     fn test_calculate_dmg_color_shade_dark_gray() {
         let mut ppu = PPU::new(ModelType::DMG);
-        // Set palette to map color_index 0 to shade 2 (dark gray)
+        // Set palette to map color_index 0 to shade 2
         ppu.dmg_bgp = 0b00_00_00_10;
         let (r, g, b, a) = ppu.calculate_dmg_color(ppu.dmg_bgp, 0);
-        assert_eq!((r, g, b, a), (85, 85, 85, 255));
+        assert_eq!((r, g, b, a), (0x30, 0x62, 0x30, 0xFF));
     }
 
     #[test]
     fn test_calculate_dmg_color_shade_black() {
         let mut ppu = PPU::new(ModelType::DMG);
-        // Set palette to map color_index 0 to shade 3 (black)
+        // Set palette to map color_index 0 to shade 3
         ppu.dmg_bgp = 0b00_00_00_11;
         let (r, g, b, a) = ppu.calculate_dmg_color(ppu.dmg_bgp, 0);
-        assert_eq!((r, g, b, a), (0, 0, 0, 255));
+        assert_eq!((r, g, b, a), (0x0F, 0x38, 0x0F, 0xFF));
     }
 
     #[test]
     fn test_calculate_dmg_color_with_custom_palette() {
         let mut ppu = PPU::new(ModelType::DMG);
         // Palette: 0b11_10_01_00
-        // color_index 0 -> bits [1:0] = 00 -> shade 0 (white)
-        // color_index 1 -> bits [3:2] = 01 -> shade 1 (light gray)
-        // color_index 2 -> bits [5:4] = 10 -> shade 2 (dark gray)
-        // color_index 3 -> bits [7:6] = 11 -> shade 3 (black)
+        // color_index 0 -> bits [1:0] = 00 -> shade 0
+        // color_index 1 -> bits [3:2] = 01 -> shade 1
+        // color_index 2 -> bits [5:4] = 10 -> shade 2
+        // color_index 3 -> bits [7:6] = 11 -> shade 3
         ppu.dmg_bgp = 0b11_10_01_00;
 
         let (r, g, b, a) = ppu.calculate_dmg_color(ppu.dmg_bgp, 0);
-        assert_eq!((r, g, b, a), (255, 255, 255, 255)); // shade 0 -> white
+        assert_eq!((r, g, b, a), (0x9B, 0xBC, 0x0F, 0xFF));
 
         let (r, g, b, a) = ppu.calculate_dmg_color(ppu.dmg_bgp, 1);
-        assert_eq!((r, g, b, a), (170, 170, 170, 255)); // shade 1 -> light gray
+        assert_eq!((r, g, b, a), (0x8B, 0xAC, 0x0F, 0xFF));
 
         let (r, g, b, a) = ppu.calculate_dmg_color(ppu.dmg_bgp, 2);
-        assert_eq!((r, g, b, a), (85, 85, 85, 255)); // shade 2 -> dark gray
+        assert_eq!((r, g, b, a), (0x30, 0x62, 0x30, 0xFF));
 
         let (r, g, b, a) = ppu.calculate_dmg_color(ppu.dmg_bgp, 3);
-        assert_eq!((r, g, b, a), (0, 0, 0, 255)); // shade 3 -> black
+        assert_eq!((r, g, b, a), (0x0F, 0x38, 0x0F, 0xFF));
     }
 
     #[test]
@@ -899,32 +899,20 @@ mod tests {
     fn test_render_scanline_basic() {
         let mut ppu = PPU::new(ModelType::DMG);
         ppu.lcdc = 0x80 | 0x01; // LCD enabled, BG enabled
-        ppu.dmg_bgp = 0x00; // All pixels white
+        ppu.dmg_bgp = 0x00; // All pixels use shade 0
         ppu.ly = 0;
         ppu.scx = 0;
         ppu.scy = 0;
 
-        // Initialize with some pattern - tile 0 for entire first row
         ppu.render_scanline();
 
-        // Verify that all 160 pixels of scanline 0 were rendered
-        // Each pixel should be white (255, 255, 255, 255) with palette 0x00
+        let expected = ppu.calculate_dmg_color(ppu.dmg_bgp, 0);
         for x in 0..160 {
             let offset = x * 4;
-            let r = ppu.frame_buffer[offset];
-            let g = ppu.frame_buffer[offset + 1];
-            let b = ppu.frame_buffer[offset + 2];
-            let a = ppu.frame_buffer[offset + 3];
-            // With default palette (0x00), all colors map to shade 0 (white)
-            assert!(
-                r == 255 && g == 255 && b == 255 && a == 255,
-                "Pixel {} should be white, got ({}, {}, {}, {})",
-                x,
-                r,
-                g,
-                b,
-                a
-            );
+            assert_eq!(ppu.frame_buffer[offset], expected.0);
+            assert_eq!(ppu.frame_buffer[offset + 1], expected.1);
+            assert_eq!(ppu.frame_buffer[offset + 2], expected.2);
+            assert_eq!(ppu.frame_buffer[offset + 3], expected.3);
         }
     }
 
@@ -932,21 +920,20 @@ mod tests {
     fn test_render_scanline_fills_frame_buffer() {
         let mut ppu = PPU::new(ModelType::DMG);
         ppu.lcdc = 0x80 | 0x01; // LCD enabled, BG enabled
-        ppu.dmg_bgp = 0x00; // All pixels map to color 0 (white)
+        ppu.dmg_bgp = 0x00; // All pixels use shade 0
         ppu.ly = 0;
         ppu.scx = 0;
         ppu.scy = 0;
 
         ppu.render_scanline();
 
-        // Verify that 160 pixels were written (160 pixels * 4 bytes = 640 bytes)
-        // All should be white (255, 255, 255, 255)
+        let expected = ppu.calculate_dmg_color(ppu.dmg_bgp, 0);
         for x in 0..160 {
             let index = x * 4;
-            assert_eq!(ppu.frame_buffer[index], 255); // R
-            assert_eq!(ppu.frame_buffer[index + 1], 255); // G
-            assert_eq!(ppu.frame_buffer[index + 2], 255); // B
-            assert_eq!(ppu.frame_buffer[index + 3], 255); // A
+            assert_eq!(ppu.frame_buffer[index], expected.0);
+            assert_eq!(ppu.frame_buffer[index + 1], expected.1);
+            assert_eq!(ppu.frame_buffer[index + 2], expected.2);
+            assert_eq!(ppu.frame_buffer[index + 3], expected.3);
         }
     }
 
@@ -969,15 +956,14 @@ mod tests {
 
         ppu.render_scanline();
 
-        // Check that pixels are written to correct scanline offset
-        // For ly=50, the offset should be 50*160*4
+        let expected = ppu.calculate_dmg_color(ppu.dmg_bgp, 0);
         let scanline_offset = 50 * 160 * 4;
         for x in 0..160 {
             let index = scanline_offset + x * 4;
-            assert_eq!(ppu.frame_buffer[index], 255); // R
-            assert_eq!(ppu.frame_buffer[index + 1], 255); // G
-            assert_eq!(ppu.frame_buffer[index + 2], 255); // B
-            assert_eq!(ppu.frame_buffer[index + 3], 255); // A
+            assert_eq!(ppu.frame_buffer[index], expected.0);
+            assert_eq!(ppu.frame_buffer[index + 1], expected.1);
+            assert_eq!(ppu.frame_buffer[index + 2], expected.2);
+            assert_eq!(ppu.frame_buffer[index + 3], expected.3);
         }
     }
 
@@ -985,28 +971,24 @@ mod tests {
     fn test_render_scanline_with_scrolling() {
         let mut ppu = PPU::new(ModelType::DMG);
         ppu.lcdc = 0x80 | 0x01; // LCD enabled, BG enabled
-        ppu.dmg_bgp = 0x00; // All pixels white
+        ppu.dmg_bgp = 0x00; // All pixels use shade 0 when background is empty
         ppu.ly = 0;
         ppu.scx = 8; // Scroll 8 pixels right
         ppu.scy = 0;
 
         // Create a tile with alternating pattern at tile 0
-        // This will help verify scrolling is working
         ppu.vram[0] = 0b10101010; // Low bits
         ppu.vram[1] = 0b01010101; // High bits
 
         ppu.render_scanline();
 
-        // With scx=8, we should see the tile pattern shifted
-        // The first 8 pixels should come from the next tile (which is empty, so white)
-        // Pixels 8-15 should show the pattern from tile 0
+        let expected_empty = ppu.calculate_dmg_color(ppu.dmg_bgp, 0);
         for x in 0..8 {
             let offset = x * 4;
-            // Should be white (default tile data is 0)
-            assert_eq!(ppu.frame_buffer[offset], 255);
-            assert_eq!(ppu.frame_buffer[offset + 1], 255);
-            assert_eq!(ppu.frame_buffer[offset + 2], 255);
-            assert_eq!(ppu.frame_buffer[offset + 3], 255);
+            assert_eq!(ppu.frame_buffer[offset], expected_empty.0);
+            assert_eq!(ppu.frame_buffer[offset + 1], expected_empty.1);
+            assert_eq!(ppu.frame_buffer[offset + 2], expected_empty.2);
+            assert_eq!(ppu.frame_buffer[offset + 3], expected_empty.3);
         }
     }
 
@@ -1014,26 +996,20 @@ mod tests {
     fn test_render_scanline_with_window() {
         let mut ppu = PPU::new(ModelType::DMG);
         ppu.lcdc = 0x80 | 0x01 | 0x20; // LCD enabled, BG enabled, window enabled
-        ppu.dmg_bgp = 0x00;
+        ppu.dmg_bgp = 0b11_11_11_11; // All palette entries map to shade 3
         ppu.ly = 0;
-        ppu.wy = 0; // Window starts at line 0
-        ppu.wx = 10; // Window starts at pixel 10 (wx - 7 = 3, but window logic uses i + 7 >= wx)
-
-        // Create different patterns for BG and window tiles
-        // BG tile 0: all white
-        // Window tile 0: all black (set palette to make it black)
-        ppu.dmg_bgp = 0b11_11_11_11; // All colors map to black
+        ppu.wy = 0;
+        ppu.wx = 10;
 
         ppu.render_scanline();
 
-        // First 10 pixels should be from BG (black due to palette)
-        // Pixels 10-159 should be from window (also black)
+        let expected_black = ppu.calculate_dmg_color(ppu.dmg_bgp, 3);
         for x in 0..160 {
             let offset = x * 4;
-            assert_eq!(ppu.frame_buffer[offset], 0); // R - black
-            assert_eq!(ppu.frame_buffer[offset + 1], 0); // G
-            assert_eq!(ppu.frame_buffer[offset + 2], 0); // B
-            assert_eq!(ppu.frame_buffer[offset + 3], 255); // A
+            assert_eq!(ppu.frame_buffer[offset], expected_black.0);
+            assert_eq!(ppu.frame_buffer[offset + 1], expected_black.1);
+            assert_eq!(ppu.frame_buffer[offset + 2], expected_black.2);
+            assert_eq!(ppu.frame_buffer[offset + 3], expected_black.3);
         }
     }
 
@@ -1041,20 +1017,20 @@ mod tests {
     fn test_render_scanline_window_not_visible() {
         let mut ppu = PPU::new(ModelType::DMG);
         ppu.lcdc = 0x80 | 0x01 | 0x20; // LCD enabled, BG enabled, window enabled
-        ppu.dmg_bgp = 0x00; // White palette
+        ppu.dmg_bgp = 0x00; // All pixels use shade 0
         ppu.ly = 0;
         ppu.wy = 10; // Window starts at line 10, so not visible on line 0
         ppu.wx = 10;
 
         ppu.render_scanline();
 
-        // All pixels should be white (BG only, no window)
+        let expected = ppu.calculate_dmg_color(ppu.dmg_bgp, 0);
         for x in 0..160 {
             let offset = x * 4;
-            assert_eq!(ppu.frame_buffer[offset], 255); // R
-            assert_eq!(ppu.frame_buffer[offset + 1], 255); // G
-            assert_eq!(ppu.frame_buffer[offset + 2], 255); // B
-            assert_eq!(ppu.frame_buffer[offset + 3], 255); // A
+            assert_eq!(ppu.frame_buffer[offset], expected.0);
+            assert_eq!(ppu.frame_buffer[offset + 1], expected.1);
+            assert_eq!(ppu.frame_buffer[offset + 2], expected.2);
+            assert_eq!(ppu.frame_buffer[offset + 3], expected.3);
         }
     }
 
@@ -1062,29 +1038,24 @@ mod tests {
     fn test_render_scanline_8800_tile_addressing() {
         let mut ppu = PPU::new(ModelType::DMG);
         ppu.lcdc = 0x80 | 0x01; // LCD enabled, BG enabled, 8800 addressing mode
-        ppu.dmg_bgp = 0b11_11_11_11; // All black palette
+        ppu.dmg_bgp = 0b11_11_11_11; // All palette entries map to shade 3
         ppu.ly = 0;
         ppu.scx = 0;
         ppu.scy = 0;
 
-        // In 8800 mode, tile index is signed: 0x80-0xFF = -128 to -1, 0x00-0x7F = 0-127
-        // Use tile index 0 for simplicity (address = 0x1000 + 0 * 16 = 0x1000)
         ppu.vram[0x1800] = 0x00; // Tile index in tilemap
-
-        // Set tile data at address 0x1000
         ppu.vram[0x1000] = 0xFF; // Low byte all 1s
         ppu.vram[0x1001] = 0xFF; // High byte all 1s
 
         ppu.render_scanline();
 
-        // All pixels should be black (color index 3 -> black with our palette)
+        let expected_black = ppu.calculate_dmg_color(ppu.dmg_bgp, 3);
         for x in 0..8 {
-            // Check first 8 pixels of the tile
             let offset = x * 4;
-            assert_eq!(ppu.frame_buffer[offset], 0); // R
-            assert_eq!(ppu.frame_buffer[offset + 1], 0); // G
-            assert_eq!(ppu.frame_buffer[offset + 2], 0); // B
-            assert_eq!(ppu.frame_buffer[offset + 3], 255); // A
+            assert_eq!(ppu.frame_buffer[offset], expected_black.0);
+            assert_eq!(ppu.frame_buffer[offset + 1], expected_black.1);
+            assert_eq!(ppu.frame_buffer[offset + 2], expected_black.2);
+            assert_eq!(ppu.frame_buffer[offset + 3], expected_black.3);
         }
     }
 
@@ -1092,56 +1063,49 @@ mod tests {
     fn test_render_scanline_8000_tile_addressing() {
         let mut ppu = PPU::new(ModelType::DMG);
         ppu.lcdc = 0x80 | 0x01 | 0x10; // LCD enabled, BG enabled, 8000 addressing mode
-        ppu.dmg_bgp = 0b11_11_11_11; // All black palette
+        ppu.dmg_bgp = 0b11_11_11_11; // All palette entries map to shade 3
         ppu.ly = 0;
         ppu.scx = 0;
         ppu.scy = 0;
 
-        // In 8000 mode, tile index is unsigned: address = index * 16
         ppu.vram[0x1800] = 0x00; // Tile index 0
-
-        // Set tile data at address 0 * 16 = 0
         ppu.vram[0] = 0xFF; // Low byte all 1s
         ppu.vram[1] = 0xFF; // High byte all 1s
 
         ppu.render_scanline();
 
-        // All pixels should be black (color index 3 -> black with our palette)
+        let expected_black = ppu.calculate_dmg_color(ppu.dmg_bgp, 3);
         for x in 0..8 {
-            // Check first 8 pixels of the tile
             let offset = x * 4;
-            assert_eq!(ppu.frame_buffer[offset], 0); // R
-            assert_eq!(ppu.frame_buffer[offset + 1], 0); // G
-            assert_eq!(ppu.frame_buffer[offset + 2], 0); // B
-            assert_eq!(ppu.frame_buffer[offset + 3], 255); // A
+            assert_eq!(ppu.frame_buffer[offset], expected_black.0);
+            assert_eq!(ppu.frame_buffer[offset + 1], expected_black.1);
+            assert_eq!(ppu.frame_buffer[offset + 2], expected_black.2);
+            assert_eq!(ppu.frame_buffer[offset + 3], expected_black.3);
         }
     }
 
     #[test]
     fn test_render_scanline_alternate_tilemap() {
         let mut ppu = PPU::new(ModelType::DMG);
-        ppu.lcdc = 0x80 | 0x01 | 0x08 | 0x10; // LCD enabled, BG enabled, alternate tilemap (0x1C00), 8000 addressing
-        ppu.dmg_bgp = 0b11_11_11_11; // All black palette
+        ppu.lcdc = 0x80 | 0x01 | 0x08 | 0x10; // LCD enabled, BG enabled, alternate tilemap, 8000 addressing
+        ppu.dmg_bgp = 0b11_11_11_11; // All palette entries map to shade 3
         ppu.ly = 0;
         ppu.scx = 0;
         ppu.scy = 0;
 
-        // Use alternate tilemap at 0x1C00
         ppu.vram[0x1C00] = 0x00; // Tile index 0
-
-        // Set tile data at address 0 * 16 = 0 (8000 mode)
         ppu.vram[0] = 0xFF; // Low byte all 1s
         ppu.vram[1] = 0xFF; // High byte all 1s
 
         ppu.render_scanline();
 
-        // All pixels should be black
+        let expected_black = ppu.calculate_dmg_color(ppu.dmg_bgp, 3);
         for x in 0..8 {
             let offset = x * 4;
-            assert_eq!(ppu.frame_buffer[offset], 0);
-            assert_eq!(ppu.frame_buffer[offset + 1], 0);
-            assert_eq!(ppu.frame_buffer[offset + 2], 0);
-            assert_eq!(ppu.frame_buffer[offset + 3], 255);
+            assert_eq!(ppu.frame_buffer[offset], expected_black.0);
+            assert_eq!(ppu.frame_buffer[offset + 1], expected_black.1);
+            assert_eq!(ppu.frame_buffer[offset + 2], expected_black.2);
+            assert_eq!(ppu.frame_buffer[offset + 3], expected_black.3);
         }
     }
 
@@ -1153,13 +1117,13 @@ mod tests {
 
         ppu.render_scanline();
 
-        // All pixels should be white (255, 255, 255, 255)
+        let expected = (0x9B, 0xBC, 0x0F, 0xFF);
         for x in 0..160 {
             let offset = x * 4;
-            assert_eq!(ppu.frame_buffer[offset], 255);
-            assert_eq!(ppu.frame_buffer[offset + 1], 255);
-            assert_eq!(ppu.frame_buffer[offset + 2], 255);
-            assert_eq!(ppu.frame_buffer[offset + 3], 255);
+            assert_eq!(ppu.frame_buffer[offset], expected.0);
+            assert_eq!(ppu.frame_buffer[offset + 1], expected.1);
+            assert_eq!(ppu.frame_buffer[offset + 2], expected.2);
+            assert_eq!(ppu.frame_buffer[offset + 3], expected.3);
         }
     }
 
@@ -1199,29 +1163,27 @@ mod tests {
     fn test_render_scanline_complex_pattern() {
         let mut ppu = PPU::new(ModelType::DMG);
         ppu.lcdc = 0x80 | 0x01 | 0x10; // LCD enabled, BG enabled, 8000 addressing
-        // Palette: 0b11_10_01_00 -> color 0=white, 1=light gray, 2=dark gray, 3=black
         ppu.dmg_bgp = 0b11100100;
         ppu.ly = 0;
         ppu.scx = 0;
         ppu.scy = 0;
 
-        // Create a checkerboard pattern in tile 0
-        // Row 0: alternating colors 0 and 1
-        ppu.vram[0] = 0b10101010; // Low bits: 1,0,1,0,1,0,1,0
-        ppu.vram[1] = 0b01010101; // High bits: 0,1,0,1,0,1,0,1
-        // This creates: color 2,0,2,0,2,0,2,0 (high=0,low=1 -> 1; high=1,low=0 -> 2)
+        ppu.vram[0] = 0b10101010; // Low bits
+        ppu.vram[1] = 0b01010101; // High bits
 
         ppu.render_scanline();
 
-        // Check the pattern: pixels should alternate between light gray (170) and dark gray (85)
-        let expected_colors = [170, 85, 170, 85, 170, 85, 170, 85]; // light gray, dark gray, ...
+        let expected_shade1 = ppu.calculate_dmg_color(ppu.dmg_bgp, 1);
+        let expected_shade2 = ppu.calculate_dmg_color(ppu.dmg_bgp, 2);
+        let expected_colors = [expected_shade1, expected_shade2, expected_shade1, expected_shade2, expected_shade1, expected_shade2, expected_shade1, expected_shade2];
+
         for x in 0..8 {
             let offset = x * 4;
             let expected = expected_colors[x];
-            assert_eq!(ppu.frame_buffer[offset], expected); // R
-            assert_eq!(ppu.frame_buffer[offset + 1], expected); // G
-            assert_eq!(ppu.frame_buffer[offset + 2], expected); // B
-            assert_eq!(ppu.frame_buffer[offset + 3], 255); // A
+            assert_eq!(ppu.frame_buffer[offset], expected.0);
+            assert_eq!(ppu.frame_buffer[offset + 1], expected.1);
+            assert_eq!(ppu.frame_buffer[offset + 2], expected.2);
+            assert_eq!(ppu.frame_buffer[offset + 3], expected.3);
         }
     }
 }
