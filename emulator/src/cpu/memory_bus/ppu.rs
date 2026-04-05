@@ -447,24 +447,20 @@ impl PPU {
     }
 
     fn update_stat_state(&mut self, if_flag: &mut u8) {
-        if self.ly == self.lyc && (self.stat & 0x04) == 0 {
+        let previous_value = self.stat_on();
+
+        if self.ly == self.lyc {
             self.stat |= 0x04;
-            if self.stat & 0x40 != 0 {
-                *if_flag |= 0x02;
-            }
-        } else if self.ly != self.lyc {
+        } else {
             self.stat &= !0x04;
         }
 
-        if self.stat & 0x03 != self.mode {
-            self.stat = (self.stat & !0x03) | self.mode;
-            if self.stat & 0x20 != 0 && self.mode == 2 {
-                *if_flag |= 0x02;
-            } else if self.stat & 0x10 != 0 && self.mode == 1 {
-                *if_flag |= 0x02;
-            } else if self.stat & 0x08 != 0 && self.mode == 0 {
-                *if_flag |= 0x02;
-            }
+        self.stat = (self.stat & !0x03) | self.mode;
+
+        let new_value = self.stat_on();
+
+        if !previous_value && new_value {
+            *if_flag |= 0x02;
         }
     }
 
@@ -476,18 +472,7 @@ impl PPU {
         mode1_trigger: bool,
         mode0_trigger: bool,
     ) {
-        if self.stat & 0x40 == 0 && ly_trigger && self.ly == self.lyc {
-            *if_flag |= 0x02;
-        }
-        if self.stat & 0x20 == 0 && mode2_tigger && self.mode == 2 {
-            *if_flag |= 0x02;
-        }
-        if self.stat & 0x10 == 0 && mode1_trigger && self.mode == 1 {
-            *if_flag |= 0x02;
-        }
-        if self.stat & 0x08 == 0 && mode0_trigger && self.mode == 0 {
-            *if_flag |= 0x02;
-        }
+        let previous_value = self.stat_on();
 
         self.stat = if ly_trigger {
             self.stat | 0x40
@@ -509,6 +494,29 @@ impl PPU {
         } else {
             self.stat & !0x08
         };
+
+        let new_value = self.stat_on();
+
+        if !previous_value && new_value {
+            *if_flag |= 0x02;
+        }
+    }
+
+    fn stat_on(&self) -> bool {
+        if self.stat & 0x40 != 0 && self.stat & 0x04 != 0 {
+            return true;
+        }
+        if self.stat & 0x20 != 0 && self.stat & 0x03 == 2 {
+            return true;
+        }
+        if self.stat & 0x10 != 0 && self.stat & 0x03 == 1 {
+            return true;
+        }
+        if self.stat & 0x08 != 0 && self.stat & 0x03 == 0 {
+            return true;
+        }
+
+        false
     }
 }
 
