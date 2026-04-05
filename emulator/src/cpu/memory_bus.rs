@@ -95,6 +95,13 @@ impl MemoryBus {
             _ => address,
         };
 
+        if self.dma.active && (address < 0xFF80 || address > 0xFFFE) {
+            console_error!(
+                "Invalid write to address {:04X} during OAM DMA Transfer\n",
+                address
+            );
+        }
+
         if self.mbc.write(address, value) {
             self.tick(4);
             return;
@@ -147,11 +154,11 @@ impl MemoryBus {
             0xFF46 => {
                 self.oam_dma_transfer = value;
                 self.dma = DMA {
-                    active: true,
-                    init_delay: 0,
+                    active: false,
+                    init_delay: 8,
                     pause: 0,
                     byte: 0,
-                    source: (self.oam_dma_transfer as u16) << value,
+                    source: (value as u16) << 8,
                 }
             }
             0xFF4C => {
@@ -252,6 +259,13 @@ impl MemoryBus {
     pub fn read(&mut self, address: u16) -> u8 {
         let result = self.read_without_tick(address);
 
+        if self.dma.active && (address < 0xFF80 || address > 0xFFFE) {
+            console_error!(
+                "Invalid read from address {:04X} during OAM DMA Transfer\n",
+                address
+            );
+        }
+
         self.tick(4);
         result
     }
@@ -303,13 +317,16 @@ impl MemoryBus {
                 self.dma.init_delay -= 1;
                 if self.dma.init_delay == 0 {
                     self.dma.active = true;
+                } else {
+                    continue;
                 }
-                continue;
             }
 
             if self.dma.pause > 0 {
                 self.dma.pause -= 1;
-                continue;
+                if self.dma.pause > 0 {
+                    continue;
+                }
             }
 
             let source = self.dma.source + self.dma.byte as u16;
@@ -412,5 +429,119 @@ mod tests {
 
         bus.write(0xC000, 0x99);
         assert_eq!(bus.total_cycles(), start + 8);
+    }
+
+    #[test]
+    fn oam_dma_transfer_starts_correctly() {
+        let rom = make_rom(0x00, 0x00);
+        let mut bus = MemoryBus::new(rom);
+
+        // Write to DMA register to start transfer from 0x8000
+        bus.write(0xFF46, 0x80);
+
+        assert_eq!(bus.dma.active, false);
+        bus.tick(4);
+
+        assert!(bus.dma.active);
+        assert_eq!(bus.dma.source, 0x8000);
+        assert_eq!(bus.dma.byte, 1); // After 4 ticks, 1 byte transferred
+    }
+
+    #[test]
+    fn oam_dma_transfer_copies_data() {
+        let rom = make_rom(0x00, 0x00);
+        let mut bus = MemoryBus::new(rom);
+
+        // Set up source data in WRAM
+        for i in 0..160 {
+            bus.write(0xC000 + i, i as u8);
+            bus.reset_total_cycles();
+        }
+
+        // Start DMA from 0xC000
+        bus.write(0xFF46, 0xC0);
+        bus.reset_total_cycles();
+
+        // Tick enough cycles to complete DMA (160 bytes * 4 cycles each)
+        for _ in 0..160 {
+            bus.tick(4);
+            bus.reset_total_cycles();
+        }
+
+        // Verify data was copied to OAM
+        for i in 0..160 {
+            assert_eq!(bus.read(0xFE00 + i), i as u8);
+            bus.reset_total_cycles();
+        }
+
+        // DMA should be inactive after completion
+        assert!(!bus.dma.active);
+    }
+
+    #[test]
+    fn oam_dma_transfer_from_vram() {
+        let rom = make_rom(0x00, 0x00);
+        let mut bus = MemoryBus::new(rom);
+
+        // Set up source data in VRAM
+        for i in 0..160 {
+            bus.write(0x8000 + i, (i + 100) as u8);
+            bus.reset_total_cycles();
+        }
+
+        // Start DMA from 0x8000
+        bus.write(0xFF46, 0x80);
+        bus.reset_total_cycles();
+
+        // Tick enough cycles to complete DMA
+        for _ in 0..160 {
+            bus.tick(4);
+            bus.reset_total_cycles();
+        }
+
+        // Verify data was copied to OAM
+        for i in 0..160 {
+            assert_eq!(bus.read(0xFE00 + i), (i + 100) as u8);
+            bus.reset_total_cycles();
+        }
+    }
+
+    #[test]
+    fn oam_dma_transfer_partial_progress() {
+        let rom = make_rom(0x00, 0x00);
+        let mut bus = MemoryBus::new(rom);
+
+        // Set up source data
+        for i in 0..160 {
+            bus.write(0xC000 + i, i as u8);
+            bus.reset_total_cycles();
+        }
+
+        // Start DMA
+        bus.write(0xFF46, 0xC0);
+        bus.reset_total_cycles();
+
+        // Tick for 44 bytes (176 cycles)
+        bus.tick(176);
+        bus.reset_total_cycles();
+
+        // DMA should still be active
+        assert!(bus.dma.active);
+        assert_eq!(bus.dma.byte, 44);
+
+        // Tick remaining cycles (116 bytes)
+        for _ in 0..116 {
+            bus.tick(4);
+            bus.reset_total_cycles();
+        }
+
+        // Check all bytes copied
+        for i in 0..160 {
+            assert_eq!(bus.read(0xFE00 + i), i as u8);
+            bus.reset_total_cycles();
+        }
+
+        // DMA should be complete
+        assert!(!bus.dma.active);
     }
 }
