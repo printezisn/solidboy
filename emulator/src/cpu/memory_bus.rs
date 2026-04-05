@@ -476,6 +476,8 @@ mod tests {
     fn oam_dma_transfer_copies_data() {
         let rom = make_rom(0x00, 0x00);
         let mut bus = MemoryBus::new(rom);
+        bus.tick(252);
+        bus.reset_total_cycles();
 
         // Set up source data in WRAM
         for i in 0..160 {

@@ -76,6 +76,10 @@ impl PPU {
     pub fn read(&self, address: u16) -> Option<u8> {
         match address {
             0x8000..=0x9FFF => {
+                if self.mode == 3 {
+                    return Some(0xFF);
+                }
+
                 let bank: usize = if matches!(self.model_type, ModelType::Color) {
                     self.vram_bank as usize
                 } else {
@@ -83,7 +87,13 @@ impl PPU {
                 };
                 Some(self.vram[bank * VRAM_SIZE + address as usize - 0x8000])
             }
-            0xFE00..=0xFE9F => Some(self.oam[(address - 0xFE00) as usize]),
+            0xFE00..=0xFE9F => {
+                if self.mode == 3 {
+                    return Some(0xFF);
+                }
+
+                Some(self.oam[(address - 0xFE00) as usize])
+            }
             0xFF40 => Some(self.lcdc),
             0xFF41 => Some(self.stat),
             0xFF42 => Some(self.scy),
@@ -112,15 +122,19 @@ impl PPU {
     pub fn write(&mut self, address: u16, value: u8, if_flag: &mut u8) -> bool {
         match address {
             0x8000..=0x9FFF => {
-                let bank: usize = if matches!(self.model_type, ModelType::Color) {
-                    self.vram_bank as usize
-                } else {
-                    0
-                };
-                self.vram[bank * VRAM_SIZE + address as usize - 0x8000] = value;
+                if self.mode != 3 {
+                    let bank: usize = if matches!(self.model_type, ModelType::Color) {
+                        self.vram_bank as usize
+                    } else {
+                        0
+                    };
+                    self.vram[bank * VRAM_SIZE + address as usize - 0x8000] = value;
+                }
             }
             0xFE00..=0xFE9F => {
-                self.oam[(address - 0xFE00) as usize] = value;
+                if self.mode != 3 {
+                    self.oam[(address - 0xFE00) as usize] = value;
+                }
             }
             0xFF40 => {
                 self.lcdc = value;
@@ -205,41 +219,41 @@ impl PPU {
 
         self.dots += 1;
 
-        match self.dots {
-            0..=79 => {
-                if self.mode != 1 {
-                    self.mode = 2;
+        let scx_penalty = self.scx % 8;
+        let sprite_penalty = self.sprites.len() as u8 * 6;
+        let mode3_end = 80 + 172 + scx_penalty as u16 + sprite_penalty as u16 - 1;
+        let mode0_start = mode3_end + 1;
+        let mode0_end = 455;
+
+        if self.dots <= 79 {
+            if self.mode != 1 {
+                self.mode = 2;
+            }
+        } else if self.dots >= 80 && self.dots <= mode3_end {
+            if self.mode != 1 {
+                self.mode = 3;
+                if self.dots == 80 && self.ly < 144 {
+                    self.render_scanline();
                 }
             }
-            80..=251 => {
-                if self.mode != 1 {
-                    self.mode = 3;
-                    if self.dots == 80 && self.ly < 144 {
-                        self.render_scanline();
-                    }
-                }
+        } else if self.dots >= mode0_start && self.dots <= mode0_end {
+            if self.mode != 1 {
+                self.mode = 0;
             }
-            252..=455 => {
-                if self.mode != 1 {
-                    self.mode = 0;
-                }
+        } else if self.dots == mode0_end + 1 {
+            self.dots = 0;
+            self.ly += 1;
+            if self.ly == 144 {
+                self.mode = 1;
+                *if_flag |= 0x01;
+            } else if self.ly == 154 {
+                self.ly = 0;
+                self.window_line = 0;
+                self.mode = 0;
+                render_frame_buffer!(self.frame_buffer.as_ptr(), self.frame_buffer.len());
             }
-            456 => {
-                self.dots = 0;
-                self.ly += 1;
-                if self.ly == 144 {
-                    self.mode = 1;
-                    *if_flag |= 0x01;
-                } else if self.ly == 154 {
-                    self.ly = 0;
-                    self.window_line = 0;
-                    self.mode = 0;
-                    render_frame_buffer!(self.frame_buffer.as_ptr(), self.frame_buffer.len());
-                }
-            }
-            _ => {
-                console_error!("Invalid ppu state. Dots: {}", self.dots);
-            }
+        } else {
+            console_error!("Invalid ppu state. Dots: {}", self.dots);
         }
 
         self.update_stat_state(if_flag);
@@ -596,6 +610,7 @@ mod tests {
     #[test]
     fn test_read_oam() {
         let mut ppu = PPU::new(ModelType::DMG);
+        ppu.mode = 1;
         ppu.oam[0x10] = 0xEF;
         assert_eq!(ppu.read(0xFE10), Some(0xEF));
     }
@@ -603,6 +618,7 @@ mod tests {
     #[test]
     fn test_write_oam() {
         let mut ppu = PPU::new(ModelType::DMG);
+        ppu.mode = 1;
         let mut if_flag: u8 = 0;
         assert!(ppu.write(0xFE10, 0xEF, &mut if_flag));
         assert_eq!(ppu.oam[0x10], 0xEF);
@@ -1183,7 +1199,16 @@ mod tests {
 
         let expected_shade1 = ppu.calculate_dmg_color(ppu.dmg_bgp, 1);
         let expected_shade2 = ppu.calculate_dmg_color(ppu.dmg_bgp, 2);
-        let expected_colors = [expected_shade1, expected_shade2, expected_shade1, expected_shade2, expected_shade1, expected_shade2, expected_shade1, expected_shade2];
+        let expected_colors = [
+            expected_shade1,
+            expected_shade2,
+            expected_shade1,
+            expected_shade2,
+            expected_shade1,
+            expected_shade2,
+            expected_shade1,
+            expected_shade2,
+        ];
 
         for x in 0..8 {
             let offset = x * 4;
