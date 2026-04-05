@@ -48,9 +48,9 @@ pub fn init_emulator(rom: Vec<u8>) {
 }
 
 #[wasm_bindgen]
-pub fn execute(cycles: i32) {
+pub fn execute(cycles: i32, joypad_pressed_directions: u8, joypad_pressed_buttons: u8) {
     EMULATOR.with(|e| match e.borrow_mut().as_mut() {
-        Some(em) => em.execute(cycles),
+        Some(em) => em.execute(cycles, joypad_pressed_directions, joypad_pressed_buttons),
         _ => {}
     });
 }

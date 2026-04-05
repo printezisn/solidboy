@@ -55,6 +55,16 @@ impl CPU {
         cpu
     }
 
+    pub fn set_joypad_pressed_directions(&mut self, joypad_pressed_directions: u8) {
+        self.memory_bus
+            .set_joypad_pressed_directions(joypad_pressed_directions);
+    }
+
+    pub fn set_joypad_pressed_buttons(&mut self, joypad_pressed_buttons: u8) {
+        self.memory_bus
+            .set_joypad_pressed_buttons(joypad_pressed_buttons);
+    }
+
     pub fn execute_instruction(&mut self) -> InstructionResult {
         self.memory_bus.reset_total_cycles();
 
@@ -1461,13 +1471,13 @@ mod tests {
     #[test]
     fn test_ld_hl_mem_r8() {
         let mut cpu = create_cpu(vec![0x70]);
-        cpu.registers.set(Register::HL, 0xFF00);
+        cpu.registers.set(Register::HL, 0xFF01);
         cpu.registers.set(Register::B, 0x34);
 
         let result = cpu.execute_instruction();
 
         assert_eq!(result.cycles, 8);
-        assert_eq!(cpu.memory_bus.read(0xFF00), 0x34);
+        assert_eq!(cpu.memory_bus.read(0xFF01), 0x34);
         assert_eq!(cpu.registers.get(Register::PC), INITIAL_PC + 1);
         assert_eq!(cpu.registers.zero(), INITIAL_ZERO_FLAG);
         assert_eq!(cpu.registers.subtract(), INITIAL_SUBTRACT_FLAG);
@@ -1478,12 +1488,12 @@ mod tests {
     #[test]
     fn test_ld_hl_mem_n8() {
         let mut cpu = create_cpu(vec![0x36, 0x34]);
-        cpu.registers.set(Register::HL, 0xFF00);
+        cpu.registers.set(Register::HL, 0xFF01);
 
         let result = cpu.execute_instruction();
 
         assert_eq!(result.cycles, 12);
-        assert_eq!(cpu.memory_bus.read(0xFF00), 0x34);
+        assert_eq!(cpu.memory_bus.read(0xFF01), 0x34);
         assert_eq!(cpu.registers.get(Register::PC), INITIAL_PC + 2);
         assert_eq!(cpu.registers.zero(), INITIAL_ZERO_FLAG);
         assert_eq!(cpu.registers.subtract(), INITIAL_SUBTRACT_FLAG);
@@ -1494,8 +1504,8 @@ mod tests {
     #[test]
     fn test_ld_r8_hl_mem() {
         let mut cpu = create_cpu(vec![0x2A]);
-        cpu.registers.set(Register::HL, 0xFF00);
-        cpu.memory_bus.write(0xFF00, 0x34);
+        cpu.registers.set(Register::HL, 0xFF01);
+        cpu.memory_bus.write(0xFF01, 0x34);
 
         let result = cpu.execute_instruction();
 
@@ -1511,13 +1521,13 @@ mod tests {
     #[test]
     fn test_ld_r16_mem_a() {
         let mut cpu = create_cpu(vec![0x12]);
-        cpu.registers.set(Register::DE, 0xFF00);
+        cpu.registers.set(Register::DE, 0xFF01);
         cpu.registers.set(Register::A, 0x34);
 
         let result = cpu.execute_instruction();
 
         assert_eq!(result.cycles, 8);
-        assert_eq!(cpu.memory_bus.read(0xFF00), 0x34);
+        assert_eq!(cpu.memory_bus.read(0xFF01), 0x34);
         assert_eq!(cpu.registers.get(Register::PC), INITIAL_PC + 1);
         assert_eq!(cpu.registers.zero(), INITIAL_ZERO_FLAG);
         assert_eq!(cpu.registers.subtract(), INITIAL_SUBTRACT_FLAG);
@@ -1527,13 +1537,13 @@ mod tests {
 
     #[test]
     fn test_ld_a16_a() {
-        let mut cpu = create_cpu(vec![0xEA, 0x00, 0xFF]);
+        let mut cpu = create_cpu(vec![0xEA, 0x01, 0xFF]);
         cpu.registers.set(Register::A, 0x34);
 
         let result = cpu.execute_instruction();
 
         assert_eq!(result.cycles, 16);
-        assert_eq!(cpu.memory_bus.read(0xFF00), 0x34);
+        assert_eq!(cpu.memory_bus.read(0xFF01), 0x34);
         assert_eq!(cpu.registers.get(Register::PC), INITIAL_PC + 3);
         assert_eq!(cpu.registers.zero(), INITIAL_ZERO_FLAG);
         assert_eq!(cpu.registers.subtract(), INITIAL_SUBTRACT_FLAG);
@@ -1543,8 +1553,8 @@ mod tests {
 
     #[test]
     fn test_ld_a_a16() {
-        let mut cpu = create_cpu(vec![0xFA, 0x00, 0xFF]);
-        cpu.memory_bus.write(0xFF00, 0x34);
+        let mut cpu = create_cpu(vec![0xFA, 0x01, 0xFF]);
+        cpu.memory_bus.write(0xFF01, 0x34);
 
         let result = cpu.execute_instruction();
 
@@ -1560,8 +1570,8 @@ mod tests {
     #[test]
     fn test_ld_a_r16() {
         let mut cpu = create_cpu(vec![0x0A]);
-        cpu.registers.set(Register::BC, 0xFF00);
-        cpu.memory_bus.write(0xFF00, 0x34);
+        cpu.registers.set(Register::BC, 0xFF01);
+        cpu.memory_bus.write(0xFF01, 0x34);
 
         let result = cpu.execute_instruction();
 
@@ -1577,14 +1587,14 @@ mod tests {
     #[test]
     fn test_ld_hl_mem_incr_a() {
         let mut cpu = create_cpu(vec![0x22]);
-        cpu.registers.set(Register::HL, 0xFF00);
+        cpu.registers.set(Register::HL, 0xFF01);
         cpu.registers.set(Register::A, 0x34);
 
         let result = cpu.execute_instruction();
 
         assert_eq!(result.cycles, 8);
-        assert_eq!(cpu.memory_bus.read(0xFF00), 0x34);
-        assert_eq!(cpu.registers.get(Register::HL), 0xFF01);
+        assert_eq!(cpu.memory_bus.read(0xFF01), 0x34);
+        assert_eq!(cpu.registers.get(Register::HL), 0xFF02);
         assert_eq!(cpu.registers.get(Register::PC), INITIAL_PC + 1);
         assert_eq!(cpu.registers.zero(), INITIAL_ZERO_FLAG);
         assert_eq!(cpu.registers.subtract(), INITIAL_SUBTRACT_FLAG);
@@ -1595,14 +1605,14 @@ mod tests {
     #[test]
     fn test_ld_hl_mem_descr_a() {
         let mut cpu = create_cpu(vec![0x32]);
-        cpu.registers.set(Register::HL, 0xFF00);
+        cpu.registers.set(Register::HL, 0xFF01);
         cpu.registers.set(Register::A, 0x34);
 
         let result = cpu.execute_instruction();
 
         assert_eq!(result.cycles, 8);
-        assert_eq!(cpu.memory_bus.read(0xFF00), 0x34);
-        assert_eq!(cpu.registers.get(Register::HL), 0xFF00 - 1);
+        assert_eq!(cpu.memory_bus.read(0xFF01), 0x34);
+        assert_eq!(cpu.registers.get(Register::HL), 0xFF00);
         assert_eq!(cpu.registers.get(Register::PC), INITIAL_PC + 1);
         assert_eq!(cpu.registers.zero(), INITIAL_ZERO_FLAG);
         assert_eq!(cpu.registers.subtract(), INITIAL_SUBTRACT_FLAG);
@@ -1613,14 +1623,14 @@ mod tests {
     #[test]
     fn test_ld_a_hl_mem_descr() {
         let mut cpu = create_cpu(vec![0x3A]);
-        cpu.registers.set(Register::HL, 0xFF00);
-        cpu.memory_bus.write(0xFF00, 0x34);
+        cpu.registers.set(Register::HL, 0xFF01);
+        cpu.memory_bus.write(0xFF01, 0x34);
 
         let result = cpu.execute_instruction();
 
         assert_eq!(result.cycles, 8);
         assert_eq!(cpu.registers.get(Register::A), 0x34);
-        assert_eq!(cpu.registers.get(Register::HL), 0xFF00 - 1);
+        assert_eq!(cpu.registers.get(Register::HL), 0xFF01 - 1);
         assert_eq!(cpu.registers.get(Register::PC), INITIAL_PC + 1);
         assert_eq!(cpu.registers.zero(), INITIAL_ZERO_FLAG);
         assert_eq!(cpu.registers.subtract(), INITIAL_SUBTRACT_FLAG);
@@ -1631,14 +1641,14 @@ mod tests {
     #[test]
     fn test_ld_a_hl_mem_incr() {
         let mut cpu = create_cpu(vec![0x2A]);
-        cpu.registers.set(Register::HL, 0xFF00);
-        cpu.memory_bus.write(0xFF00, 0x34);
+        cpu.registers.set(Register::HL, 0xFF01);
+        cpu.memory_bus.write(0xFF01, 0x34);
 
         let result = cpu.execute_instruction();
 
         assert_eq!(result.cycles, 8);
         assert_eq!(cpu.registers.get(Register::A), 0x34);
-        assert_eq!(cpu.registers.get(Register::HL), 0xFF00 + 1);
+        assert_eq!(cpu.registers.get(Register::HL), 0xFF01 + 1);
         assert_eq!(cpu.registers.get(Register::PC), INITIAL_PC + 1);
         assert_eq!(cpu.registers.zero(), INITIAL_ZERO_FLAG);
         assert_eq!(cpu.registers.subtract(), INITIAL_SUBTRACT_FLAG);
@@ -1648,13 +1658,13 @@ mod tests {
 
     #[test]
     fn test_ld_sp_n16() {
-        let mut cpu = create_cpu(vec![0x31, 0x00, 0xFF]);
+        let mut cpu = create_cpu(vec![0x31, 0x01, 0xFF]);
         cpu.registers.set(Register::SP, 0x0000);
 
         let result = cpu.execute_instruction();
 
         assert_eq!(result.cycles, 12);
-        assert_eq!(cpu.registers.get(Register::SP), 0xFF00);
+        assert_eq!(cpu.registers.get(Register::SP), 0xFF01);
         assert_eq!(cpu.registers.get(Register::PC), INITIAL_PC + 3);
         assert_eq!(cpu.registers.zero(), INITIAL_ZERO_FLAG);
         assert_eq!(cpu.registers.subtract(), INITIAL_SUBTRACT_FLAG);

@@ -36,8 +36,12 @@ pub struct MemoryBus {
     wram_bank: u8,
     high_ram: [u8; HIGH_RAM_SIZE],
 
-    joypad_input: u8,
+    joypad_selection: u8,
+    joypad_pressed_directions: u8,
+    joypad_pressed_buttons: u8,
+
     serial_transfer: [u8; SERIAL_TRANSFER_SIZE],
+
     if_flag: u8,
     ie_flag: u8,
     key0: u8,
@@ -74,7 +78,9 @@ impl MemoryBus {
             wram_bank: 1,
             high_ram: [0; HIGH_RAM_SIZE],
 
-            joypad_input: 0,
+            joypad_selection: 0,
+            joypad_pressed_directions: 0x0F,
+            joypad_pressed_buttons: 0x0F,
             serial_transfer: [0; SERIAL_TRANSFER_SIZE],
             if_flag: 0,
             ie_flag: 0,
@@ -131,7 +137,7 @@ impl MemoryBus {
             }
             0xFEA0..=0xFEFF => {}
             0xFF00 => {
-                self.joypad_input = value;
+                self.joypad_selection = (value & 0x30) >> 4;
             }
             0xFF01..=0xFF02 => {
                 self.serial_transfer[address as usize - 0xFF01] = value;
@@ -231,7 +237,18 @@ impl MemoryBus {
                 self.wram[bank * WRAM_SIZE + address as usize - 0xD000]
             }
             0xFEA0..=0xFEFF => 0x00,
-            0xFF00 => self.joypad_input,
+            0xFF00 => {
+                let mut value = 0xC0 | (self.joypad_selection << 4);
+                if self.joypad_selection == 0x01 {
+                    value |= self.joypad_pressed_buttons;
+                } else if self.joypad_selection == 0x02 {
+                    value |= self.joypad_pressed_directions;
+                } else {
+                    value |= 0x0F;
+                }
+
+                value
+            }
             0xFF01..=0xFF02 => self.serial_transfer[(address - 0xFF01) as usize],
             0xFF04 => self.timer.div(),
             0xFF05 => self.timer.tima(),
@@ -297,6 +314,14 @@ impl MemoryBus {
 
     pub fn set_key1(&mut self, value: u8) {
         self.key1 = value;
+    }
+
+    pub fn set_joypad_pressed_directions(&mut self, joypad_pressed_directions: u8) {
+        self.joypad_pressed_directions = joypad_pressed_directions;
+    }
+
+    pub fn set_joypad_pressed_buttons(&mut self, joypad_pressed_buttons: u8) {
+        self.joypad_pressed_buttons = joypad_pressed_buttons;
     }
 
     pub fn reset_total_cycles(&mut self) {

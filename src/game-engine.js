@@ -1,6 +1,7 @@
 import { init_emulator, execute, emulator_memory } from 'emulator-lib';
+import { initJoypad, pressedButtons, pressedDirections } from './joypad';
 
-const CYCLES_PER_MILLI = 4194;
+const CYCLES_PER_MILLI = 4194 / 2;
 const MAX_FRAME_DIFF = 20;
 
 let canvas = null;
@@ -25,7 +26,7 @@ const onFrame = () => {
 
   const diff = Math.max(MAX_FRAME_DIFF, now - lastFrameTime);
   let totalCycles = diff * CYCLES_PER_MILLI;
-  execute(totalCycles);
+  execute(totalCycles, pressedDirections(), pressedButtons());
 
   lastFrameTime = now;
 
@@ -61,6 +62,7 @@ export const initGameEngine = () => {
 
     const reader = new FileReader();
     reader.onload = () => {
+      initJoypad();
       init_emulator(new Uint8Array(reader.result));
 
       canvas = document.createElement('canvas');
