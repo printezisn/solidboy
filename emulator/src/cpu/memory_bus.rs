@@ -380,6 +380,7 @@ impl MemoryBus {
             };
 
         self.ppu.tick(&mut self.if_flag, real_speed);
+        self.mbc.tick(real_speed as u32);
         self.tick_dma(cycles);
     }
 }

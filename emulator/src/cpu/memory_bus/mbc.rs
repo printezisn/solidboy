@@ -38,6 +38,13 @@ impl MBC {
             MBC::MBC5(mbc) => mbc.write(address, value),
         }
     }
+
+    pub fn tick(&mut self, cycles: u32) {
+        match self {
+            MBC::MBC3(mbc) => mbc.tick(cycles),
+            _ => {}
+        }
+    }
 }
 
 #[cfg(test)]
