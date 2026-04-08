@@ -6324,7 +6324,7 @@ mod tests {
         let result = cpu.execute_instruction();
 
         assert_eq!(cpu.registers.get(Register::PC), INITIAL_PC + 2);
-        assert_eq!(result.cycles, 4);
+        assert_eq!(result.cycles, 2);
         // After STOP: clear bit 0, since bit 7 was 1, clear bit 7
         assert_eq!(cpu.memory_bus.key1(), 0x00);
     }

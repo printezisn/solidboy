@@ -383,15 +383,15 @@ impl MemoryBus {
     }
 
     pub fn tick(&mut self, cycles: u8) {
-        self.total_cycles += cycles;
-        self.timer.tick(&mut self.if_flag, cycles);
-
         let real_speed: u8 =
             if matches!(self.model_type(), ModelType::Color) && (self.key1() & 0x80) != 0 {
                 cycles / 2
             } else {
                 cycles
             };
+
+        self.total_cycles += real_speed;
+        self.timer.tick(&mut self.if_flag, cycles);
 
         self.ppu.tick(&mut self.if_flag, real_speed);
         self.mbc.tick(real_speed as u32);
