@@ -17,6 +17,13 @@ struct Sprite {
     priority: u8,
 }
 
+#[derive(Clone, Copy)]
+enum PixelPriority {
+    BG,
+    BGIfSpriteDisabled,
+    Sprite,
+}
+
 pub struct PPU {
     vram: [u8; VRAM_SIZE * VRAM_TOTAL_BANKS],
     vram_bank: u8,
@@ -44,7 +51,7 @@ pub struct PPU {
     mode: u8,
     sprites: Vec<Sprite>,
     frame_buffer: [u8; FRAME_BUFFER_ROWS * FRAME_BUFFER_COLS * 4],
-    frame_buffer_color_indices: [u8; FRAME_BUFFER_ROWS * FRAME_BUFFER_COLS],
+    frame_buffer_pixel_priorities: [PixelPriority; FRAME_BUFFER_ROWS * FRAME_BUFFER_COLS],
 }
 
 impl PPU {
@@ -76,7 +83,7 @@ impl PPU {
             mode: 2,
             sprites: Vec::new(),
             frame_buffer: [0; FRAME_BUFFER_ROWS * FRAME_BUFFER_COLS * 4],
-            frame_buffer_color_indices: [0; FRAME_BUFFER_ROWS * FRAME_BUFFER_COLS],
+            frame_buffer_pixel_priorities: [PixelPriority::Sprite; FRAME_BUFFER_ROWS * FRAME_BUFFER_COLS],
         }
     }
 
@@ -298,22 +305,14 @@ impl PPU {
                 window_drawn = true;
             }
 
-            if self.lcdc & 0x01 == 0 {
+            if self.lcdc & 0x01 == 0 && !matches!(self.model_type, ModelType::Color) {
                 let frame_buffer_index = (self.ly as usize * 160 + i as usize) * 4;
 
-                if matches!(self.model_type, ModelType::Color) {
-                    self.frame_buffer[frame_buffer_index] = 0xFF;
-                    self.frame_buffer[frame_buffer_index + 1] = 0xFF;
-                    self.frame_buffer[frame_buffer_index + 2] = 0xFF;
-                    self.frame_buffer[frame_buffer_index + 3] = 0xFF;
-                    self.frame_buffer_color_indices[self.ly as usize * 160 + i as usize] = 0;
-                } else {
-                    self.frame_buffer[frame_buffer_index] = 0x9B;
-                    self.frame_buffer[frame_buffer_index + 1] = 0xBC;
-                    self.frame_buffer[frame_buffer_index + 2] = 0x0F;
-                    self.frame_buffer[frame_buffer_index + 3] = 0xFF;
-                    self.frame_buffer_color_indices[self.ly as usize * 160 + i as usize] = 0;
-                }
+                self.frame_buffer[frame_buffer_index] = 0x9B;
+                self.frame_buffer[frame_buffer_index + 1] = 0xBC;
+                self.frame_buffer[frame_buffer_index + 2] = 0x0F;
+                self.frame_buffer[frame_buffer_index + 3] = 0xFF;
+                self.frame_buffer_pixel_priorities[self.ly as usize * 160 + i as usize] = PixelPriority::Sprite;
 
                 continue;
             }
@@ -336,9 +335,7 @@ impl PPU {
                 self.ly.wrapping_add(self.scy) as u16
             };
             let tile_row = (y / 8) as u16;
-            let inner_tile_row = (y % 8) as u16;
             let tile_col = x / 8;
-            let inner_tile_col = x % 8;
 
             let tilemap_address = timemap_base + tile_row * 32 + tile_col;
             let tile_index = self.vram[tilemap_address as usize];
@@ -347,27 +344,58 @@ impl PPU {
             } else {
                 (0x1000 + (tile_index as i8 as i16) * 16) as u16
             };
+            let tile_attributes = if matches!(self.model_type, ModelType::Color) {
+                self.vram[VRAM_SIZE + tilemap_address as usize]
+            } else {
+                0x00
+            };
 
-            let inner_row_address = tile_data_address + inner_tile_row * 2;
-            let color_index = self.calculate_pixel_color_index(inner_row_address, inner_tile_col);
-            let (r, g, b, a) =
-                if matches!(self.model_type, ModelType::Color) {
-                    let palette_num = 0usize;
-                    let base = palette_num * 8 + color_index as usize * 2;
-                    let low  = self.bg_palette_data[base];
-                    let high = self.bg_palette_data[base + 1];
-                  
-                    self.calculate_cgb_color(low, high)
+            let palette_num = (tile_attributes & 0x07) as usize;
+            let tile_bank = if tile_attributes & 0x08 != 0 { 1 } else { 0 };
+            let x_flip = tile_attributes & 0x20 != 0;
+            let y_flip = tile_attributes & 0x40 != 0;
+            let bg_priority = tile_attributes & 0x80 != 0;
+
+            let inner_tile_row =
+                if y_flip {
+                    7 - (y % 8)
                 } else {
-                    self.calculate_dmg_color(self.dmg_bgp, color_index)
-                };
+                    y % 8
+                } as u16;
+            let inner_tile_col =
+                if x_flip {
+                    7 - (x % 8)
+                } else {
+                    x % 8
+                } as u16;
+            let inner_row_address = VRAM_SIZE as u16 * tile_bank + tile_data_address + inner_tile_row * 2;
+
+            let color_index = self.calculate_pixel_color_index(inner_row_address, inner_tile_col);
+            let (r, g, b, a) = if matches!(self.model_type, ModelType::Color) {
+                let base = palette_num * 8 + color_index as usize * 2;
+                let low = self.bg_palette_data[base];
+                let high = self.bg_palette_data[base + 1];
+
+                self.calculate_cgb_color(low, high)
+            } else {
+                self.calculate_dmg_color(self.dmg_bgp, color_index)
+            };
             let frame_buffer_index = (self.ly as usize * 160 + i as usize) * 4;
 
             self.frame_buffer[frame_buffer_index] = r;
             self.frame_buffer[frame_buffer_index + 1] = g;
             self.frame_buffer[frame_buffer_index + 2] = b;
             self.frame_buffer[frame_buffer_index + 3] = a;
-            self.frame_buffer_color_indices[self.ly as usize * 160 + i as usize] = color_index;
+            self.frame_buffer_pixel_priorities[self.ly as usize * 160 + i as usize] =
+                if self.lcdc & 0x01 == 0 {
+                    PixelPriority::Sprite
+                } else if bg_priority && color_index > 0 {
+                    PixelPriority::BG
+                } else if color_index > 0 {
+                    PixelPriority::BGIfSpriteDisabled
+                } else {
+                    PixelPriority::Sprite
+                };
         }
 
         if window_drawn {
@@ -402,7 +430,13 @@ impl PPU {
                 sprite.tile_index
             } as u16;
 
-            let tile_address = tile_index * 16 + tile_row * 2;
+            let tile_bank =
+                if matches!(self.model_type, ModelType::Color) && sprite.attributes & 0x08 != 0 {
+                    1
+                } else {
+                    0
+                };
+            let tile_address = VRAM_SIZE as u16 * tile_bank + tile_index * 16 + tile_row * 2;
             let byte0 = self.vram[tile_address as usize];
             let byte1 = self.vram[tile_address as usize + 1];
 
@@ -427,30 +461,30 @@ impl PPU {
                     continue;
                 }
 
-                if sprite.attributes & 0x80 != 0
-                    && self.frame_buffer_color_indices[self.ly as usize * 160 + screen_x as usize]
-                        != 0
-                {
+                let pixel_priority = self.frame_buffer_pixel_priorities[self.ly as usize * 160 + screen_x as usize];          
+                if matches!(pixel_priority, PixelPriority::BG) {
+                    continue;
+                }
+                if matches!(pixel_priority, PixelPriority::BGIfSpriteDisabled) && sprite.attributes & 0x80 != 0 {
                     continue;
                 }
 
-                let (r, g, b, a) =
-                    if matches!(self.model_type, ModelType::Color) {
-                        let palette_num = (sprite.attributes & 0x07) as usize;
-                        let base = palette_num * 8 + color_index as usize * 2;
-                        let low  = self.bg_palette_data[base];
-                        let high = self.bg_palette_data[base + 1];
-                    
-                        self.calculate_cgb_color(low, high)
-                    } else {
-                        let palette = if sprite.attributes & 0x10 != 0 {
-                            self.obp1
-                        } else {
-                            self.obp0
-                        };
+                let (r, g, b, a) = if matches!(self.model_type, ModelType::Color) {
+                    let palette_num = (sprite.attributes & 0x07) as usize;
+                    let base = palette_num * 8 + color_index as usize * 2;
+                    let low = self.obj_palette_data[base];
+                    let high = self.obj_palette_data[base + 1];
 
-                        self.calculate_dmg_color(palette, color_index)
+                    self.calculate_cgb_color(low, high)
+                } else {
+                    let palette = if sprite.attributes & 0x10 != 0 {
+                        self.obp1
+                    } else {
+                        self.obp0
                     };
+
+                    self.calculate_dmg_color(palette, color_index)
+                };
 
                 let i = (self.ly as usize * 160 + screen_x as usize) * 4;
                 self.frame_buffer[i] = r;
@@ -489,8 +523,11 @@ impl PPU {
             }
         }
 
+        let sort_only_by_priority =
+            matches!(self.model_type, ModelType::Color) && self.object_priority_mode & 0x01 == 0; 
+
         self.sprites.sort_by(|a, b| {
-            if a.x == b.x {
+            if a.x == b.x || sort_only_by_priority {
                 b.priority.cmp(&a.priority)
             } else {
                 b.x.cmp(&a.x)

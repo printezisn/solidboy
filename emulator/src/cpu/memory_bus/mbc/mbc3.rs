@@ -60,7 +60,8 @@ impl MBC3 {
                 }
                 match self.ram_bank {
                     0x00..=0x07 => {
-                        let offset = self.ram_bank as usize * EXTERNAL_RAM_SIZE + (address as usize - 0xA000);
+                        let offset = self.ram_bank as usize * EXTERNAL_RAM_SIZE
+                            + (address as usize - 0xA000);
                         Some(self.external_ram[offset])
                     }
                     0x08 => Some(self.rtc_latched.seconds),
@@ -68,7 +69,7 @@ impl MBC3 {
                     0x0A => Some(self.rtc_latched.hours),
                     0x0B => Some(self.rtc_latched.days_low),
                     0x0C => Some(self.rtc_latched.days_high),
-                    _ => Some(0xFF)
+                    _ => Some(0xFF),
                 }
             }
             _ => None,
@@ -107,7 +108,8 @@ impl MBC3 {
 
                 match self.ram_bank {
                     0x00..=0x07 => {
-                        let offset = self.ram_bank as usize * EXTERNAL_RAM_SIZE + (address as usize - 0xA000);
+                        let offset = self.ram_bank as usize * EXTERNAL_RAM_SIZE
+                            + (address as usize - 0xA000);
                         self.external_ram[offset] = value;
                     }
                     0x08 => self.rtc.seconds = value & 0x3F,
@@ -154,12 +156,11 @@ impl MBC3 {
                 self.rtc.hours += 1;
                 if self.rtc.hours >= 24 {
                     self.rtc.hours = 0;
-                    let days = ((self.rtc.days_high & 0x01) as u16) << 8 
-                            | self.rtc.days_low as u16;
+                    let days = ((self.rtc.days_high & 0x01) as u16) << 8 | self.rtc.days_low as u16;
                     let new_days = days + 1;
                     self.rtc.days_low = new_days as u8;
-                    self.rtc.days_high = (self.rtc.days_high & 0xFE) 
-                                    | ((new_days >> 8) as u8 & 0x01);
+                    self.rtc.days_high =
+                        (self.rtc.days_high & 0xFE) | ((new_days >> 8) as u8 & 0x01);
                     if new_days >= 512 {
                         self.rtc.days_high |= 0x80;
                         self.rtc.days_low = 0;

@@ -57,7 +57,7 @@ pub struct MemoryBus {
 impl MemoryBus {
     pub fn new(rom: Vec<u8>) -> Self {
         let model_type = match rom[0x0143] {
-            0xC0 => ModelType::Color,
+            0xC0 | 0x80 => ModelType::Color,
             _ => ModelType::DMG,
         };
 
@@ -273,7 +273,7 @@ impl MemoryBus {
                 }
 
                 0xFF
-            },
+            }
             0xFF70 => {
                 if matches!(self.model_type, ModelType::Color) {
                     return 0xF8 | self.wram_bank;
