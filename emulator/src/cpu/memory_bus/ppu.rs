@@ -60,7 +60,7 @@ impl PPU {
             obp1: 0xFF,
             wy: 0,
             wx: 0,
-            vram_dma: [0; VRAM_DMA_SIZE],
+            vram_dma: [0xFF; VRAM_DMA_SIZE],
             bg_obj_palettes: [0; BG_OBJ_PALETTES_SIZE],
             object_priority_mode: 0,
             model_type,
@@ -550,7 +550,7 @@ mod tests {
         assert!(ppu.vram.iter().all(|&x| x == 0));
         assert!(ppu.oam.iter().all(|&x| x == 0));
         assert_eq!(ppu.lcdc, 0);
-        assert!(ppu.vram_dma.iter().all(|&x| x == 0));
+        assert!(ppu.vram_dma.iter().all(|&x| x == 0xFF));
         assert!(ppu.bg_obj_palettes.iter().all(|&x| x == 0));
     }
 

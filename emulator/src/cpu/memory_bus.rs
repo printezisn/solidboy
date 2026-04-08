@@ -75,7 +75,7 @@ impl MemoryBus {
             },
 
             wram: [0; WRAM_SIZE * (WRAM_TOTAL_BANKS + 1)],
-            wram_bank: 1,
+            wram_bank: 0,
             high_ram: [0; HIGH_RAM_SIZE],
 
             joypad_selection: 0,
@@ -85,9 +85,9 @@ impl MemoryBus {
             if_flag: 0xE1,
             ie_flag: 0,
             key0: 0,
-            key1: 0,
+            key1: 0x7E,
             boot_rom_mapping_control: 0,
-            ir_port: 0,
+            ir_port: 0x3E,
             oam_dma_transfer: 0,
 
             total_cycles: 0,
@@ -128,11 +128,15 @@ impl MemoryBus {
                 self.wram[(address - 0xC000) as usize] = value;
             }
             0xD000..=0xDFFF => {
-                let bank: usize = if matches!(self.model_type, ModelType::Color) {
+                let mut bank: usize = if matches!(self.model_type, ModelType::Color) {
                     self.wram_bank as usize
                 } else {
                     1
                 };
+                if bank == 0 {
+                    bank = 1;
+                }
+
                 self.wram[bank * WRAM_SIZE + address as usize - 0xD000] = value;
             }
             0xFEA0..=0xFEFF => {}
@@ -177,14 +181,13 @@ impl MemoryBus {
                 self.boot_rom_mapping_control = value;
             }
             0xFF56 => {
-                self.ir_port = value;
+                if matches!(self.model_type, ModelType::Color) {
+                    self.ir_port = value;
+                }
             }
             0xFF70 => {
                 if matches!(self.model_type, ModelType::Color) {
                     self.wram_bank = value & 0x07;
-                    if self.wram_bank == 0 {
-                        self.wram_bank = 1;
-                    }
                 }
             }
             0xFF80..=0xFFFE => {
@@ -229,11 +232,16 @@ impl MemoryBus {
         match address {
             0xC000..=0xCFFF => self.wram[(address - 0xC000) as usize],
             0xD000..=0xDFFF => {
-                let bank: usize = if matches!(self.model_type, ModelType::Color) {
+                let mut bank: usize = if matches!(self.model_type, ModelType::Color) {
                     self.wram_bank as usize
                 } else {
                     1
                 };
+
+                if bank == 0 {
+                    bank = 1;
+                }
+
                 self.wram[bank * WRAM_SIZE + address as usize - 0xD000]
             }
             0xFEA0..=0xFEFF => 0x00,
@@ -259,13 +267,19 @@ impl MemoryBus {
             0xFF4C => self.key0,
             0xFF4D => self.key1,
             0xFF50 => self.boot_rom_mapping_control,
-            0xFF56 => self.ir_port,
-            0xFF70 => {
+            0xFF56 => {
                 if matches!(self.model_type, ModelType::Color) {
-                    return self.wram_bank;
+                    return self.ir_port;
                 }
 
-                return 0xFF;
+                0xFF
+            },
+            0xFF70 => {
+                if matches!(self.model_type, ModelType::Color) {
+                    return 0xF8 | self.wram_bank;
+                }
+
+                0xFF
             }
             0xFF80..=0xFFFE => self.high_ram[(address - 0xFF80) as usize],
             0xFFFF => self.ie_flag,
