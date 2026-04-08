@@ -208,7 +208,7 @@ impl PPU {
     fn single_tick(&mut self, if_flag: &mut u8) {
         if self.lcdc & 0x80 == 0 {
             self.ly = 0;
-            self.mode = 2;
+            self.mode = 0;
             self.dots = 0;
             return;
         }
