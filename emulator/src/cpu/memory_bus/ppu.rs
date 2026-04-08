@@ -4,7 +4,8 @@ const VRAM_TOTAL_BANKS: usize = 2;
 const VRAM_SIZE: usize = 0x9FFF - 0x8000 + 1;
 const OAM_SIZE: usize = 0xFE9F - 0xFE00 + 1;
 const VRAM_DMA_SIZE: usize = 0xFF55 - 0xFF51 + 1;
-const BG_OBJ_PALETTES_SIZE: usize = 0xFF6B - 0xFF68 + 1;
+const CGB_BG_PALETTE_DATA_SIZE: usize = 64;
+const CGB_OBJ_PALETTE_DATA_SIZE: usize = 64;
 const FRAME_BUFFER_ROWS: usize = 160;
 const FRAME_BUFFER_COLS: usize = 144;
 
@@ -32,7 +33,10 @@ pub struct PPU {
     wy: u8,
     wx: u8,
     vram_dma: [u8; VRAM_DMA_SIZE],
-    bg_obj_palettes: [u8; BG_OBJ_PALETTES_SIZE],
+    bg_palette_spec: u8,
+    bg_palette_data: [u8; CGB_BG_PALETTE_DATA_SIZE],
+    obj_palette_spec: u8,
+    obj_palette_data: [u8; CGB_OBJ_PALETTE_DATA_SIZE],
     object_priority_mode: u8,
     model_type: ModelType,
     dots: u16,
@@ -61,7 +65,10 @@ impl PPU {
             wy: 0,
             wx: 0,
             vram_dma: [0xFF; VRAM_DMA_SIZE],
-            bg_obj_palettes: [0; BG_OBJ_PALETTES_SIZE],
+            bg_palette_spec: 0,
+            bg_palette_data: [0; CGB_BG_PALETTE_DATA_SIZE],
+            obj_palette_spec: 0,
+            obj_palette_data: [0; CGB_OBJ_PALETTE_DATA_SIZE],
             object_priority_mode: 0,
             model_type,
             dots: 0,
@@ -113,7 +120,10 @@ impl PPU {
                 return Some(0xFF);
             }
             0xFF51..=0xFF55 => Some(self.vram_dma[(address - 0xFF51) as usize]),
-            0xFF68..=0xFF6B => Some(self.bg_obj_palettes[(address - 0xFF68) as usize]),
+            0xFF68 => Some(self.bg_palette_spec),
+            0xFF69 => Some(self.bg_palette_data[(self.bg_palette_spec & 0x3F) as usize]),
+            0xFF6A => Some(self.obj_palette_spec),
+            0xFF6B => Some(self.obj_palette_data[(self.obj_palette_spec & 0x3F) as usize]),
             0xFF6C => Some(self.object_priority_mode),
             _ => None,
         }
@@ -185,8 +195,27 @@ impl PPU {
             0xFF51..=0xFF55 => {
                 self.vram_dma[(address - 0xFF51) as usize] = value;
             }
-            0xFF68..=0xFF6B => {
-                self.bg_obj_palettes[(address - 0xFF68) as usize] = value;
+            0xFF68 => {
+                self.bg_palette_spec = value;
+            }
+            0xFF69 => {
+                let index = self.bg_palette_spec & 0x3F;
+                self.bg_palette_data[index as usize] = value;
+                if self.bg_palette_spec & 0x80 != 0 {
+                    let new_index = (index + 1) & 0x3F;
+                    self.bg_palette_spec = (self.bg_palette_spec & 0x80) | new_index;
+                }
+            }
+            0xFF6A => {
+                self.obj_palette_spec = value;
+            }
+            0xFF6B => {
+                let index = self.obj_palette_spec & 0x3F;
+                self.obj_palette_data[index as usize] = value;
+                if self.obj_palette_spec & 0x80 != 0 {
+                    let new_index = (index + 1) & 0x3F;
+                    self.obj_palette_spec = (self.obj_palette_spec & 0x80) | new_index;
+                }
             }
             0xFF6C => {
                 self.object_priority_mode = value;
@@ -272,11 +301,20 @@ impl PPU {
             if self.lcdc & 0x01 == 0 {
                 let frame_buffer_index = (self.ly as usize * 160 + i as usize) * 4;
 
-                self.frame_buffer[frame_buffer_index] = 0x9B;
-                self.frame_buffer[frame_buffer_index + 1] = 0xBC;
-                self.frame_buffer[frame_buffer_index + 2] = 0x0F;
-                self.frame_buffer[frame_buffer_index + 3] = 0xFF;
-                self.frame_buffer_color_indices[self.ly as usize * 160 + i as usize] = 0;
+                if matches!(self.model_type, ModelType::Color) {
+                    self.frame_buffer[frame_buffer_index] = 0xFF;
+                    self.frame_buffer[frame_buffer_index + 1] = 0xFF;
+                    self.frame_buffer[frame_buffer_index + 2] = 0xFF;
+                    self.frame_buffer[frame_buffer_index + 3] = 0xFF;
+                    self.frame_buffer_color_indices[self.ly as usize * 160 + i as usize] = 0;
+                } else {
+                    self.frame_buffer[frame_buffer_index] = 0x9B;
+                    self.frame_buffer[frame_buffer_index + 1] = 0xBC;
+                    self.frame_buffer[frame_buffer_index + 2] = 0x0F;
+                    self.frame_buffer[frame_buffer_index + 3] = 0xFF;
+                    self.frame_buffer_color_indices[self.ly as usize * 160 + i as usize] = 0;
+                }
+
                 continue;
             }
 
@@ -312,7 +350,17 @@ impl PPU {
 
             let inner_row_address = tile_data_address + inner_tile_row * 2;
             let color_index = self.calculate_pixel_color_index(inner_row_address, inner_tile_col);
-            let (r, g, b, a) = self.calculate_dmg_color(self.dmg_bgp, color_index);
+            let (r, g, b, a) =
+                if matches!(self.model_type, ModelType::Color) {
+                    let palette_num = 0usize;
+                    let base = palette_num * 8 + color_index as usize * 2;
+                    let low  = self.bg_palette_data[base];
+                    let high = self.bg_palette_data[base + 1];
+                  
+                    self.calculate_cgb_color(low, high)
+                } else {
+                    self.calculate_dmg_color(self.dmg_bgp, color_index)
+                };
             let frame_buffer_index = (self.ly as usize * 160 + i as usize) * 4;
 
             self.frame_buffer[frame_buffer_index] = r;
@@ -386,12 +434,23 @@ impl PPU {
                     continue;
                 }
 
-                let palette = if sprite.attributes & 0x10 != 0 {
-                    self.obp1
-                } else {
-                    self.obp0
-                };
-                let (r, g, b, a) = self.calculate_dmg_color(palette, color_index);
+                let (r, g, b, a) =
+                    if matches!(self.model_type, ModelType::Color) {
+                        let palette_num = (sprite.attributes & 0x07) as usize;
+                        let base = palette_num * 8 + color_index as usize * 2;
+                        let low  = self.bg_palette_data[base];
+                        let high = self.bg_palette_data[base + 1];
+                    
+                        self.calculate_cgb_color(low, high)
+                    } else {
+                        let palette = if sprite.attributes & 0x10 != 0 {
+                            self.obp1
+                        } else {
+                            self.obp0
+                        };
+
+                        self.calculate_dmg_color(palette, color_index)
+                    };
 
                 let i = (self.ly as usize * 160 + screen_x as usize) * 4;
                 self.frame_buffer[i] = r;
@@ -458,6 +517,18 @@ impl PPU {
             3 => (0x0F, 0x38, 0x0F, 0xFF),
             _ => unreachable!(),
         }
+    }
+
+    fn calculate_cgb_color(&self, low: u8, high: u8) -> (u8, u8, u8, u8) {
+        let r5 = (low & 0x1F) as u16;
+        let g5 = (((low >> 5) | (high << 3)) & 0x1F) as u16;
+        let b5 = ((high >> 2) & 0x1F) as u16;
+
+        let r8 = ((r5 << 3) | (r5 >> 2)) as u8;
+        let g8 = ((g5 << 3) | (g5 >> 2)) as u8;
+        let b8 = ((b5 << 3) | (b5 >> 2)) as u8;
+
+        (r8, g8, b8, 255)
     }
 
     fn update_stat_state(&mut self, if_flag: &mut u8) {
@@ -551,7 +622,8 @@ mod tests {
         assert!(ppu.oam.iter().all(|&x| x == 0));
         assert_eq!(ppu.lcdc, 0);
         assert!(ppu.vram_dma.iter().all(|&x| x == 0xFF));
-        assert!(ppu.bg_obj_palettes.iter().all(|&x| x == 0));
+        assert!(ppu.bg_palette_data.iter().all(|&x| x == 0));
+        assert!(ppu.obj_palette_data.iter().all(|&x| x == 0));
     }
 
     #[test]
@@ -694,18 +766,39 @@ mod tests {
     }
 
     #[test]
-    fn test_read_bg_obj_palettes() {
-        let mut ppu = PPU::new(ModelType::DMG);
-        ppu.bg_obj_palettes[0x01] = 0x56;
+    fn test_read_bg_palette_data() {
+        let mut ppu = PPU::new(ModelType::Color);
+        ppu.bg_palette_spec = 0x02;
+        ppu.bg_palette_data[0x02] = 0x56;
         assert_eq!(ppu.read(0xFF69), Some(0x56));
     }
 
     #[test]
-    fn test_write_bg_obj_palettes() {
-        let mut ppu = PPU::new(ModelType::DMG);
+    fn test_read_obj_palette_data() {
+        let mut ppu = PPU::new(ModelType::Color);
+        ppu.obj_palette_spec = 0x02;
+        ppu.obj_palette_data[0x02] = 0x56;
+        assert_eq!(ppu.read(0xFF6B), Some(0x56));
+    }
+
+    #[test]
+    fn test_write_bg_palette_data() {
+        let mut ppu = PPU::new(ModelType::Color);
         let mut if_flag: u8 = 0;
+        ppu.bg_palette_spec = 0x81;
         assert!(ppu.write(0xFF69, 0x56, &mut if_flag));
-        assert_eq!(ppu.bg_obj_palettes[0x01], 0x56);
+        assert_eq!(ppu.bg_palette_data[0x01], 0x56);
+        assert_eq!(ppu.bg_palette_spec, 0x82);
+    }
+
+    #[test]
+    fn test_write_obj_palette_data() {
+        let mut ppu = PPU::new(ModelType::Color);
+        let mut if_flag: u8 = 0;
+        ppu.obj_palette_spec = 0x81;
+        assert!(ppu.write(0xFF6B, 0x56, &mut if_flag));
+        assert_eq!(ppu.obj_palette_data[0x01], 0x56);
+        assert_eq!(ppu.obj_palette_spec, 0x82);
     }
 
     #[test]
