@@ -3,7 +3,6 @@ use super::types::ModelType;
 const VRAM_TOTAL_BANKS: usize = 2;
 const VRAM_SIZE: usize = 0x9FFF - 0x8000 + 1;
 const OAM_SIZE: usize = 0xFE9F - 0xFE00 + 1;
-const VRAM_DMA_SIZE: usize = 0xFF55 - 0xFF51 + 1;
 const CGB_BG_PALETTE_DATA_SIZE: usize = 64;
 const CGB_OBJ_PALETTE_DATA_SIZE: usize = 64;
 const FRAME_BUFFER_ROWS: usize = 160;
@@ -39,7 +38,6 @@ pub struct PPU {
     obp1: u8,
     wy: u8,
     wx: u8,
-    vram_dma: [u8; VRAM_DMA_SIZE],
     bg_palette_spec: u8,
     bg_palette_data: [u8; CGB_BG_PALETTE_DATA_SIZE],
     obj_palette_spec: u8,
@@ -71,7 +69,6 @@ impl PPU {
             obp1: 0xFF,
             wy: 0,
             wx: 0,
-            vram_dma: [0xFF; VRAM_DMA_SIZE],
             bg_palette_spec: 0,
             bg_palette_data: [0; CGB_BG_PALETTE_DATA_SIZE],
             obj_palette_spec: 0,
@@ -85,6 +82,10 @@ impl PPU {
             frame_buffer: [0; FRAME_BUFFER_ROWS * FRAME_BUFFER_COLS * 4],
             frame_buffer_pixel_priorities: [PixelPriority::Sprite; FRAME_BUFFER_ROWS * FRAME_BUFFER_COLS],
         }
+    }
+
+    pub fn mode(&self) -> u8 {
+        self.mode
     }
 
     pub fn read(&self, address: u16) -> Option<u8> {
@@ -126,7 +127,6 @@ impl PPU {
 
                 return Some(0xFF);
             }
-            0xFF51..=0xFF55 => Some(self.vram_dma[(address - 0xFF51) as usize]),
             0xFF68 => Some(self.bg_palette_spec),
             0xFF69 => Some(self.bg_palette_data[(self.bg_palette_spec & 0x3F) as usize]),
             0xFF6A => Some(self.obj_palette_spec),
@@ -199,9 +199,6 @@ impl PPU {
                     self.vram_bank = value & 0x01;
                 }
             }
-            0xFF51..=0xFF55 => {
-                self.vram_dma[(address - 0xFF51) as usize] = value;
-            }
             0xFF68 => {
                 self.bg_palette_spec = value;
             }
@@ -233,6 +230,15 @@ impl PPU {
         }
 
         true
+    }
+
+    pub fn write_to_vram(&mut self, address: u16, value: u8) {
+        let bank: usize = if matches!(self.model_type, ModelType::Color) {
+            self.vram_bank as usize
+        } else {
+            0
+        };
+        self.vram[bank * VRAM_SIZE + address as usize] = value;
     }
 
     pub fn tick(&mut self, if_flag: &mut u8, cycles: u8) {
@@ -658,7 +664,6 @@ mod tests {
         assert!(ppu.vram.iter().all(|&x| x == 0));
         assert!(ppu.oam.iter().all(|&x| x == 0));
         assert_eq!(ppu.lcdc, 0);
-        assert!(ppu.vram_dma.iter().all(|&x| x == 0xFF));
         assert!(ppu.bg_palette_data.iter().all(|&x| x == 0));
         assert!(ppu.obj_palette_data.iter().all(|&x| x == 0));
     }
@@ -785,21 +790,6 @@ mod tests {
         assert_eq!(ppu.vram_bank, 1);
         assert!(ppu.write(0xFF4F, 0x02, &mut if_flag));
         assert_eq!(ppu.vram_bank, 0); // Only bit 0
-    }
-
-    #[test]
-    fn test_read_vram_dma() {
-        let mut ppu = PPU::new(ModelType::DMG);
-        ppu.vram_dma[0x02] = 0x34;
-        assert_eq!(ppu.read(0xFF53), Some(0x34));
-    }
-
-    #[test]
-    fn test_write_vram_dma() {
-        let mut ppu = PPU::new(ModelType::DMG);
-        let mut if_flag: u8 = 0;
-        assert!(ppu.write(0xFF53, 0x34, &mut if_flag));
-        assert_eq!(ppu.vram_dma[0x02], 0x34);
     }
 
     #[test]

@@ -2,11 +2,12 @@ use crate::cpu::CPU;
 
 pub struct Emulator {
     cpu: CPU,
+    remaining_cycles: i32,
 }
 
 impl Emulator {
     pub fn new(rom: Vec<u8>) -> Self {
-        Emulator { cpu: CPU::new(rom) }
+        Emulator { cpu: CPU::new(rom), remaining_cycles: 0 }
     }
 
     pub fn execute(
@@ -19,9 +20,9 @@ impl Emulator {
             .set_joypad_pressed_directions(joypad_pressed_directions);
         self.cpu.set_joypad_pressed_buttons(joypad_pressed_buttons);
 
-        let mut remaining_cycles = cycles;
-        while remaining_cycles > 0 {
-            remaining_cycles -= self.cpu.execute_instruction().cycles as i32;
+        self.remaining_cycles += cycles;
+        while self.remaining_cycles > 0 {
+           self.remaining_cycles -= self.cpu.execute_instruction().cycles as i32;
         }
     }
 }

@@ -63,7 +63,9 @@ export const initGameEngine = () => {
     const reader = new FileReader();
     reader.onload = () => {
       initJoypad();
-      init_emulator(new Uint8Array(reader.result));
+
+      const rom = new Uint8Array(reader.result);
+      init_emulator(rom);
 
       canvas = document.createElement('canvas');
       canvas.width = 160;

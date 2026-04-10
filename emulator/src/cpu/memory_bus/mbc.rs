@@ -17,7 +17,7 @@ impl MBC {
             0x01..=0x03 => MBC::MBC1(mbc1::MBC1::new(rom)),
             0x0F..=0x13 => MBC::MBC3(mbc3::MBC3::new(rom)),
             0x19..=0x1E => MBC::MBC5(mbc5::MBC5::new(rom)),
-            _ => console_error!("Unsupported MBC type {:02X}", rom[0x0147]),
+            _ => console_error!("Unsupported MBC type"),
         }
     }
 

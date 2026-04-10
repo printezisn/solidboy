@@ -25,12 +25,22 @@ struct DMA {
     pub source: u16,
 }
 
+pub struct HDMA {
+    pub active: bool,
+    pub source: u16,
+    pub destination: u16,
+    pub remaining: u8,
+    pub pause: u8,
+    pub general_purpose: bool,
+}
+
 pub struct MemoryBus {
     mbc: MBC,
     ppu: PPU,
     audio: Audio,
     timer: Timer,
     dma: DMA,
+    hdma: HDMA,
 
     wram: [u8; WRAM_SIZE * (WRAM_TOTAL_BANKS + 1)],
     wram_bank: u8,
@@ -52,6 +62,7 @@ pub struct MemoryBus {
 
     total_cycles: u8,
     model_type: ModelType,
+    halted: bool,
 }
 
 impl MemoryBus {
@@ -73,6 +84,14 @@ impl MemoryBus {
                 byte: 0,
                 source: 0,
             },
+            hdma: HDMA {
+                active: false,
+                source: 0,
+                destination: 0,
+                remaining: 0,
+                pause: 0,
+                general_purpose: false,
+            },
 
             wram: [0; WRAM_SIZE * (WRAM_TOTAL_BANKS + 1)],
             wram_bank: 0,
@@ -92,6 +111,7 @@ impl MemoryBus {
 
             total_cycles: 0,
             model_type,
+            halted: false,
         }
     }
 
@@ -180,6 +200,28 @@ impl MemoryBus {
             0xFF50 => {
                 self.boot_rom_mapping_control = value;
             }
+            0xFF51 => {
+                self.hdma.source = ((value as u16) << 8) | (self.hdma.source & 0xFF);
+            }
+            0xFF52 => {
+                self.hdma.source = (self.hdma.source & 0xFF00) | (value as u16 & 0xF0);
+            }
+            0xFF53 => {
+                self.hdma.destination = ((value as u16) << 8) | (self.hdma.destination & 0xFF);
+            }
+            0xFF54 => {
+                self.hdma.destination = (self.hdma.destination & 0xFF00) | (value as u16 & 0xF0);
+            }
+            0xFF55 => {
+                if !matches!(self.model_type, ModelType::Color) {
+                    return;
+                }
+
+                self.hdma.remaining = (value & 0x7F) + 1;
+                self.hdma.active = true;
+                self.hdma.general_purpose = value & 0x80 == 0;
+                self.hdma.pause = if self.hdma.general_purpose { 8 } else { 0 };
+            }
             0xFF56 => {
                 if matches!(self.model_type, ModelType::Color) {
                     self.ir_port = value;
@@ -267,6 +309,17 @@ impl MemoryBus {
             0xFF4C => self.key0,
             0xFF4D => self.key1,
             0xFF50 => self.boot_rom_mapping_control,
+            0xFF51 => (self.hdma.source >> 8) as u8,
+            0xFF52 => self.hdma.source as u8,
+            0xFF53 => (self.hdma.destination >> 8) as u8,
+            0xFF54 => self.hdma.destination as u8,
+            0xFF55 => {
+                if self.hdma.active {
+                    self.hdma.remaining - 1
+                } else {
+                    0xFF
+                }
+            }
             0xFF56 => {
                 if matches!(self.model_type, ModelType::Color) {
                     return self.ir_port;
@@ -346,6 +399,47 @@ impl MemoryBus {
         self.total_cycles
     }
 
+    pub fn hdma(&self) -> &HDMA {
+        &self.hdma
+    }
+
+    pub fn halted(&self) -> bool {
+        self.halted
+    }
+
+    pub fn set_halted(&mut self, value: bool) {
+        self.halted = value;
+    }
+
+    fn tick_hdma(&mut self, cycles: u8) {
+        for _ in 0..cycles {
+            if !self.hdma.active {
+                break;
+            }
+
+            if self.hdma.pause > 0 {
+                self.hdma.pause -= 1;
+                if self.hdma.pause > 0 {
+                    continue;
+                }
+            }
+
+            for _ in 0..16 {
+                let value = self.read_without_tick(self.hdma.source);
+                self.ppu.write_to_vram(self.hdma.destination - 0x8000, value);
+                self.hdma.source = self.hdma.source.wrapping_add(1);
+                self.hdma.destination = self.hdma.destination.wrapping_add(1);
+            }
+
+            self.hdma.remaining -= 1;
+            if self.hdma.remaining == 0 {
+                self.hdma.active = false;
+            } else if self.hdma.general_purpose {
+                self.hdma.pause = 8;
+            }
+        }
+    }
+
     fn tick_dma(&mut self, cycles: u8) {
         for _ in 0..cycles {
             if !self.dma.active && self.dma.init_delay == 0 {
@@ -393,9 +487,21 @@ impl MemoryBus {
         self.total_cycles += real_speed;
         self.timer.tick(&mut self.if_flag, cycles);
 
-        self.ppu.tick(&mut self.if_flag, real_speed);
+        for _ in 0..real_speed {
+            let previous_mode = self.ppu.mode();
+            self.ppu.tick(&mut self.if_flag, 1);
+            let new_mode = self.ppu.mode();
+
+            if !self.hdma.general_purpose && previous_mode != 0 && new_mode == 0 && !self.halted {
+                self.tick_hdma(1);
+            }
+        }
+        
         self.mbc.tick(real_speed as u32);
         self.tick_dma(cycles);
+        if self.hdma.general_purpose {
+            self.tick_hdma(cycles);
+        }
     }
 }
 
