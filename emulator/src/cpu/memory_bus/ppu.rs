@@ -17,7 +17,7 @@ struct Sprite {
     priority: u8,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum PixelPriority {
     BG,
     BGIfSpriteDisabled,
@@ -836,6 +836,116 @@ mod tests {
         assert!(ppu.write(0xFF6B, 0x56, &mut if_flag));
         assert_eq!(ppu.obj_palette_data[0x01], 0x56);
         assert_eq!(ppu.obj_palette_spec, 0x82);
+    }
+
+    #[test]
+    fn test_write_bg_palette_data_auto_increment_wraps() {
+        let mut ppu = PPU::new(ModelType::Color);
+        let mut if_flag: u8 = 0;
+        ppu.bg_palette_spec = 0x80 | 0x3F;
+        assert!(ppu.write(0xFF69, 0xAA, &mut if_flag));
+        assert_eq!(ppu.bg_palette_data[0x3F], 0xAA);
+        assert_eq!(ppu.bg_palette_spec, 0x80);
+    }
+
+    #[test]
+    fn test_render_scanline_cgb_bg_palette_section_uses_palette_number() {
+        let mut ppu = PPU::new(ModelType::Color);
+        ppu.lcdc = 0x80 | 0x01 | 0x10;
+        ppu.ly = 0;
+        ppu.scx = 0;
+        ppu.scy = 0;
+
+        ppu.vram[0x1800] = 0;
+        ppu.vram[0] = 0b1000_0000;
+        ppu.vram[1] = 0x00;
+        ppu.vram[VRAM_SIZE + 0x1800] = 0x02;
+
+        let palette_num = 2;
+        let color_index = 1;
+        let base = palette_num * 8 + color_index * 2;
+        ppu.bg_palette_data[base] = 0x1F;
+        ppu.bg_palette_data[base + 1] = 0x00;
+
+        ppu.render_scanline();
+
+        let expected = ppu.calculate_cgb_color(0x1F, 0x00);
+        let color_offset = 0;
+        assert_eq!(ppu.frame_buffer[color_offset], expected.0);
+        assert_eq!(ppu.frame_buffer[color_offset + 1], expected.1);
+        assert_eq!(ppu.frame_buffer[color_offset + 2], expected.2);
+        assert_eq!(ppu.frame_buffer[color_offset + 3], expected.3);
+        assert_eq!(ppu.frame_buffer_pixel_priorities[0], PixelPriority::BGIfSpriteDisabled);
+    }
+
+    #[test]
+    fn test_render_scanline_cgb_bg_priority_flag_sets_bg_priority() {
+        let mut ppu = PPU::new(ModelType::Color);
+        ppu.lcdc = 0x80 | 0x01 | 0x10;
+        ppu.ly = 0;
+        ppu.scx = 0;
+        ppu.scy = 0;
+
+        ppu.vram[0x1800] = 0;
+        ppu.vram[0] = 0b1000_0000;
+        ppu.vram[1] = 0x00;
+        ppu.vram[VRAM_SIZE + 0x1800] = 0x82;
+
+        let palette_num = 2;
+        let color_index = 1;
+        let base = palette_num * 8 + color_index * 2;
+        ppu.bg_palette_data[base] = 0x1F;
+        ppu.bg_palette_data[base + 1] = 0x00;
+
+        ppu.render_scanline();
+
+        assert_eq!(ppu.frame_buffer_pixel_priorities[0], PixelPriority::BG);
+    }
+
+    #[test]
+    fn test_oam_scan_color_sort_by_priority_when_object_priority_mode_zero() {
+        let mut ppu = PPU::new(ModelType::Color);
+        ppu.ly = 8;
+        ppu.object_priority_mode = 0;
+
+        ppu.oam[0] = 24;
+        ppu.oam[1] = 18;
+        ppu.oam[2] = 0;
+        ppu.oam[3] = 0;
+
+        ppu.oam[4] = 24;
+        ppu.oam[5] = 18;
+        ppu.oam[6] = 0;
+        ppu.oam[7] = 0;
+
+        ppu.oam_scan();
+
+        assert_eq!(ppu.sprites.len(), 2);
+        assert_eq!(ppu.sprites[0].priority, 1);
+        assert_eq!(ppu.sprites[1].priority, 0);
+    }
+
+    #[test]
+    fn test_oam_scan_color_sort_by_x_when_object_priority_mode_one() {
+        let mut ppu = PPU::new(ModelType::Color);
+        ppu.ly = 8;
+        ppu.object_priority_mode = 1;
+
+        ppu.oam[0] = 24;
+        ppu.oam[1] = 18;
+        ppu.oam[2] = 0;
+        ppu.oam[3] = 0;
+
+        ppu.oam[4] = 24;
+        ppu.oam[5] = 26;
+        ppu.oam[6] = 0;
+        ppu.oam[7] = 0;
+
+        ppu.oam_scan();
+
+        assert_eq!(ppu.sprites.len(), 2);
+        assert_eq!(ppu.sprites[0].x, 18);
+        assert_eq!(ppu.sprites[1].x, 10);
     }
 
     #[test]
