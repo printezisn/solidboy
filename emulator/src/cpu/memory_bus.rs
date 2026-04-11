@@ -487,7 +487,7 @@ impl MemoryBus {
         self.total_cycles += real_speed;
         self.timer.tick(&mut self.if_flag, cycles);
 
-        for _ in 0..real_speed {
+        for _ in 0..cycles {
             let previous_mode = self.ppu.mode();
             self.ppu.tick(&mut self.if_flag, 1);
             let new_mode = self.ppu.mode();
@@ -497,7 +497,7 @@ impl MemoryBus {
             }
         }
         
-        self.mbc.tick(real_speed as u32);
+        self.mbc.tick(cycles as u32);
         self.tick_dma(cycles);
         if self.hdma.general_purpose {
             self.tick_hdma(cycles);
