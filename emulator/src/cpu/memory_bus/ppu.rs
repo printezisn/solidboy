@@ -428,7 +428,7 @@ impl PPU {
         let sprite_height = if self.lcdc & 0x04 != 0 { 16 } else { 8 };
 
         for sprite in &self.sprites {
-            let mut tile_row = (self.ly as i16 - sprite.y as i16) as u16;
+            let mut tile_row = self.ly.wrapping_sub(sprite.y) as u16;
 
             if sprite.attributes & 0x40 != 0 {
                 tile_row = sprite_height - 1 - tile_row;
@@ -456,9 +456,9 @@ impl PPU {
             let byte1 = self.vram[tile_address as usize + 1];
 
             for bit in 0..8u8 {
-                let screen_x = sprite.x as i16 + bit as i16;
+                let screen_x = sprite.x.wrapping_add(bit);
 
-                if screen_x < 0 || screen_x >= 160 {
+                if screen_x >= 160 {
                     continue;
                 }
 
@@ -525,9 +525,8 @@ impl PPU {
             let tile_index = self.oam[base + 2];
             let attributes = self.oam[base + 3];
 
-            let y = self.oam[base] as i16 - 16;
-            let ly = self.ly as i16;
-            if ly >= y && ly < y + sprite_height as i16 {
+            let diff = self.ly.wrapping_sub(sprite_y);
+            if diff < sprite_height {
                 self.sprites.push(Sprite {
                     y: sprite_y,
                     x: sprite_x,
