@@ -50,6 +50,7 @@ pub struct PPU {
     sprites: Vec<Sprite>,
     frame_buffer: [u8; FRAME_BUFFER_ROWS * FRAME_BUFFER_COLS * 4],
     frame_buffer_pixel_priorities: [PixelPriority; FRAME_BUFFER_ROWS * FRAME_BUFFER_COLS],
+    skip_frame: bool,
 }
 
 impl PPU {
@@ -81,6 +82,7 @@ impl PPU {
             sprites: Vec::new(),
             frame_buffer: [0; FRAME_BUFFER_ROWS * FRAME_BUFFER_COLS * 4],
             frame_buffer_pixel_priorities: [PixelPriority::Sprite; FRAME_BUFFER_ROWS * FRAME_BUFFER_COLS],
+            skip_frame: false,
         }
     }
 
@@ -154,6 +156,15 @@ impl PPU {
                 }
             }
             0xFF40 => {
+                if self.lcdc & 0x80 != 0 && value & 0x80 == 0 {
+                    self.mode = 0;
+                } else if self.lcdc & 0x80 == 0 && value & 0x80 != 0 {
+                    self.ly = 0;
+                    self.dots = 0;
+                    self.window_line = 0;
+                    self.skip_frame = true;
+                }
+
                 self.lcdc = value;
             }
             0xFF41 => {
@@ -249,13 +260,10 @@ impl PPU {
 
     fn single_tick(&mut self, if_flag: &mut u8) {
         if self.lcdc & 0x80 == 0 {
-            self.ly = 0;
-            self.mode = 0;
-            self.dots = 0;
             return;
         }
 
-        if self.dots == 0 && self.mode != 1 {
+        if self.dots == 0 && self.mode != 1 && !self.skip_frame {
             self.oam_scan();
         }
 
@@ -274,7 +282,7 @@ impl PPU {
         } else if self.dots >= 80 && self.dots <= mode3_end {
             if self.mode != 1 {
                 self.mode = 3;
-                if self.dots == 80 && self.ly < 144 {
+                if self.dots == 80 && self.ly < 144 && !self.skip_frame {
                     self.render_scanline();
                 }
             }
@@ -292,6 +300,7 @@ impl PPU {
                 self.ly = 0;
                 self.window_line = 0;
                 self.mode = 0;
+                self.skip_frame = false;
                 render_frame_buffer!(self.frame_buffer.as_ptr(), self.frame_buffer.len());
             }
         } else {
@@ -587,7 +596,7 @@ impl PPU {
 
         let new_value = self.stat_on();
 
-        if !previous_value && new_value {
+        if !previous_value && new_value && self.lcdc & 0x80 != 0 {
             *if_flag |= 0x02;
         }
     }
@@ -625,7 +634,7 @@ impl PPU {
 
         let new_value = self.stat_on();
 
-        if !previous_value && new_value {
+        if !previous_value && new_value && self.lcdc & 0x80 != 0 {
             *if_flag |= 0x02;
         }
     }
