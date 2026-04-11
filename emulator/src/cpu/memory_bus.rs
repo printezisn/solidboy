@@ -195,7 +195,7 @@ impl MemoryBus {
                 self.key0 = value;
             }
             0xFF4D => {
-                self.key1 = value;
+                self.key1 = (self.key1 & !0x01) | (value & 0x01);
             }
             0xFF50 => {
                 self.boot_rom_mapping_control = value;
@@ -487,7 +487,7 @@ impl MemoryBus {
         self.total_cycles += real_speed;
         self.timer.tick(&mut self.if_flag, cycles);
 
-        for _ in 0..cycles {
+        for _ in 0..real_speed {
             let previous_mode = self.ppu.mode();
             self.ppu.tick(&mut self.if_flag, 1);
             let new_mode = self.ppu.mode();
@@ -500,7 +500,7 @@ impl MemoryBus {
         self.mbc.tick(cycles as u32);
         self.tick_dma(cycles);
         if self.hdma.general_purpose {
-            self.tick_hdma(cycles);
+            self.tick_hdma(real_speed);
         }
     }
 }
