@@ -1,6 +1,12 @@
 <header class="container">
   <h1 class="title1">Solidboy Emulator</h1>
-  <p>A GameBoy/GameBoy Color emulator</p>
+  <p>A GameBoy/GameBoy Color emulator.</p>
+  <p>
+    You can find homebrew games in the
+    <a href="https://hh.gbdev.io/" target="_blank" rel="noreferrer"
+      >Homebrew Hub</a
+    >
+  </p>
 </header>
 <main class="container">
   <div class="device">
@@ -85,27 +91,32 @@
       </div>
     </div>
     <div class="settings">
-      <button type="button" class="console-button" id="console-button">
+      <button
+        type="button"
+        class="button default hollow"
+        commandfor="console-modal"
+        command="show-modal"
+      >
         <span class="terminal-icon" aria-hidden="true"></span>
         Console
       </button>
-      <button type="button" class="sound-button" id="sound-button">
+      <button type="button" class="button default hollow">
         <span class="volume-icon" aria-hidden="true"></span>
         Mute
       </button>
     </div>
-    <div class="console-modal" id="console-modal">
-      <div class="overlay" id="console-modal-overlay"></div>
-      <div class="console-container">
+    <dialog id="console-modal" closedby="any">
+      <div class="dialog-container">
         <button
           type="button"
           aria-label="Close"
-          class="x-icon console-close-button"
-          id="console-close-button"
+          class="x-icon"
+          commandfor="console-modal"
+          command="close"
         ></button>
         <pre class="console" id="console"></pre>
       </div>
-    </div>
+    </dialog>
   </div>
 </main>
 <footer class="container">
@@ -121,6 +132,14 @@
       </li>
       <li>
         <a href="/privacy-policy">Privacy Policy</a>
+      </li>
+      <li>
+        <a
+          href="https://github.com/printezisn/solidboy"
+          target="_blank"
+          rel="noreferrer nofollow"
+          >GitHub</a
+        >
       </li>
     </ul>
   </nav>

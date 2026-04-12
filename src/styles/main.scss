@@ -1,6 +1,8 @@
 @use 'functions' as f;
 @use 'titles';
 @use 'container';
+@use 'dialog';
+@use 'buttons';
 @use 'device';
 
 :root {
@@ -35,6 +37,7 @@
   padding: 0;
   box-sizing: border-box;
   font: inherit;
+  outline-color: var(--color-primary-white);
 }
 
 html,
@@ -113,6 +116,16 @@ body > footer {
     }
 
     li:last-child::after {
+      content: unset;
+    }
+  }
+}
+
+@media (max-width: #{f.relative-size(370)}) {
+  body > footer ul {
+    flex-direction: column;
+
+    li::after {
       content: unset;
     }
   }

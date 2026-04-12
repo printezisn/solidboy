@@ -4,7 +4,6 @@ import uploadIcon from 'feather-icons/dist/icons/upload.svg?raw';
 import terminalIcon from 'feather-icons/dist/icons/terminal.svg?raw';
 import volumeIcon from 'feather-icons/dist/icons/volume.svg?raw';
 import xIcon from 'feather-icons/dist/icons/x.svg?raw';
-import { initConsole } from './console';
 
 export const initEmulator = () => {
   document.getElementById('current-year').innerHTML = new Date().getFullYear();
@@ -31,6 +30,5 @@ export const initEmulator = () => {
     container.innerHTML = xIcon;
   });
 
-  initConsole();
   initGameEngine();
 };

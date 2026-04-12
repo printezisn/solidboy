@@ -30,20 +30,20 @@ var e = Object.defineProperty, t = (t, n) => {
 //#endregion
 //#region emulator/pkg/solidboy_emulator_bg.js
 function i() {
-	return b.emulator_memory();
+	return x.emulator_memory();
 }
 function a(e, t, n) {
-	b.execute(e, t, n);
+	x.execute(e, t, n);
 }
 function o(e, t) {
-	let n = m(e, b.__wbindgen_malloc), r = y, i = m(t, b.__wbindgen_malloc), a = y;
-	b.init_emulator(n, r, i, a);
+	let n = h(e, x.__wbindgen_malloc), r = b, i = h(t, x.__wbindgen_malloc), a = b;
+	x.init_emulator(n, r, i, a);
 }
 function s() {
-	return b.memory;
+	return x.memory;
 }
 function c(e, t) {
-	emulator_console_error(d(e, t));
+	emulator_console_error(f(e, t));
 }
 function l(e, t) {
 	render_frame_buffer(e >>> 0, t >>> 0);
@@ -51,60 +51,60 @@ function l(e, t) {
 function u(e, t) {
 	save_data(e >>> 0, t >>> 0);
 }
-function ee() {
-	let e = b.__wbindgen_externrefs, t = e.grow(4);
+function d() {
+	let e = x.__wbindgen_externrefs, t = e.grow(4);
 	e.set(0, void 0), e.set(t + 0, void 0), e.set(t + 1, null), e.set(t + 2, !0), e.set(t + 3, !1);
 }
-function d(e, t) {
-	return e >>>= 0, v(e, t);
+function f(e, t) {
+	return e >>>= 0, y(e, t);
 }
-var f = null;
-function p() {
-	return (f === null || f.byteLength === 0) && (f = new Uint8Array(b.memory.buffer)), f;
+var p = null;
+function m() {
+	return (p === null || p.byteLength === 0) && (p = new Uint8Array(x.memory.buffer)), p;
 }
-function m(e, t) {
+function h(e, t) {
 	let n = t(e.length * 1, 1) >>> 0;
-	return p().set(e, n / 1), y = e.length, n;
+	return m().set(e, n / 1), b = e.length, n;
 }
-var h = new TextDecoder("utf-8", {
+var g = new TextDecoder("utf-8", {
 	ignoreBOM: !0,
 	fatal: !0
 });
-h.decode();
-var g = 2146435072, _ = 0;
-function v(e, t) {
-	return _ += t, _ >= g && (h = new TextDecoder("utf-8", {
+g.decode();
+var _ = 2146435072, v = 0;
+function y(e, t) {
+	return v += t, v >= _ && (g = new TextDecoder("utf-8", {
 		ignoreBOM: !0,
 		fatal: !0
-	}), h.decode(), _ = t), h.decode(p().subarray(e, e + t));
+	}), g.decode(), v = t), g.decode(m().subarray(e, e + t));
 }
-var y = 0, b;
-function x(e) {
-	b = e;
+var b = 0, x;
+function S(e) {
+	x = e;
 }
 //#endregion
 //#region emulator/pkg/solidboy_emulator_bg.wasm
-var S = /* @__PURE__ */ t({
-	__wbindgen_externrefs: () => ae,
-	__wbindgen_malloc: () => oe,
-	__wbindgen_start: () => C,
-	emulator_memory: () => ie,
-	execute: () => re,
-	init_emulator: () => ne,
-	memory: () => te
+var C = /* @__PURE__ */ t({
+	__wbindgen_externrefs: () => O,
+	__wbindgen_malloc: () => k,
+	__wbindgen_start: () => A,
+	emulator_memory: () => D,
+	execute: () => E,
+	init_emulator: () => T,
+	memory: () => w
 });
 URL = globalThis.URL;
-var { memory: te, init_emulator: ne, execute: re, emulator_memory: ie, __wbindgen_externrefs: ae, __wbindgen_malloc: oe, __wbindgen_start: C } = await r({ "./solidboy_emulator_bg.js": {
+var { memory: w, init_emulator: T, execute: E, emulator_memory: D, __wbindgen_externrefs: O, __wbindgen_malloc: k, __wbindgen_start: A } = await r({ "./solidboy_emulator_bg.js": {
 	__wbg_emulator_console_error_0e41d9e099af87bf: c,
 	__wbg_render_frame_buffer_9cf1360b11ecab81: l,
 	__wbg_save_data_0d1e8ef359f1c7c9: u,
 	__wbg___wbindgen_memory_edb3f01e3930bbf6: s,
-	__wbindgen_init_externref_table: ee
+	__wbindgen_init_externref_table: d
 } }, n);
-x(S), C();
+S(C), A();
 //#endregion
 //#region src/joypad.js
-var w = {
+var j = {
 	"down-direction": {
 		pressed: !1,
 		bit: 8,
@@ -145,107 +145,87 @@ var w = {
 		bit: 1,
 		key: "s"
 	}
-}, T = () => {
+}, M = () => {
 	let e = 0;
-	for (let t in w) t.includes("-direction") && w[t].pressed && (e |= w[t].bit);
+	for (let t in j) t.includes("-direction") && j[t].pressed && (e |= j[t].bit);
 	return ~e & 15;
-}, E = () => {
+}, N = () => {
 	let e = 0;
-	for (let t in w) t.includes("-button") && w[t].pressed && (e |= w[t].bit);
+	for (let t in j) t.includes("-button") && j[t].pressed && (e |= j[t].bit);
 	return ~e & 15;
-}, D = () => {
-	for (let e in w) {
+}, P = () => {
+	for (let e in j) {
 		let t = document.getElementById(e);
 		t.addEventListener("pointerdown", () => {
-			w[e].pressed = !0, t.classList.add("pressed");
+			j[e].pressed = !0, t.classList.add("pressed");
 		}), t.addEventListener("pointerup", () => {
-			w[e].pressed = !1, t.classList.remove("pressed");
+			j[e].pressed = !1, t.classList.remove("pressed");
 		});
 	}
 	document.addEventListener("keydown", (e) => {
-		for (let t in w) if (e.key === w[t].key) {
-			w[t].pressed = !0, document.getElementById(t).classList.add("pressed"), e.preventDefault();
+		for (let t in j) if (e.key === j[t].key) {
+			j[t].pressed = !0, document.getElementById(t).classList.add("pressed"), e.preventDefault();
 			break;
 		}
 	}), document.addEventListener("keyup", (e) => {
-		for (let t in w) if (e.key === w[t].key) {
-			w[t].pressed = !1, document.getElementById(t).classList.remove("pressed"), e.preventDefault();
+		for (let t in j) if (e.key === j[t].key) {
+			j[t].pressed = !1, document.getElementById(t).classList.remove("pressed"), e.preventDefault();
 			break;
 		}
 	});
-}, O = "game-data", k = 1, A = "game-data", j = () => new Promise((e, t) => {
-	let n = indexedDB.open(O, k);
+}, F = "game-data", I = 1, L = "game-data", R = () => new Promise((e, t) => {
+	let n = indexedDB.open(F, I);
 	n.onupgradeneeded = (e) => {
 		let t = e.target.result;
-		t.objectStoreNames.contains(A) || t.createObjectStore(A);
+		t.objectStoreNames.contains(L) || t.createObjectStore(L);
 	}, n.onsuccess = (t) => e(t.target.result), n.onerror = (e) => t(e.target.error);
-}), M = async (e, t) => {
-	let n = await j();
+}), z = async (e, t) => {
+	let n = await R();
 	return new Promise((r, i) => {
-		let a = n.transaction(A, "readwrite").objectStore(A).put(t, e);
+		let a = n.transaction(L, "readwrite").objectStore(L).put(t, e);
 		a.onsuccess = () => r(), a.onerror = () => i(a.error);
 	});
-}, N = async (e) => {
-	let t = await j();
+}, B = async (e) => {
+	let t = await R();
 	return new Promise((n, r) => {
-		let i = t.transaction(A, "readonly").objectStore(A).get(e);
+		let i = t.transaction(L, "readonly").objectStore(L).get(e);
 		i.onsuccess = () => n(i.result || new Uint8ClampedArray()), i.onerror = () => r(i.error);
 	});
-}, P = 4194 / 2, F = 20, I = null, L = new Uint8ClampedArray(23040 * 4), R = null, z = null, B = null, V = document.getElementById("console"), H = () => {
-	let e = new ImageData(L, 160, 144);
-	I.getContext("2d").putImageData(e, 0, 0);
-}, U = () => {
+}, V = 4194 / 2, H = 20, U = null, W = new Uint8ClampedArray(23040 * 4), G = null, K = null, q = null, J = document.getElementById("console"), Y = () => {
+	let e = new ImageData(W, 160, 144);
+	U.getContext("2d").putImageData(e, 0, 0);
+}, X = () => {
 	let e = performance.now();
-	R ??= e, a(Math.max(F, e - R) * P, T(), E()), R = e, H(), B &&= (M(z, B), null), requestAnimationFrame(U);
-}, W = () => {
+	G ??= e, a(Math.max(H, e - G) * V, M(), N()), G = e, Y(), q &&= (z(K, q), null), requestAnimationFrame(X);
+}, Z = () => {
 	let e = i();
 	window.emulator_console_log = (e) => {
-		V.innerHTML += e;
+		J.innerHTML += e;
 	}, window.emulator_console_error = (e) => {
-		V.innerHTML += `<span class="error-message">${e}</span>`;
+		J.innerHTML += `<span class="error-message">${e}</span>`;
 	}, window.render_frame_buffer = (t, n) => {
-		L = new Uint8ClampedArray(e.buffer, t, n);
+		W = new Uint8ClampedArray(e.buffer, t, n);
 	}, window.save_data = (t, n) => {
-		B = new Uint8ClampedArray(e.buffer, t, n);
+		q = new Uint8ClampedArray(e.buffer, t, n);
 	}, document.getElementById("rom-file").addEventListener("change", (e) => {
 		let t = e.target.files[0];
 		if (!t) return;
-		z = t.name;
+		K = t.name;
 		let n = new FileReader();
 		n.onload = async () => {
-			I = document.createElement("canvas"), I.width = 160, I.height = 144, document.getElementById("insert-rom-container").remove(), document.getElementById("screen-container").appendChild(I), o(new Uint8Array(n.result), await N(z)), D(), U();
+			U = document.createElement("canvas"), U.width = 160, U.height = 144, document.getElementById("insert-rom-container").remove(), document.getElementById("screen-container").appendChild(U), o(new Uint8Array(n.result), await B(K)), P(), X();
 		}, n.readAsArrayBuffer(t);
 	});
-}, G = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"feather feather-upload\"><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\"></path><polyline points=\"17 8 12 3 7 8\"></polyline><line x1=\"12\" y1=\"3\" x2=\"12\" y2=\"15\"></line></svg>", K = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"feather feather-terminal\"><polyline points=\"4 17 10 11 4 5\"></polyline><line x1=\"12\" y1=\"19\" x2=\"20\" y2=\"19\"></line></svg>", q = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"feather feather-volume\"><polygon points=\"11 5 6 9 2 9 2 15 6 15 11 19 11 5\"></polygon></svg>", se = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"feather feather-x\"><line x1=\"18\" y1=\"6\" x2=\"6\" y2=\"18\"></line><line x1=\"6\" y1=\"6\" x2=\"18\" y2=\"18\"></line></svg>", J = 500, Y = document.getElementById("console-modal"), X = !1, Z = !1, ce = () => {
-	X || Z || (X = !0, Z = !0, Y.classList.add("show-start"), setTimeout(() => {
-		Y.classList.add("show"), Y.classList.remove("show-start"), setTimeout(() => {
-			Z = !1;
-		}, J);
-	}, 0));
-}, Q = () => {
-	!X || Z || (X = !1, Z = !0, Y.classList.add("show-end"), Y.classList.remove("show"), setTimeout(() => {
-		Y.classList.remove("show-end"), Z = !1;
-	}, J));
-}, le = () => {
-	document.getElementById("console-modal-overlay").addEventListener("click", () => {
-		Q();
-	}), document.getElementById("console-button").addEventListener("click", () => {
-		ce();
-	}), document.getElementById("console-close-button").addEventListener("click", () => {
-		Q();
-	}), document.addEventListener("keyup", (e) => {
-		e.key === "Escape" && Q();
-	});
-}, $ = () => {
+}, Q = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"feather feather-upload\"><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\"></path><polyline points=\"17 8 12 3 7 8\"></polyline><line x1=\"12\" y1=\"3\" x2=\"12\" y2=\"15\"></line></svg>", $ = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"feather feather-terminal\"><polyline points=\"4 17 10 11 4 5\"></polyline><line x1=\"12\" y1=\"19\" x2=\"20\" y2=\"19\"></line></svg>", ee = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"feather feather-volume\"><polygon points=\"11 5 6 9 2 9 2 15 6 15 11 19 11 5\"></polygon></svg>", te = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"feather feather-x\"><line x1=\"18\" y1=\"6\" x2=\"6\" y2=\"18\"></line><line x1=\"6\" y1=\"6\" x2=\"18\" y2=\"18\"></line></svg>", ne = () => {
 	document.getElementById("current-year").innerHTML = (/* @__PURE__ */ new Date()).getFullYear(), Array.from(document.getElementsByClassName("upload-icon")).forEach((e) => {
-		e.innerHTML = G;
+		e.innerHTML = Q;
 	}), Array.from(document.getElementsByClassName("terminal-icon")).forEach((e) => {
-		e.innerHTML = K;
+		e.innerHTML = $;
 	}), Array.from(document.getElementsByClassName("volume-icon")).forEach((e) => {
-		e.innerHTML = q;
+		e.innerHTML = ee;
 	}), Array.from(document.getElementsByClassName("x-icon")).forEach((e) => {
-		e.innerHTML = se;
-	}), le(), W();
+		e.innerHTML = te;
+	}), Z();
 };
 //#endregion
-export { $ as initEmulator };
+export { ne as initEmulator };

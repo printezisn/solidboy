@@ -1,0 +1,61 @@
+@use 'functions' as f;
+
+dialog {
+  @keyframes fadeIn {
+    0% {
+      opacity: 0;
+    }
+  }
+
+  @keyframes scaleUp {
+    0% {
+      transform: translate(-50%, -50%) scale(0.5);
+    }
+  }
+
+  &::backdrop {
+    background-color: var(--color-primary-black);
+    opacity: 0.8;
+    animation: fadeIn 0.5s forwards;
+  }
+
+  .x-icon {
+    position: absolute;
+    inset-inline-end: 0;
+    inset-block-start: #{f.relative-size(-50)};
+    color: var(--color-primary-grey-light);
+    font-size: var(--font-size-15);
+  }
+
+  .dialog-container {
+    position: fixed;
+    inline-size: #{f.relative-size(480)};
+    max-inline-size: calc(100% - var(--spacing-4) * 2);
+    padding: var(--spacing-4);
+    background-color: var(--color-primary-light);
+    z-index: 101;
+    inset-inline-start: 50%;
+    inset-block-start: 50%;
+    transform: translate(-50%, -50%) scale(1);
+    animation:
+      fadeIn 0.5s forwards,
+      scaleUp 0.5s forwards;
+    animation-timing-function: linear(
+      0,
+      0.402 7.4%,
+      0.711 15.3%,
+      0.929 23.7%,
+      1.008 28.2%,
+      1.067 33%,
+      1.099 36.9%,
+      1.12 41%,
+      1.13 45.4%,
+      1.13 50.1%,
+      1.111 58.5%,
+      1.019 83.2%,
+      1.004 91.3%,
+      1
+    );
+    border-radius: var(--border-radius-medium);
+  }
+}
