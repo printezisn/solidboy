@@ -6,8 +6,8 @@ pub struct Emulator {
 }
 
 impl Emulator {
-    pub fn new(rom: Vec<u8>) -> Self {
-        Emulator { cpu: CPU::new(rom), remaining_cycles: 0 }
+    pub fn new(rom: Vec<u8>, external_ram: Vec<u8>) -> Self {
+        Emulator { cpu: CPU::new(rom, external_ram), remaining_cycles: 0 }
     }
 
     pub fn execute(
@@ -23,6 +23,11 @@ impl Emulator {
         self.remaining_cycles += cycles;
         while self.remaining_cycles > 0 {
            self.remaining_cycles -= self.cpu.execute_instruction().cycles as i32;
+        }
+
+        let (data_ptr, length, has_data_to_save) = self.cpu.save_data();
+        if has_data_to_save {
+            save_data!(data_ptr, length);
         }
     }
 }

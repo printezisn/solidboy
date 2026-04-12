@@ -66,14 +66,14 @@ pub struct MemoryBus {
 }
 
 impl MemoryBus {
-    pub fn new(rom: Vec<u8>) -> Self {
+    pub fn new(rom: Vec<u8>, external_ram: Vec<u8>) -> Self {
         let model_type = match rom[0x0143] {
             0xC0 | 0x80 => ModelType::Color,
             _ => ModelType::DMG,
         };
 
         MemoryBus {
-            mbc: MBC::new(rom),
+            mbc: MBC::new(rom, external_ram),
             ppu: PPU::new(model_type.clone()),
             audio: Audio::new(),
             timer: Timer::new(),
@@ -391,6 +391,10 @@ impl MemoryBus {
         self.joypad_pressed_buttons = joypad_pressed_buttons;
     }
 
+    pub fn save_data(&mut self) -> (*const u8, usize, bool) {
+        self.mbc.save_data()
+    }
+
     pub fn reset_total_cycles(&mut self) {
         self.total_cycles = 0;
     }
@@ -519,7 +523,7 @@ mod tests {
     #[test]
     fn vram_bank_switching_color() {
         let rom = make_rom(0x01, 0xC0);
-        let mut bus = MemoryBus::new(rom);
+        let mut bus = MemoryBus::new(rom, vec![]);
 
         // VRAM bank 0
         bus.write(0xFF4F, 0);
@@ -539,7 +543,7 @@ mod tests {
     #[test]
     fn wram_bank_switching_color() {
         let rom = make_rom(0x01, 0xC0);
-        let mut bus = MemoryBus::new(rom);
+        let mut bus = MemoryBus::new(rom, vec![]);
 
         // wram bank 0, write to fixed region
         bus.write(0xC000, 0x11);
@@ -557,7 +561,7 @@ mod tests {
     #[test]
     fn echo_ram_mirror() {
         let rom = make_rom(0x00, 0x00);
-        let mut bus = MemoryBus::new(rom);
+        let mut bus = MemoryBus::new(rom, vec![]);
 
         bus.write(0xE000, 0x77);
         assert_eq!(bus.read(0xC000), 0x77);
@@ -567,7 +571,7 @@ mod tests {
     #[test]
     fn total_cycles_increment_on_access() {
         let rom = make_rom(0x00, 0x00);
-        let mut bus = MemoryBus::new(rom);
+        let mut bus = MemoryBus::new(rom, vec![]);
 
         let start = bus.total_cycles();
         let _ = bus.read(0xC000);
@@ -580,7 +584,7 @@ mod tests {
     #[test]
     fn oam_dma_transfer_starts_correctly() {
         let rom = make_rom(0x00, 0x00);
-        let mut bus = MemoryBus::new(rom);
+        let mut bus = MemoryBus::new(rom, vec![]);
 
         // Write to DMA register to start transfer from 0x8000
         bus.write(0xFF46, 0x80);
@@ -596,7 +600,7 @@ mod tests {
     #[test]
     fn oam_dma_transfer_copies_data() {
         let rom = make_rom(0x00, 0x00);
-        let mut bus = MemoryBus::new(rom);
+        let mut bus = MemoryBus::new(rom, vec![]);
         bus.ppu.write(0xFF40, 0, &mut bus.if_flag);
 
         bus.tick(252);
@@ -631,7 +635,7 @@ mod tests {
     #[test]
     fn oam_dma_transfer_from_vram() {
         let rom = make_rom(0x00, 0x00);
-        let mut bus = MemoryBus::new(rom);
+        let mut bus = MemoryBus::new(rom, vec![]);
         bus.ppu.write(0xFF40, 0, &mut bus.if_flag);
 
         // Set up source data in VRAM
@@ -660,7 +664,7 @@ mod tests {
     #[test]
     fn oam_dma_transfer_partial_progress() {
         let rom = make_rom(0x00, 0x00);
-        let mut bus = MemoryBus::new(rom);
+        let mut bus = MemoryBus::new(rom, vec![]);
         bus.ppu.write(0xFF40, 0, &mut bus.if_flag);
 
         // Set up source data

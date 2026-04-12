@@ -1,14 +1,15 @@
 import { init_emulator, execute, emulator_memory } from 'emulator-lib';
 import { initJoypad, pressedButtons, pressedDirections } from './joypad';
+import { fetchGameData, saveGameData } from './storage';
 
 const CYCLES_PER_MILLI = 4194 / 2;
 const MAX_FRAME_DIFF = 20;
 
 let canvas = null;
 let framebuffer = new Uint8ClampedArray(160 * 144 * 4);
-
 let lastFrameTime = null;
-let consoleMessage = '';
+let gameName = null;
+let dataToBeSaved = null;
 
 const debugConsole = document.getElementById('console');
 
@@ -31,6 +32,10 @@ const onFrame = () => {
   lastFrameTime = now;
 
   renderFrameBuffer();
+  if (dataToBeSaved) {
+    saveGameData(gameName, dataToBeSaved);
+    dataToBeSaved = null;
+  }
 
   requestAnimationFrame(onFrame);
 };
@@ -39,13 +44,11 @@ export const initGameEngine = () => {
   const memory = emulator_memory();
 
   window.emulator_console_log = (str) => {
-    consoleMessage += str || '';
-    debugConsole.innerHTML = consoleMessage;
+    debugConsole.innerHTML += str;
   };
 
   window.emulator_console_error = (str) => {
-    consoleMessage = '<span class="error-message">' + (str || '') + '</span>';
-    debugConsole.innerHTML = consoleMessage;
+    debugConsole.innerHTML += `<span class="error-message">${str}</span>`;
   };
 
   window.render_frame_buffer = (frame_buffer_ptr, length) => {
@@ -56,22 +59,29 @@ export const initGameEngine = () => {
     );
   };
 
+  window.save_data = (data_ptr, length) => {
+    dataToBeSaved = new Uint8ClampedArray(memory.buffer, data_ptr, length);
+  };
+
   document.getElementById('rom-file').addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
+    gameName = file.name;
+
     const reader = new FileReader();
-    reader.onload = () => {
-      initJoypad();
-
-      const rom = new Uint8Array(reader.result);
-      init_emulator(rom);
-
+    reader.onload = async () => {
       canvas = document.createElement('canvas');
       canvas.width = 160;
       canvas.height = 144;
       document.getElementById('insert-rom-container').remove();
       document.getElementById('screen-container').appendChild(canvas);
+
+      const rom = new Uint8Array(reader.result);
+      const gameData = await fetchGameData(gameName);
+
+      init_emulator(rom, gameData);
+      initJoypad();
 
       onFrame();
     };

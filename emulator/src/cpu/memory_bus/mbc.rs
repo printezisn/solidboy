@@ -11,12 +11,15 @@ pub enum MBC {
 }
 
 impl MBC {
-    pub fn new(rom: Vec<u8>) -> MBC {
+    pub fn new(rom: Vec<u8>, external_ram: Vec<u8>) -> MBC {
         match rom[0x0147] {
             0x00 => MBC::NoROM(no_rom::NoROM::new(rom)),
-            0x01..=0x03 => MBC::MBC1(mbc1::MBC1::new(rom)),
-            0x0F..=0x13 => MBC::MBC3(mbc3::MBC3::new(rom)),
-            0x19..=0x1E => MBC::MBC5(mbc5::MBC5::new(rom)),
+            0x01..=0x02 => MBC::MBC1(mbc1::MBC1::new(rom, external_ram, false)),
+            0x03 => MBC::MBC1(mbc1::MBC1::new(rom, external_ram, true)),
+            0x0F | 0x10 | 0x13 => MBC::MBC3(mbc3::MBC3::new(rom, external_ram, true)),
+            0x11 | 0x12 => MBC::MBC3(mbc3::MBC3::new(rom, external_ram, false)),
+            0x1B | 0x1E => MBC::MBC5(mbc5::MBC5::new(rom, external_ram, true)),
+            0x19 | 0x1A | 0x1C | 0x1D => MBC::MBC5(mbc5::MBC5::new(rom, external_ram, false)),
             _ => console_error!("Unsupported MBC type"),
         }
     }
@@ -45,6 +48,15 @@ impl MBC {
             _ => {}
         }
     }
+
+    pub fn save_data(&mut self) -> (*const u8, usize, bool) {
+        match self {
+            MBC::NoROM(_) => (0 as *const u8, 0, false),
+            MBC::MBC1(mbc) => mbc.save_data(),
+            MBC::MBC3(mbc) => mbc.save_data(),
+            MBC::MBC5(mbc) => mbc.save_data(),
+        }
+    }
 }
 
 #[cfg(test)]
@@ -63,7 +75,7 @@ mod tests {
     #[test]
     fn new_no_rom() {
         let rom = make_rom_with_type(0x00, 0x8000);
-        let mbc = MBC::new(rom);
+        let mbc = MBC::new(rom, vec![]);
 
         match mbc {
             MBC::NoROM(_) => {}
@@ -74,7 +86,7 @@ mod tests {
     #[test]
     fn new_mbc1() {
         let rom = make_rom_with_type(0x01, 0x8000);
-        let mbc = MBC::new(rom);
+        let mbc = MBC::new(rom, vec![]);
 
         match mbc {
             MBC::MBC1(_) => {}
@@ -85,7 +97,7 @@ mod tests {
     #[test]
     fn new_mbc3() {
         let rom = make_rom_with_type(0x0F, 0x8000);
-        let mbc = MBC::new(rom);
+        let mbc = MBC::new(rom, vec![]);
 
         match mbc {
             MBC::MBC3(_) => {}
@@ -96,7 +108,7 @@ mod tests {
     #[test]
     fn new_mbc5() {
         let rom = make_rom_with_type(0x19, 0x8000);
-        let mbc = MBC::new(rom);
+        let mbc = MBC::new(rom, vec![]);
 
         match mbc {
             MBC::MBC5(_) => {}
@@ -107,7 +119,7 @@ mod tests {
     #[test]
     fn dispatch_read() {
         let rom = make_rom_with_type(0x00, 0x8000);
-        let mbc = MBC::new(rom);
+        let mbc = MBC::new(rom, vec![]);
 
         assert_eq!(mbc.read(0x0000), Some(0x00));
     }
@@ -115,7 +127,7 @@ mod tests {
     #[test]
     fn dispatch_write() {
         let rom = make_rom_with_type(0x01, 0x8000);
-        let mut mbc = MBC::new(rom);
+        let mut mbc = MBC::new(rom, vec![]);
 
         assert!(mbc.write(0x2000, 2));
     }

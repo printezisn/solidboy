@@ -11,7 +11,9 @@ pub struct MBC3 {
     external_ram: [u8; EXTERNAL_RAM_SIZE * EXTERNAL_RAM_BANKS + 15],
     ram_enabled: bool,
     ram_bank: u8,
-    latch_state: u8
+    latch_state: u8,
+    has_battery_saves: bool,
+    has_data_to_save: bool,
 }
 
 impl MBC3 {
@@ -113,17 +115,23 @@ impl MBC3 {
         self.external_ram[LATCHED_RTC_OFFSET + 4] = value;
     }
 
-    pub fn new(rom: Vec<u8>) -> Self {
-        let external_ram = [0; EXTERNAL_RAM_SIZE * EXTERNAL_RAM_BANKS + 15];
-
-        Self {
+    pub fn new(rom: Vec<u8>, external_ram: Vec<u8>, has_battery_saves: bool) -> Self {
+        let mut result = Self {
             rom,
             rom_bank: 1,
-            external_ram,
+            external_ram: [0; EXTERNAL_RAM_SIZE * EXTERNAL_RAM_BANKS + 15],
             ram_enabled: false,
             ram_bank: 0,
             latch_state: 0,
+            has_battery_saves,
+            has_data_to_save: false,
+        };
+
+        for i in 0..external_ram.len() {
+            result.external_ram[i] = external_ram[i];
         }
+
+        result
     }
 
     pub fn read(&self, address: u16) -> Option<u8> {
@@ -201,6 +209,8 @@ impl MBC3 {
                         return false;
                     }
                 }
+
+                self.has_data_to_save = self.has_battery_saves;
             }
             _ => {
                 return false;
@@ -212,6 +222,13 @@ impl MBC3 {
 
     fn rom_bank(&self) -> usize {
         self.rom_bank as usize
+    }
+
+    pub fn save_data(&mut self) -> (*const u8, usize, bool) {
+        let result = (self.external_ram.as_ptr(), self.external_ram.len(), self.has_data_to_save);
+        self.has_data_to_save = false;
+
+        result
     }
 
     pub fn tick(&mut self, cycles: u32) {
@@ -228,6 +245,7 @@ impl MBC3 {
         }
 
         self.store_u32(CYCLES_OFFSET, stored_cycles);
+        self.has_data_to_save = self.has_battery_saves;
     }
 
     fn increment_rtc(&mut self) {
@@ -273,7 +291,7 @@ mod tests {
     #[test]
     fn test_initialization() {
         let rom = make_test_rom(0x8000);
-        let mbc = MBC3::new(rom);
+        let mbc = MBC3::new(rom, vec![], false);
 
         assert_eq!(mbc.rom_bank, 1);
         assert!(!mbc.ram_enabled);
@@ -290,7 +308,7 @@ mod tests {
         let mut rom = make_test_rom(0x8000);
         rom[0x0000] = 0x55;
         rom[0x1FFF] = 0xAA;
-        let mbc = MBC3::new(rom);
+        let mbc = MBC3::new(rom, vec![], false);
 
         assert_eq!(mbc.read(0x0000), Some(0x55));
         assert_eq!(mbc.read(0x1FFF), Some(0xAA));
@@ -303,7 +321,7 @@ mod tests {
         rom[0x4000] = 0x11;
         // Bank 2 at switchable area (0x4000-0x7FFF): rom offset 0x8000
         rom[0x8000] = 0x22;
-        let mut mbc = MBC3::new(rom);
+        let mut mbc = MBC3::new(rom, vec![], false);
 
         // Read from address 0x4000 with default bank 1
         assert_eq!(mbc.read(0x4000), Some(0x11));
@@ -316,7 +334,7 @@ mod tests {
     #[test]
     fn test_rom_bank_zero_wraps_to_one() {
         let rom = make_test_rom(0x8000);
-        let mut mbc = MBC3::new(rom);
+        let mut mbc = MBC3::new(rom, vec![], false);
 
         mbc.write(0x2000, 0x00);
         assert_eq!(mbc.rom_bank, 1);
@@ -325,7 +343,7 @@ mod tests {
     #[test]
     fn test_rom_bank_masking() {
         let rom = make_test_rom(0x18000);
-        let mut mbc = MBC3::new(rom);
+        let mut mbc = MBC3::new(rom, vec![], false);
 
         mbc.write(0x2000, 0xFF);
         assert_eq!(mbc.rom_bank, 0x7F);
@@ -334,7 +352,7 @@ mod tests {
     #[test]
     fn test_ram_enable_with_0x0a() {
         let rom = make_test_rom(0x8000);
-        let mut mbc = MBC3::new(rom);
+        let mut mbc = MBC3::new(rom, vec![], false);
 
         mbc.write(0x0000, 0x0A);
         assert!(mbc.ram_enabled);
@@ -343,7 +361,7 @@ mod tests {
     #[test]
     fn test_ram_disable_with_other_values() {
         let rom = make_test_rom(0x8000);
-        let mut mbc = MBC3::new(rom);
+        let mut mbc = MBC3::new(rom, vec![], false);
 
         mbc.write(0x0000, 0x0A);
         assert!(mbc.ram_enabled);
@@ -361,7 +379,7 @@ mod tests {
     #[test]
     fn test_external_ram_read_when_disabled() {
         let rom = make_test_rom(0x8000);
-        let mut mbc = MBC3::new(rom);
+        let mut mbc = MBC3::new(rom, vec![], false);
 
         mbc.write(0x0000, 0x0A);
         mbc.write(0xA000, 0x42);
@@ -373,7 +391,7 @@ mod tests {
     #[test]
     fn test_external_ram_read_write() {
         let rom = make_test_rom(0x8000);
-        let mut mbc = MBC3::new(rom);
+        let mut mbc = MBC3::new(rom, vec![], false);
 
         mbc.write(0x0000, 0x0A);
         mbc.write(0xA000, 0x42);
@@ -386,7 +404,7 @@ mod tests {
     #[test]
     fn test_external_ram_bank_switching() {
         let rom = make_test_rom(0x8000);
-        let mut mbc = MBC3::new(rom);
+        let mut mbc = MBC3::new(rom, vec![], false);
 
         mbc.write(0x0000, 0x0A);
 
@@ -410,7 +428,7 @@ mod tests {
     #[test]
     fn test_rtc_latch_mechanism() {
         let rom = make_test_rom(0x8000);
-        let mut mbc = MBC3::new(rom);
+        let mut mbc = MBC3::new(rom, vec![], false);
 
         mbc.write(0x0000, 0x0A);
         mbc.set_rtc_seconds(42);
@@ -427,7 +445,7 @@ mod tests {
     #[test]
     fn test_rtc_latch_requires_sequence() {
         let rom = make_test_rom(0x8000);
-        let mut mbc = MBC3::new(rom);
+        let mut mbc = MBC3::new(rom, vec![], false);
 
         mbc.write(0x0000, 0x0A);
         mbc.set_rtc_seconds(42);
@@ -445,7 +463,7 @@ mod tests {
     #[test]
     fn test_rtc_seconds_read() {
         let rom = make_test_rom(0x8000);
-        let mut mbc = MBC3::new(rom);
+        let mut mbc = MBC3::new(rom, vec![], false);
 
         mbc.write(0x0000, 0x0A);
         mbc.write(0x4000, 0x08);
@@ -460,7 +478,7 @@ mod tests {
     #[test]
     fn test_rtc_minutes_read() {
         let rom = make_test_rom(0x8000);
-        let mut mbc = MBC3::new(rom);
+        let mut mbc = MBC3::new(rom, vec![], false);
 
         mbc.write(0x0000, 0x0A);
         mbc.write(0x4000, 0x09);
@@ -475,7 +493,7 @@ mod tests {
     #[test]
     fn test_rtc_hours_read() {
         let rom = make_test_rom(0x8000);
-        let mut mbc = MBC3::new(rom);
+        let mut mbc = MBC3::new(rom, vec![], false);
 
         mbc.write(0x0000, 0x0A);
         mbc.write(0x4000, 0x0A);
@@ -490,7 +508,7 @@ mod tests {
     #[test]
     fn test_rtc_days_read() {
         let rom = make_test_rom(0x8000);
-        let mut mbc = MBC3::new(rom);
+        let mut mbc = MBC3::new(rom, vec![], false);
 
         mbc.write(0x0000, 0x0A);
         mbc.write(0x4000, 0x0B);
@@ -505,7 +523,7 @@ mod tests {
     #[test]
     fn test_rtc_seconds_write_masking() {
         let rom = make_test_rom(0x8000);
-        let mut mbc = MBC3::new(rom);
+        let mut mbc = MBC3::new(rom, vec![], false);
 
         mbc.write(0x0000, 0x0A);
         mbc.write(0x4000, 0x08);
@@ -517,7 +535,7 @@ mod tests {
     #[test]
     fn test_rtc_minutes_write_masking() {
         let rom = make_test_rom(0x8000);
-        let mut mbc = MBC3::new(rom);
+        let mut mbc = MBC3::new(rom, vec![], false);
 
         mbc.write(0x0000, 0x0A);
         mbc.write(0x4000, 0x09);
@@ -529,7 +547,7 @@ mod tests {
     #[test]
     fn test_rtc_hours_write_masking() {
         let rom = make_test_rom(0x8000);
-        let mut mbc = MBC3::new(rom);
+        let mut mbc = MBC3::new(rom, vec![], false);
 
         mbc.write(0x0000, 0x0A);
         mbc.write(0x4000, 0x0A);
@@ -541,7 +559,7 @@ mod tests {
     #[test]
     fn test_rtc_days_high_write_masking() {
         let rom = make_test_rom(0x8000);
-        let mut mbc = MBC3::new(rom);
+        let mut mbc = MBC3::new(rom, vec![], false);
 
         mbc.write(0x0000, 0x0A);
         mbc.write(0x4000, 0x0C);
@@ -553,7 +571,7 @@ mod tests {
     #[test]
     fn test_tick_increments_seconds() {
         let rom = make_test_rom(0x8000);
-        let mut mbc = MBC3::new(rom);
+        let mut mbc = MBC3::new(rom, vec![], false);
 
         mbc.tick(CYCLES_PER_SECOND);
         assert_eq!(mbc.rtc_seconds(), 1);
@@ -562,7 +580,7 @@ mod tests {
     #[test]
     fn test_tick_increment_from_59_to_60() {
         let rom = make_test_rom(0x8000);
-        let mut mbc = MBC3::new(rom);
+        let mut mbc = MBC3::new(rom, vec![], false);
 
         mbc.set_rtc_seconds(59);
         mbc.tick(CYCLES_PER_SECOND);
@@ -574,7 +592,7 @@ mod tests {
     #[test]
     fn test_tick_minute_overflow() {
         let rom = make_test_rom(0x8000);
-        let mut mbc = MBC3::new(rom);
+        let mut mbc = MBC3::new(rom, vec![], false);
 
         mbc.set_rtc_seconds(59);
         mbc.set_rtc_minutes(59);
@@ -588,7 +606,7 @@ mod tests {
     #[test]
     fn test_tick_hour_overflow() {
         let rom = make_test_rom(0x8000);
-        let mut mbc = MBC3::new(rom);
+        let mut mbc = MBC3::new(rom, vec![], false);
 
         mbc.set_rtc_seconds(59);
         mbc.set_rtc_minutes(59);
@@ -604,7 +622,7 @@ mod tests {
     #[test]
     fn test_tick_day_overflow() {
         let rom = make_test_rom(0x8000);
-        let mut mbc = MBC3::new(rom);
+        let mut mbc = MBC3::new(rom, vec![], false);
 
         mbc.set_rtc_days_low(0xFF);
         mbc.set_rtc_days_high(0x00);
@@ -620,7 +638,7 @@ mod tests {
     #[test]
     fn test_tick_day_counter_wraps() {
         let rom = make_test_rom(0x8000);
-        let mut mbc = MBC3::new(rom);
+        let mut mbc = MBC3::new(rom, vec![], false);
 
         // Set days to 511 (0x01FF)
         mbc.set_rtc_days_low(0xFF);
@@ -639,7 +657,7 @@ mod tests {
     #[test]
     fn test_tick_with_halt_flag() {
         let rom = make_test_rom(0x8000);
-        let mut mbc = MBC3::new(rom);
+        let mut mbc = MBC3::new(rom, vec![], false);
 
         mbc.set_rtc_seconds(30);
         mbc.set_rtc_days_high(0x40);
@@ -651,7 +669,7 @@ mod tests {
     #[test]
     fn test_tick_partial_cycles() {
         let rom = make_test_rom(0x8000);
-        let mut mbc = MBC3::new(rom);
+        let mut mbc = MBC3::new(rom, vec![], false);
 
         mbc.tick(CYCLES_PER_SECOND / 2);
         assert_eq!(mbc.rtc_seconds(), 0);
@@ -663,7 +681,7 @@ mod tests {
     #[test]
     fn test_tick_multiple_increments() {
         let rom = make_test_rom(0x8000);
-        let mut mbc = MBC3::new(rom);
+        let mut mbc = MBC3::new(rom, vec![], false);
 
         mbc.tick(CYCLES_PER_SECOND * 150);
         assert_eq!(mbc.rtc_seconds(), 30);

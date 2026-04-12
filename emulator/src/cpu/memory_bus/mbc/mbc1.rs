@@ -8,18 +8,28 @@ pub struct MBC1 {
     external_ram: [u8; EXTERNAL_RAM_SIZE * EXTERNAL_RAM_BANKS],
     ram_enabled: bool,
     banking_mode: u8,
+    has_battery_saves: bool,
+    has_data_to_save: bool,
 }
 
 impl MBC1 {
-    pub fn new(rom: Vec<u8>) -> Self {
-        Self {
+    pub fn new(rom: Vec<u8>, external_ram: Vec<u8>, has_battery_saves: bool) -> Self {
+        let mut result = Self {
             rom,
             rom_bank_low: 1,
             rom_bank_high: 0,
             external_ram: [0; EXTERNAL_RAM_SIZE * EXTERNAL_RAM_BANKS],
             ram_enabled: false,
             banking_mode: 0,
+            has_battery_saves,
+            has_data_to_save: false,
+        };
+
+        for i in 0..external_ram.len() {
+            result.external_ram[i] = external_ram[i];
         }
+
+        result
     }
 
     pub fn read(&self, address: u16) -> Option<u8> {
@@ -70,6 +80,7 @@ impl MBC1 {
                 if self.ram_enabled {
                     self.external_ram
                         [self.ram_bank() * EXTERNAL_RAM_SIZE + address as usize - 0xA000] = value;
+                    self.has_data_to_save = self.has_battery_saves;
                 }
             }
             _ => {
@@ -78,6 +89,13 @@ impl MBC1 {
         }
 
         true
+    }
+
+    pub fn save_data(&mut self) -> (*const u8, usize, bool) {
+        let result = (self.external_ram.as_ptr(), self.external_ram.len(), self.has_data_to_save);
+        self.has_data_to_save = false;
+
+        result
     }
 
     fn rom_bank(&self) -> usize {
@@ -118,7 +136,7 @@ mod tests {
     #[test]
     fn read_rom_bank_0() {
         let rom = make_rom(0x8000);
-        let mbc = MBC1::new(rom);
+        let mbc = MBC1::new(rom, vec![], false);
 
         assert_eq!(mbc.read(0x0000), Some(0x00));
         assert_eq!(mbc.read(0x3FFF), Some(0xFF));
@@ -127,7 +145,7 @@ mod tests {
     #[test]
     fn read_rom_bank_1() {
         let rom = make_rom(0x10000); // 2 banks
-        let mbc = MBC1::new(rom);
+        let mbc = MBC1::new(rom, vec![], false);
 
         assert_eq!(mbc.read(0x4000), Some(0x00));
         assert_eq!(mbc.read(0x7FFF), Some(0xFF));
@@ -136,7 +154,7 @@ mod tests {
     #[test]
     fn switch_rom_bank() {
         let rom = make_rom(0x20000); // 4 banks
-        let mut mbc = MBC1::new(rom);
+        let mut mbc = MBC1::new(rom, vec![], false);
 
         // Switch to bank 2
         mbc.write(0x2000, 2);
@@ -152,7 +170,7 @@ mod tests {
     #[test]
     fn ram_enable_disable() {
         let rom = make_rom(0x8000);
-        let mut mbc = MBC1::new(rom);
+        let mut mbc = MBC1::new(rom, vec![], false);
 
         // RAM disabled by default
         assert_eq!(mbc.read(0xA000), Some(0xFF));
@@ -169,7 +187,7 @@ mod tests {
     #[test]
     fn write_read_ram() {
         let rom = make_rom(0x8000);
-        let mut mbc = MBC1::new(rom);
+        let mut mbc = MBC1::new(rom, vec![], false);
 
         // Enable RAM
         mbc.write(0x0000, 0x0A);
@@ -186,7 +204,7 @@ mod tests {
     #[test]
     fn banking_mode_switch() {
         let rom = make_rom(0x40000); // 16 banks
-        let mut mbc = MBC1::new(rom);
+        let mut mbc = MBC1::new(rom, vec![], false);
 
         // Set banking mode to RAM banking
         mbc.write(0x6000, 1);
@@ -205,7 +223,7 @@ mod tests {
     #[test]
     fn rom_banking_mode_0() {
         let rom = make_rom(0x40000); // 16 banks
-        let mut mbc = MBC1::new(rom);
+        let mut mbc = MBC1::new(rom, vec![], false);
 
         // Banking mode 0
         mbc.write(0x6000, 0);
@@ -222,7 +240,7 @@ mod tests {
     #[test]
     fn invalid_address() {
         let rom = make_rom(0x8000);
-        let mbc = MBC1::new(rom);
+        let mbc = MBC1::new(rom, vec![], false);
 
         assert_eq!(mbc.read(0x8000), None);
         assert_eq!(mbc.read(0x9FFF), None);

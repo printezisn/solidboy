@@ -25,10 +25,10 @@ pub struct InstructionResult {
 }
 
 impl CPU {
-    pub fn new(rom: Vec<u8>) -> Self {
+    pub fn new(rom: Vec<u8>, external_ram: Vec<u8>) -> Self {
         let mut cpu = CPU {
             registers: Registers::new(),
-            memory_bus: MemoryBus::new(rom),
+            memory_bus: MemoryBus::new(rom, external_ram),
             ime: false,
             pending_ime_set: false,
         };
@@ -61,6 +61,10 @@ impl CPU {
     pub fn set_joypad_pressed_buttons(&mut self, joypad_pressed_buttons: u8) {
         self.memory_bus
             .set_joypad_pressed_buttons(joypad_pressed_buttons);
+    }
+
+    pub fn save_data(&mut self) -> (*const u8, usize, bool) {
+        self.memory_bus.save_data()
     }
 
     pub fn execute_instruction(&mut self) -> InstructionResult {
@@ -1179,7 +1183,7 @@ mod tests {
             rom[INITIAL_PC as usize + i] = bytes[i];
         }
 
-        CPU::new(rom)
+        CPU::new(rom, vec![])
     }
 
     fn create_gbc_cpu(bytes: Vec<u8>) -> CPU {
@@ -1189,7 +1193,7 @@ mod tests {
             rom[INITIAL_PC as usize + i] = bytes[i];
         }
 
-        CPU::new(rom)
+        CPU::new(rom, vec![])
     }
 
     #[test]

@@ -5,6 +5,7 @@ extern "C" {
     fn emulator_console_log(msg: &str);
     fn emulator_console_error(err: &str);
     fn render_frame_buffer(frame_buffer_ptr: *const u8, length: usize);
+    fn save_data(data_ptr: *const u8, length: usize);
 }
 
 #[macro_export]
@@ -29,6 +30,13 @@ macro_rules! render_frame_buffer {
     }}
 }
 
+#[macro_export]
+macro_rules! save_data {
+    ($($t:tt)*) => {{
+        crate::save_data($($t)*);
+    }}
+}
+
 mod cpu;
 mod emulator;
 
@@ -41,9 +49,9 @@ thread_local! {
 }
 
 #[wasm_bindgen]
-pub fn init_emulator(rom: Vec<u8>) {
+pub fn init_emulator(rom: Vec<u8>, external_ram: Vec<u8>) {
     EMULATOR.with(|e| {
-        *e.borrow_mut() = Some(Emulator::new(rom));
+        *e.borrow_mut() = Some(Emulator::new(rom, external_ram));
     });
 }
 
