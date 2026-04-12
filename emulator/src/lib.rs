@@ -42,7 +42,6 @@ thread_local! {
 
 #[wasm_bindgen]
 pub fn init_emulator(rom: Vec<u8>) {
-    console_log!("Starting the game...\n");
     EMULATOR.with(|e| {
         *e.borrow_mut() = Some(Emulator::new(rom));
     });

@@ -31,8 +31,8 @@
     "node": ">=24"
   },
   "scripts": {
-    "build:wasm:dev": "wasm-pack build ./emulator --target bundler && pnpm i --force ./emulator/pkg",
-    "build:wasm:prod": "wasm-pack build ./emulator --target bundler --release && pnpm i --force ./emulator/pkg",
+    "build:wasm:dev": "RUSTFLAGS=\"-C link-arg=-zstack-size=2097152\" wasm-pack build ./emulator --target bundler && pnpm i --force ./emulator/pkg",
+    "build:wasm:prod": "RUSTFLAGS=\"-C link-arg=-zstack-size=2097152\" wasm-pack build ./emulator --target bundler --release && pnpm i --force ./emulator/pkg",
     "build:prod": "pnpm build:wasm:prod && vite build",
     "format": "prettier ./src --write",
     "lint": "eslint ./src",

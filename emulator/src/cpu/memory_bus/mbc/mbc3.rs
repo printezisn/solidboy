@@ -1,52 +1,128 @@
 const EXTERNAL_RAM_SIZE: usize = 0xBFFF - 0xA000 + 1;
 const EXTERNAL_RAM_BANKS: usize = 8;
 const CYCLES_PER_SECOND: u32 = 4_194_304;
+const RTC_OFFSET: usize = EXTERNAL_RAM_SIZE * EXTERNAL_RAM_BANKS;
+const LATCHED_RTC_OFFSET: usize = RTC_OFFSET + 5;
+const CYCLES_OFFSET: usize = LATCHED_RTC_OFFSET + 5;
 
 pub struct MBC3 {
     rom: Vec<u8>,
     rom_bank: u8,
-    external_ram: [u8; EXTERNAL_RAM_SIZE * EXTERNAL_RAM_BANKS],
+    external_ram: [u8; EXTERNAL_RAM_SIZE * EXTERNAL_RAM_BANKS + 15],
     ram_enabled: bool,
     ram_bank: u8,
-    rtc: RTC,
-    rtc_latched: RTC,
-    latch_state: u8,
-    cycles: u32,
-}
-
-#[derive(Clone, Copy)]
-struct RTC {
-    pub seconds: u8,
-    pub minutes: u8,
-    pub hours: u8,
-    pub days_low: u8,
-    pub days_high: u8,
+    latch_state: u8
 }
 
 impl MBC3 {
+    fn load_u32(&self, offset: usize) -> u32 {
+        let mut num: u32 = 0;
+
+        num |= self.external_ram[offset] as u32;
+        num |= (self.external_ram[offset + 1] as u32) << 8;
+        num |= (self.external_ram[offset + 2] as u32) << 16;
+        num |= (self.external_ram[offset + 3] as u32) << 24;
+
+        num
+    }
+
+    fn store_u32(&mut self, offset: usize, value: u32) {
+        self.external_ram[offset] = value as u8;
+        self.external_ram[offset + 1] = (value >> 8) as u8;
+        self.external_ram[offset + 2] = (value >> 16) as u8;
+        self.external_ram[offset + 3] = (value >> 24) as u8;
+    }
+
+    fn rtc_seconds(&self) -> u8 {
+        self.external_ram[RTC_OFFSET]
+    }
+
+    fn set_rtc_seconds(&mut self, value: u8) {
+        self.external_ram[RTC_OFFSET] = value;
+    }
+
+    fn rtc_minutes(&self) -> u8 {
+        self.external_ram[RTC_OFFSET + 1]
+    }
+
+    fn set_rtc_minutes(&mut self, value: u8) {
+        self.external_ram[RTC_OFFSET + 1] = value;
+    }
+
+    fn rtc_hours(&self) -> u8 {
+        self.external_ram[RTC_OFFSET + 2]
+    }
+
+    fn set_rtc_hours(&mut self, value: u8) {
+        self.external_ram[RTC_OFFSET + 2] = value;
+    }
+
+    fn rtc_days_low(&self) -> u8 {
+        self.external_ram[RTC_OFFSET + 3]
+    }
+
+    fn set_rtc_days_low(&mut self, value: u8) {
+        self.external_ram[RTC_OFFSET + 3] = value;
+    }
+
+    fn rtc_days_high(&self) -> u8 {
+        self.external_ram[RTC_OFFSET + 4]
+    }
+
+    fn set_rtc_days_high(&mut self, value: u8) {
+        self.external_ram[RTC_OFFSET + 4] = value;
+    }
+
+    fn rtc_latched_seconds(&self) -> u8 {
+        self.external_ram[LATCHED_RTC_OFFSET]
+    }
+
+    fn set_rtc_latched_seconds(&mut self, value: u8) {
+        self.external_ram[LATCHED_RTC_OFFSET] = value;
+    }
+
+    fn rtc_latched_minutes(&self) -> u8 {
+        self.external_ram[LATCHED_RTC_OFFSET + 1]
+    }
+
+    fn set_rtc_latched_minutes(&mut self, value: u8) {
+        self.external_ram[LATCHED_RTC_OFFSET + 1] = value;
+    }
+
+    fn rtc_latched_hours(&self) -> u8 {
+        self.external_ram[LATCHED_RTC_OFFSET + 2]
+    }
+
+    fn set_rtc_latched_hours(&mut self, value: u8) {
+        self.external_ram[LATCHED_RTC_OFFSET + 2] = value;
+    }
+
+    fn rtc_latched_days_low(&self) -> u8 {
+        self.external_ram[LATCHED_RTC_OFFSET + 3]
+    }
+
+    fn set_rtc_latched_days_low(&mut self, value: u8) {
+        self.external_ram[LATCHED_RTC_OFFSET + 3] = value;
+    }
+
+    fn rtc_latched_days_high(&self) -> u8 {
+        self.external_ram[LATCHED_RTC_OFFSET + 4]
+    }
+
+    fn set_rtc_latched_days_high(&mut self, value: u8) {
+        self.external_ram[LATCHED_RTC_OFFSET + 4] = value;
+    }
+
     pub fn new(rom: Vec<u8>) -> Self {
+        let external_ram = [0; EXTERNAL_RAM_SIZE * EXTERNAL_RAM_BANKS + 15];
+
         Self {
             rom,
             rom_bank: 1,
-            external_ram: [0; EXTERNAL_RAM_SIZE * EXTERNAL_RAM_BANKS],
+            external_ram,
             ram_enabled: false,
             ram_bank: 0,
-            rtc: RTC {
-                seconds: 0,
-                minutes: 0,
-                hours: 0,
-                days_low: 0,
-                days_high: 0,
-            },
-            rtc_latched: RTC {
-                seconds: 0,
-                minutes: 0,
-                hours: 0,
-                days_low: 0,
-                days_high: 0,
-            },
             latch_state: 0,
-            cycles: 0,
         }
     }
 
@@ -64,11 +140,11 @@ impl MBC3 {
                             + (address as usize - 0xA000);
                         Some(self.external_ram[offset])
                     }
-                    0x08 => Some(self.rtc_latched.seconds),
-                    0x09 => Some(self.rtc_latched.minutes),
-                    0x0A => Some(self.rtc_latched.hours),
-                    0x0B => Some(self.rtc_latched.days_low),
-                    0x0C => Some(self.rtc_latched.days_high),
+                    0x08 => Some(self.rtc_latched_seconds()),
+                    0x09 => Some(self.rtc_latched_minutes()),
+                    0x0A => Some(self.rtc_latched_hours()),
+                    0x0B => Some(self.rtc_latched_days_low()),
+                    0x0C => Some(self.rtc_latched_days_high()),
                     _ => Some(0xFF),
                 }
             }
@@ -95,7 +171,11 @@ impl MBC3 {
                 if self.latch_state == 0 && value == 0x00 {
                     self.latch_state = 1;
                 } else if self.latch_state == 1 && value == 0x01 {
-                    self.rtc_latched = self.rtc.clone();
+                    self.set_rtc_latched_seconds(self.rtc_seconds());
+                    self.set_rtc_latched_minutes(self.rtc_minutes());
+                    self.set_rtc_latched_hours(self.rtc_hours());
+                    self.set_rtc_latched_days_low(self.rtc_days_low());
+                    self.set_rtc_latched_days_high(self.rtc_days_high());
                     self.latch_state = 0;
                 } else {
                     self.latch_state = 0;
@@ -112,11 +192,11 @@ impl MBC3 {
                             + (address as usize - 0xA000);
                         self.external_ram[offset] = value;
                     }
-                    0x08 => self.rtc.seconds = value & 0x3F,
-                    0x09 => self.rtc.minutes = value & 0x3F,
-                    0x0A => self.rtc.hours = value & 0x1F,
-                    0x0B => self.rtc.days_low = value,
-                    0x0C => self.rtc.days_high = value & 0xC1,
+                    0x08 => self.set_rtc_seconds(value & 0x3F),
+                    0x09 => self.set_rtc_minutes(value & 0x3F),
+                    0x0A => self.set_rtc_hours(value & 0x1F),
+                    0x0B => self.set_rtc_days_low(value),
+                    0x0C => self.set_rtc_days_high(value & 0xC1),
                     _ => {
                         return false;
                     }
@@ -135,39 +215,49 @@ impl MBC3 {
     }
 
     pub fn tick(&mut self, cycles: u32) {
-        if self.rtc.days_high & 0x40 != 0 {
+        if self.rtc_days_high() & 0x40 != 0 {
             return;
         }
 
-        self.cycles += cycles;
-        while self.cycles >= CYCLES_PER_SECOND {
-            self.cycles -= CYCLES_PER_SECOND;
+        let mut stored_cycles = self.load_u32(CYCLES_OFFSET);
+        stored_cycles += cycles;
+
+        while stored_cycles >= CYCLES_PER_SECOND {
+            stored_cycles -= CYCLES_PER_SECOND;
             self.increment_rtc();
         }
+
+        self.store_u32(CYCLES_OFFSET, stored_cycles);
     }
 
     fn increment_rtc(&mut self) {
-        self.rtc.seconds += 1;
-        if self.rtc.seconds >= 60 {
-            self.rtc.seconds = 0;
-            self.rtc.minutes += 1;
-            if self.rtc.minutes >= 60 {
-                self.rtc.minutes = 0;
-                self.rtc.hours += 1;
-                if self.rtc.hours >= 24 {
-                    self.rtc.hours = 0;
-                    let days = ((self.rtc.days_high & 0x01) as u16) << 8 | self.rtc.days_low as u16;
+        let seconds = self.rtc_seconds().wrapping_add(1);
+        if seconds >= 60 {
+            self.set_rtc_seconds(0);
+            let minutes = self.rtc_minutes().wrapping_add(1);
+            if minutes >= 60 {
+                self.set_rtc_minutes(0);
+                let hours = self.rtc_hours().wrapping_add(1);
+                if hours >= 24 {
+                    self.set_rtc_hours(0);
+                    let days_high = self.rtc_days_high();
+                    let days = ((days_high & 0x01) as u16) << 8 | self.rtc_days_low() as u16;
                     let new_days = days + 1;
-                    self.rtc.days_low = new_days as u8;
-                    self.rtc.days_high =
-                        (self.rtc.days_high & 0xFE) | ((new_days >> 8) as u8 & 0x01);
+                    self.set_rtc_days_low(new_days as u8);
+                    self.set_rtc_days_high(
+                        (days_high & 0xFE) | ((new_days >> 8) as u8 & 0x01));
                     if new_days >= 512 {
-                        self.rtc.days_high |= 0x80;
-                        self.rtc.days_low = 0;
-                        self.rtc.days_high &= !0x01;
+                        self.set_rtc_days_high((days_high | 0x80) & !0x01);
+                        self.set_rtc_days_low(0);
                     }
+                } else {
+                    self.set_rtc_hours(hours);
                 }
+            } else {
+                self.set_rtc_minutes(minutes);
             }
+        } else {
+            self.set_rtc_seconds(seconds);
         }
     }
 }
@@ -188,11 +278,11 @@ mod tests {
         assert_eq!(mbc.rom_bank, 1);
         assert!(!mbc.ram_enabled);
         assert_eq!(mbc.ram_bank, 0);
-        assert_eq!(mbc.rtc.seconds, 0);
-        assert_eq!(mbc.rtc.minutes, 0);
-        assert_eq!(mbc.rtc.hours, 0);
-        assert_eq!(mbc.rtc.days_low, 0);
-        assert_eq!(mbc.rtc.days_high, 0);
+        assert_eq!(mbc.rtc_seconds(), 0);
+        assert_eq!(mbc.rtc_minutes(), 0);
+        assert_eq!(mbc.rtc_hours(), 0);
+        assert_eq!(mbc.rtc_days_low(), 0);
+        assert_eq!(mbc.rtc_days_high(), 0);
     }
 
     #[test]
@@ -323,15 +413,15 @@ mod tests {
         let mut mbc = MBC3::new(rom);
 
         mbc.write(0x0000, 0x0A);
-        mbc.rtc.seconds = 42;
-        mbc.rtc.minutes = 30;
+        mbc.set_rtc_seconds(42);
+        mbc.set_rtc_minutes(30);
 
         // Latch the RTC
         mbc.write(0x6000, 0x00);
         mbc.write(0x6000, 0x01);
 
-        assert_eq!(mbc.rtc_latched.seconds, 42);
-        assert_eq!(mbc.rtc_latched.minutes, 30);
+        assert_eq!(mbc.rtc_latched_seconds(), 42);
+        assert_eq!(mbc.rtc_latched_minutes(), 30);
     }
 
     #[test]
@@ -340,16 +430,16 @@ mod tests {
         let mut mbc = MBC3::new(rom);
 
         mbc.write(0x0000, 0x0A);
-        mbc.rtc.seconds = 42;
+        mbc.set_rtc_seconds(42);
 
         // Wrong sequence - should not latch
         mbc.write(0x6000, 0x01);
-        assert_eq!(mbc.rtc_latched.seconds, 0);
+        assert_eq!(mbc.rtc_latched_seconds(), 0);
 
         // Correct sequence
         mbc.write(0x6000, 0x00);
         mbc.write(0x6000, 0x01);
-        assert_eq!(mbc.rtc_latched.seconds, 42);
+        assert_eq!(mbc.rtc_latched_seconds(), 42);
     }
 
     #[test]
@@ -421,7 +511,7 @@ mod tests {
         mbc.write(0x4000, 0x08);
         mbc.write(0xA000, 0x7F);
 
-        assert_eq!(mbc.rtc.seconds, 0x3F);
+        assert_eq!(mbc.rtc_seconds(), 0x3F);
     }
 
     #[test]
@@ -433,7 +523,7 @@ mod tests {
         mbc.write(0x4000, 0x09);
         mbc.write(0xA000, 0x7F);
 
-        assert_eq!(mbc.rtc.minutes, 0x3F);
+        assert_eq!(mbc.rtc_minutes(), 0x3F);
     }
 
     #[test]
@@ -445,7 +535,7 @@ mod tests {
         mbc.write(0x4000, 0x0A);
         mbc.write(0xA000, 0xFF);
 
-        assert_eq!(mbc.rtc.hours, 0x1F);
+        assert_eq!(mbc.rtc_hours(), 0x1F);
     }
 
     #[test]
@@ -457,7 +547,7 @@ mod tests {
         mbc.write(0x4000, 0x0C);
         mbc.write(0xA000, 0xFF);
 
-        assert_eq!(mbc.rtc.days_high, 0xC1);
+        assert_eq!(mbc.rtc_days_high(), 0xC1);
     }
 
     #[test]
@@ -466,7 +556,7 @@ mod tests {
         let mut mbc = MBC3::new(rom);
 
         mbc.tick(CYCLES_PER_SECOND);
-        assert_eq!(mbc.rtc.seconds, 1);
+        assert_eq!(mbc.rtc_seconds(), 1);
     }
 
     #[test]
@@ -474,11 +564,11 @@ mod tests {
         let rom = make_test_rom(0x8000);
         let mut mbc = MBC3::new(rom);
 
-        mbc.rtc.seconds = 59;
+        mbc.set_rtc_seconds(59);
         mbc.tick(CYCLES_PER_SECOND);
 
-        assert_eq!(mbc.rtc.seconds, 0);
-        assert_eq!(mbc.rtc.minutes, 1);
+        assert_eq!(mbc.rtc_seconds(), 0);
+        assert_eq!(mbc.rtc_minutes(), 1);
     }
 
     #[test]
@@ -486,13 +576,13 @@ mod tests {
         let rom = make_test_rom(0x8000);
         let mut mbc = MBC3::new(rom);
 
-        mbc.rtc.seconds = 59;
-        mbc.rtc.minutes = 59;
+        mbc.set_rtc_seconds(59);
+        mbc.set_rtc_minutes(59);
         mbc.tick(CYCLES_PER_SECOND);
 
-        assert_eq!(mbc.rtc.seconds, 0);
-        assert_eq!(mbc.rtc.minutes, 0);
-        assert_eq!(mbc.rtc.hours, 1);
+        assert_eq!(mbc.rtc_seconds(), 0);
+        assert_eq!(mbc.rtc_minutes(), 0);
+        assert_eq!(mbc.rtc_hours(), 1);
     }
 
     #[test]
@@ -500,15 +590,15 @@ mod tests {
         let rom = make_test_rom(0x8000);
         let mut mbc = MBC3::new(rom);
 
-        mbc.rtc.seconds = 59;
-        mbc.rtc.minutes = 59;
-        mbc.rtc.hours = 23;
+        mbc.set_rtc_seconds(59);
+        mbc.set_rtc_minutes(59);
+        mbc.set_rtc_hours(23);
         mbc.tick(CYCLES_PER_SECOND);
 
-        assert_eq!(mbc.rtc.seconds, 0);
-        assert_eq!(mbc.rtc.minutes, 0);
-        assert_eq!(mbc.rtc.hours, 0);
-        assert_eq!(mbc.rtc.days_low, 1);
+        assert_eq!(mbc.rtc_seconds(), 0);
+        assert_eq!(mbc.rtc_minutes(), 0);
+        assert_eq!(mbc.rtc_hours(), 0);
+        assert_eq!(mbc.rtc_days_low(), 1);
     }
 
     #[test]
@@ -516,15 +606,15 @@ mod tests {
         let rom = make_test_rom(0x8000);
         let mut mbc = MBC3::new(rom);
 
-        mbc.rtc.days_low = 0xFF;
-        mbc.rtc.days_high = 0x00;
-        mbc.rtc.seconds = 59;
-        mbc.rtc.minutes = 59;
-        mbc.rtc.hours = 23;
+        mbc.set_rtc_days_low(0xFF);
+        mbc.set_rtc_days_high(0x00);
+        mbc.set_rtc_seconds(59);
+        mbc.set_rtc_minutes(59);
+        mbc.set_rtc_hours(23);
         mbc.tick(CYCLES_PER_SECOND);
 
-        assert_eq!(mbc.rtc.days_low, 0x00);
-        assert_eq!(mbc.rtc.days_high & 0x01, 0x01);
+        assert_eq!(mbc.rtc_days_low(), 0x00);
+        assert_eq!(mbc.rtc_days_high() & 0x01, 0x01);
     }
 
     #[test]
@@ -533,17 +623,17 @@ mod tests {
         let mut mbc = MBC3::new(rom);
 
         // Set days to 511 (0x01FF)
-        mbc.rtc.days_low = 0xFF;
-        mbc.rtc.days_high = 0x01;
-        mbc.rtc.seconds = 59;
-        mbc.rtc.minutes = 59;
-        mbc.rtc.hours = 23;
+        mbc.set_rtc_days_low(0xFF);
+        mbc.set_rtc_days_high(0x01);
+        mbc.set_rtc_seconds(59);
+        mbc.set_rtc_minutes(59);
+        mbc.set_rtc_hours(23);
         mbc.tick(CYCLES_PER_SECOND);
 
         // Should wrap to 512 with carry flag set
-        assert_eq!(mbc.rtc.days_low, 0x00);
-        assert_eq!(mbc.rtc.days_high & 0x01, 0x00);
-        assert_eq!(mbc.rtc.days_high & 0x80, 0x80);
+        assert_eq!(mbc.rtc_days_low(), 0x00);
+        assert_eq!(mbc.rtc_days_high() & 0x01, 0x00);
+        assert_eq!(mbc.rtc_days_high() & 0x80, 0x80);
     }
 
     #[test]
@@ -551,11 +641,11 @@ mod tests {
         let rom = make_test_rom(0x8000);
         let mut mbc = MBC3::new(rom);
 
-        mbc.rtc.seconds = 30;
-        mbc.rtc.days_high = 0x40;
+        mbc.set_rtc_seconds(30);
+        mbc.set_rtc_days_high(0x40);
 
         mbc.tick(CYCLES_PER_SECOND);
-        assert_eq!(mbc.rtc.seconds, 30);
+        assert_eq!(mbc.rtc_seconds(), 30);
     }
 
     #[test]
@@ -564,10 +654,10 @@ mod tests {
         let mut mbc = MBC3::new(rom);
 
         mbc.tick(CYCLES_PER_SECOND / 2);
-        assert_eq!(mbc.rtc.seconds, 0);
+        assert_eq!(mbc.rtc_seconds(), 0);
 
         mbc.tick(CYCLES_PER_SECOND / 2);
-        assert_eq!(mbc.rtc.seconds, 1);
+        assert_eq!(mbc.rtc_seconds(), 1);
     }
 
     #[test]
@@ -576,7 +666,7 @@ mod tests {
         let mut mbc = MBC3::new(rom);
 
         mbc.tick(CYCLES_PER_SECOND * 150);
-        assert_eq!(mbc.rtc.seconds, 30);
-        assert_eq!(mbc.rtc.minutes, 2);
+        assert_eq!(mbc.rtc_seconds(), 30);
+        assert_eq!(mbc.rtc_minutes(), 2);
     }
 }
