@@ -27,6 +27,9 @@ importers:
       globals:
         specifier: 17.4.0
         version: 17.4.0
+      invokers-polyfill:
+        specifier: 1.0.3
+        version: 1.0.3
       prettier:
         specifier: 3.8.1
         version: 3.8.1
@@ -613,6 +616,9 @@ packages:
   imurmurhash@0.1.4:
     resolution: {integrity: sha512-JmXMZ6wuvDmLiHEml9ykzqO6lwFbof0GG4IkcGaENdCRDDmMVnny7s5HsIgHCbaq0w2MyPhDqkhTUgS2LU2PHA==}
     engines: {node: '>=0.8.19'}
+
+  invokers-polyfill@1.0.3:
+    resolution: {integrity: sha512-T8zVavFQu5GlWlpkjghmaCaTx6Wk+9tWwJ2BC4oNsNAnar6AIrvSJQFZUcYDfrxzK9thBIyZvAkeLfdN9hTzGA==}
 
   is-extglob@2.1.1:
     resolution: {integrity: sha512-SbKbANkN603Vi4jEZv49LeVJMn4yGwsbzZworEoyEiutsN3nJYdbO36zfhGJ6QEDpOZIFkDtnq5JRxmvl3jsoQ==}
@@ -1473,6 +1479,8 @@ snapshots:
   immutable@5.1.5: {}
 
   imurmurhash@0.1.4: {}
+
+  invokers-polyfill@1.0.3: {}
 
   is-extglob@2.1.1: {}
 

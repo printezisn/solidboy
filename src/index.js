@@ -1,3 +1,4 @@
+import 'invokers-polyfill';
 import { initGameEngine } from './game-engine';
 import './styles/main.scss';
 import uploadIcon from 'feather-icons/dist/icons/upload.svg?raw';

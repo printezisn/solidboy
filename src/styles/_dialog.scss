@@ -1,22 +1,24 @@
 @use 'functions' as f;
 
 dialog {
-  @keyframes fadeIn {
-    0% {
-      opacity: 0;
-    }
-  }
-
-  @keyframes scaleUp {
-    0% {
-      transform: translate(-50%, -50%) scale(0.5);
-    }
-  }
+  transition-property: opacity, translate, display, overlay;
+  transition-duration: 0.5s;
+  transition-behavior: allow-discrete;
 
   &::backdrop {
     background-color: var(--color-primary-black);
+    transition-property: opacity, display, overlay;
+    transition-behavior: allow-discrete;
+    transition-duration: 0.5s;
+    opacity: 0;
+  }
+
+  &[open]::backdrop {
     opacity: 0.8;
-    animation: fadeIn 0.5s forwards;
+
+    @starting-style {
+      opacity: 0;
+    }
   }
 
   .x-icon {
@@ -37,10 +39,9 @@ dialog {
     inset-inline-start: 50%;
     inset-block-start: 50%;
     transform: translate(-50%, -50%) scale(1);
-    animation:
-      fadeIn 0.5s forwards,
-      scaleUp 0.5s forwards;
-    animation-timing-function: linear(
+    transition-property: opacity, transform;
+    transition-duration: 0.5s;
+    transition-timing-function: linear(
       0,
       0.402 7.4%,
       0.711 15.3%,
@@ -57,5 +58,15 @@ dialog {
       1
     );
     border-radius: var(--border-radius-medium);
+
+    @starting-style {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.5);
+    }
+  }
+
+  &:not([open]) .dialog-container {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.5);
   }
 }
