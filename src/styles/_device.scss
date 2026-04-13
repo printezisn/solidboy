@@ -71,6 +71,7 @@
       block-size: #{f.relative-size(125)};
       position: relative;
       margin: auto;
+      transform: translateY(-#{f.relative-size(8)});
 
       .up-direction {
         inline-size: #{f.relative-size(25)};
@@ -270,7 +271,6 @@
 @media (max-width: #{f.relative-size(490)}) {
   .device .controls {
     grid-template-columns: repeat(2, 1fr);
-    grid-template-rows: 2;
 
     .menu-container {
       grid-row: 2;
@@ -282,8 +282,7 @@
 
 @media (max-width: #{f.relative-size(350)}) {
   .device .controls {
-    grid-template-columns: repeat(1, 1fr);
-    grid-template-rows: 3;
+    grid-template-columns: 1fr;
 
     .menu-container {
       grid-row: 3;
