@@ -38,12 +38,14 @@ export const initJoypad = () => {
   for (const name in buttonState) {
     const button = document.getElementById(name);
 
-    button.addEventListener('pointerdown', () => {
+    button.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
       buttonState[name].pressed = true;
       button.classList.add('pressed');
     });
 
-    button.addEventListener('pointerup', () => {
+    button.addEventListener('pointerup', (e) => {
+      e.preventDefault();
       buttonState[name].pressed = false;
       button.classList.remove('pressed');
     });

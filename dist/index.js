@@ -331,10 +331,10 @@ var N = {
 }, I = () => {
 	for (let e in N) {
 		let t = document.getElementById(e);
-		t.addEventListener("pointerdown", () => {
-			N[e].pressed = !0, t.classList.add("pressed");
-		}), t.addEventListener("pointerup", () => {
-			N[e].pressed = !1, t.classList.remove("pressed");
+		t.addEventListener("pointerdown", (n) => {
+			n.preventDefault(), N[e].pressed = !0, t.classList.add("pressed");
+		}), t.addEventListener("pointerup", (n) => {
+			n.preventDefault(), N[e].pressed = !1, t.classList.remove("pressed");
 		});
 	}
 	document.addEventListener("keydown", (e) => {

@@ -60,6 +60,10 @@
     grid-template-columns: repeat(3, 1fr);
     align-items: center;
     gap: var(--spacing-8);
+    user-select: none;
+    touch-action: none;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
 
     .direction-container {
       display: inline-block;
