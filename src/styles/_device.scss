@@ -67,14 +67,14 @@
 
     .direction-container {
       display: inline-block;
-      inline-size: #{f.relative-size(95)};
-      block-size: #{f.relative-size(95)};
+      inline-size: #{f.relative-size(125)};
+      block-size: #{f.relative-size(125)};
       position: relative;
       margin: auto;
 
       .up-direction {
-        inline-size: #{f.relative-size(15)};
-        block-size: #{f.relative-size(35)};
+        inline-size: #{f.relative-size(25)};
+        block-size: #{f.relative-size(50)};
         background-color: var(--color-primary-black);
         border-radius: var(--border-radius-medium);
         position: absolute;
@@ -85,8 +85,8 @@
       }
 
       .down-direction {
-        inline-size: #{f.relative-size(15)};
-        block-size: #{f.relative-size(35)};
+        inline-size: #{f.relative-size(25)};
+        block-size: #{f.relative-size(50)};
         background-color: var(--color-primary-black);
         border-radius: var(--border-radius-medium);
         position: absolute;
@@ -97,8 +97,8 @@
       }
 
       .left-direction {
-        inline-size: #{f.relative-size(35)};
-        block-size: #{f.relative-size(15)};
+        inline-size: #{f.relative-size(50)};
+        block-size: #{f.relative-size(25)};
         background-color: var(--color-primary-black);
         border-radius: var(--border-radius-medium);
         position: absolute;
@@ -109,8 +109,8 @@
       }
 
       .right-direction {
-        inline-size: #{f.relative-size(35)};
-        block-size: #{f.relative-size(15)};
+        inline-size: #{f.relative-size(50)};
+        block-size: #{f.relative-size(25)};
         background-color: var(--color-primary-black);
         border-radius: var(--border-radius-medium);
         position: absolute;
@@ -148,8 +148,8 @@
         gap: var(--spacing-4);
 
         button {
-          inline-size: #{f.relative-size(35)};
-          block-size: #{f.relative-size(10)};
+          inline-size: #{f.relative-size(50)};
+          block-size: #{f.relative-size(20)};
           background-color: var(--color-primary-black);
           border-radius: var(--border-radius-medium);
           box-shadow: 0 0 5px 0 var(--color-shadow-black);
@@ -184,8 +184,8 @@
         gap: var(--spacing-4);
 
         button {
-          inline-size: #{f.relative-size(35)};
-          block-size: #{f.relative-size(35)};
+          inline-size: #{f.relative-size(50)};
+          block-size: #{f.relative-size(50)};
           background: radial-gradient(
             var(--color-secondary-light),
             var(--color-secondary)
@@ -267,7 +267,7 @@
   }
 }
 
-@media (max-width: #{f.relative-size(400)}) {
+@media (max-width: #{f.relative-size(490)}) {
   .device .controls {
     grid-template-columns: repeat(2, 1fr);
     grid-template-rows: 2;
@@ -276,6 +276,18 @@
       grid-row: 2;
       grid-column-start: 1;
       grid-column-end: 3;
+    }
+  }
+}
+
+@media (max-width: #{f.relative-size(350)}) {
+  .device .controls {
+    grid-template-columns: repeat(1, 1fr);
+    grid-template-rows: 3;
+
+    .menu-container {
+      grid-row: 3;
+      grid-column: 1;
     }
   }
 }
