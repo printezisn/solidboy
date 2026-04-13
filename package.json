@@ -1,7 +1,7 @@
 {
   "name": "@printezisn/solidboy",
   "type": "module",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": {
     "name": "Nikos Printezis",
     "url": "https://printezisn.github.io/"
@@ -24,7 +24,7 @@
       "import": "./dist/templates.js"
     },
     "./style.css": {
-      "import": "./dist/style.css"
+      "import": "./dist/solidboy.css"
     }
   },
   "engines": {

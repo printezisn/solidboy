@@ -5,6 +5,7 @@ import uploadIcon from 'feather-icons/dist/icons/upload.svg?raw';
 import terminalIcon from 'feather-icons/dist/icons/terminal.svg?raw';
 import volumeIcon from 'feather-icons/dist/icons/volume.svg?raw';
 import xIcon from 'feather-icons/dist/icons/x.svg?raw';
+import tableIcon from 'feather-icons/dist/icons/table.svg?raw';
 
 export const initEmulator = () => {
   document.getElementById('current-year').innerHTML = new Date().getFullYear();
@@ -30,6 +31,12 @@ export const initEmulator = () => {
   Array.from(document.getElementsByClassName('x-icon')).forEach((container) => {
     container.innerHTML = xIcon;
   });
+
+  Array.from(document.getElementsByClassName('table-icon')).forEach(
+    (container) => {
+      container.innerHTML = tableIcon;
+    },
+  );
 
   initGameEngine();
 };

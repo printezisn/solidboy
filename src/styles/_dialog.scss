@@ -4,6 +4,7 @@ dialog {
   transition-property: opacity, translate, display, overlay;
   transition-duration: 0.5s;
   transition-behavior: allow-discrete;
+  border: 0;
 
   &::backdrop {
     background-color: var(--color-primary-black);

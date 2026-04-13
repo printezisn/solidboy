@@ -104,6 +104,15 @@
         <span class="volume-icon" aria-hidden="true"></span>
         Mute
       </button>
+      <button
+        type="button"
+        class="button default hollow"
+        commandfor="keyboard-modal"
+        command="show-modal"
+      >
+        <span class="table-icon" aria-hidden="true"></span>
+        Keyboard Mapping
+      </button>
     </div>
     <dialog id="console-modal" closedby="any">
       <div class="dialog-container">
@@ -115,6 +124,75 @@
           command="close"
         ></button>
         <pre class="console" id="console"></pre>
+      </div>
+    </dialog>
+    <dialog id="keyboard-modal" class="keyboard-modal" closedby="any">
+      <div class="dialog-container">
+        <button
+          type="button"
+          aria-label="Close"
+          class="x-icon"
+          commandfor="keyboard-modal"
+          command="close"
+        ></button>
+        <table>
+          <thead>
+            <tr>
+              <th>Button</th>
+              <th>Keyboard</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>A</td>
+              <td>
+                <span class="keyboard-button">S</span>
+              </td>
+            </tr>
+            <tr>
+              <td>B</td>
+              <td>
+                <span class="keyboard-button">A</span>
+              </td>
+            </tr>
+            <tr>
+              <td>Start</td>
+              <td>
+                <span class="keyboard-button">Enter</span>
+              </td>
+            </tr>
+            <tr>
+              <td>Select</td>
+              <td>
+                <span class="keyboard-button">Space</span>
+              </td>
+            </tr>
+            <tr>
+              <td>Up</td>
+              <td>
+                <span class="keyboard-button">Up</span>
+              </td>
+            </tr>
+            <tr>
+              <td>Down</td>
+              <td>
+                <span class="keyboard-button">Down</span>
+              </td>
+            </tr>
+            <tr>
+              <td>Left</td>
+              <td>
+                <span class="keyboard-button">Left</span>
+              </td>
+            </tr>
+            <tr>
+              <td>Right</td>
+              <td>
+                <span class="keyboard-button">Right</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </dialog>
   </div>
