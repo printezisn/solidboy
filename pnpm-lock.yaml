@@ -9,41 +9,38 @@ importers:
   .:
     dependencies:
       husky:
-        specifier: ^9.1.7
+        specifier: 9.1.7
         version: 9.1.7
       solidboy-emulator:
         specifier: link:emulator/pkg
         version: link:emulator/pkg
     devDependencies:
       '@eslint/js':
-        specifier: ^10.0.1
+        specifier: 10.0.1
         version: 10.0.1(eslint@10.1.0)
-      emulator-lib:
-        specifier: link:emulator/pkg
-        version: link:emulator/pkg
       eslint:
-        specifier: ^10.1.0
+        specifier: 10.1.0
         version: 10.1.0
       feather-icons:
-        specifier: ^4.29.2
+        specifier: 4.29.2
         version: 4.29.2
       globals:
-        specifier: ^17.4.0
+        specifier: 17.4.0
         version: 17.4.0
       prettier:
-        specifier: ^3.8.1
+        specifier: 3.8.1
         version: 3.8.1
       sass:
-        specifier: ^1.98.0
+        specifier: 1.98.0
         version: 1.98.0
       vite:
-        specifier: ^8.0.1
+        specifier: 8.0.1
         version: 8.0.1(sass@1.98.0)(terser@5.46.1)
       vite-plugin-html:
-        specifier: ^3.2.2
+        specifier: 3.2.2
         version: 3.2.2(vite@8.0.1(sass@1.98.0)(terser@5.46.1))
       vite-plugin-wasm:
-        specifier: ^3.6.0
+        specifier: 3.6.0
         version: 3.6.0(vite@8.0.1(sass@1.98.0)(terser@5.46.1))
 
 packages:

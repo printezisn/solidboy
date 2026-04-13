@@ -1,4 +1,4 @@
-import { init_emulator, execute, emulator_memory } from 'emulator-lib';
+import { init_emulator, execute, emulator_memory } from 'solidboy-emulator';
 import { initJoypad, pressedButtons, pressedDirections } from './joypad';
 import { fetchGameData, saveGameData } from './storage';
 
