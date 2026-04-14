@@ -2,7 +2,7 @@ import { init_emulator, execute, emulator_memory } from 'solidboy-emulator';
 import { initJoypad, pressedButtons, pressedDirections } from './joypad';
 import { fetchGameData, saveGameData } from './storage';
 
-const CYCLES_PER_MILLI = 4194 / 2;
+const CYCLES_PER_MILLI = 4194;
 const MAX_FRAME_DIFF = 20;
 
 let canvas = null;
@@ -25,7 +25,7 @@ const onFrame = () => {
     lastFrameTime = now;
   }
 
-  const diff = Math.max(MAX_FRAME_DIFF, now - lastFrameTime);
+  const diff = Math.min(MAX_FRAME_DIFF, now - lastFrameTime);
   let totalCycles = diff * CYCLES_PER_MILLI;
   execute(totalCycles, pressedDirections(), pressedButtons());
 

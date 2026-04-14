@@ -366,12 +366,12 @@ var N = {
 		let i = t.transaction(z, "readonly").objectStore(z).get(e);
 		i.onsuccess = () => n(i.result || new Uint8ClampedArray()), i.onerror = () => r(i.error);
 	});
-}, U = 4194 / 2, W = 20, G = null, K = new Uint8ClampedArray(23040 * 4), q = null, J = null, Y = null, X = document.getElementById("console"), Z = () => {
+}, U = 4194, W = 20, G = null, K = new Uint8ClampedArray(23040 * 4), q = null, J = null, Y = null, X = document.getElementById("console"), Z = () => {
 	let e = new ImageData(K, 160, 144);
 	G.getContext("2d").putImageData(e, 0, 0);
 }, Q = () => {
 	let e = performance.now();
-	q ??= e, s(Math.max(W, e - q) * U, P(), F()), q = e, Z(), Y &&= (V(J, Y), null), requestAnimationFrame(Q);
+	q ??= e, s(Math.min(W, e - q) * U, P(), F()), q = e, Z(), Y &&= (V(J, Y), null), requestAnimationFrame(Q);
 }, $ = () => {
 	let e = o();
 	window.emulator_console_log = (e) => {
