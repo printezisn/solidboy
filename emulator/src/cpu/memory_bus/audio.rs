@@ -1,11 +1,12 @@
 mod pulse_channel;
 mod envelope_pulse_channel;
+mod wave_channel;
 
 use pulse_channel::PulseChannel;
 use envelope_pulse_channel::EnvelopePulseChannel;
+use wave_channel::WaveChannel;
 
 const AUDIO_SIZE: usize = 0xFF26 - 0xFF10 + 1;
-const WAVE_PATTERN_SIZE: usize = 0xFF3F - 0xFF30 + 1;
 const SAMPLE_BUFFER_SIZE: usize = 4096;
 const SAMPLE_RATE: f32 = 44100.0;
 const CLOCK_RATE: f32 = 4194304.0;
@@ -14,7 +15,6 @@ const CYCLES_PER_FRAME: u32 = 70224;
 
 pub struct Audio {
     audio: [u8; AUDIO_SIZE],
-    wave_pattern: [u8; WAVE_PATTERN_SIZE],
 
     sample_buffer: [f32; SAMPLE_BUFFER_SIZE],
     sample_buffer_pos: usize,
@@ -24,13 +24,13 @@ pub struct Audio {
     nr52: u8,
     pulse_channel: PulseChannel,
     envelope_pulse_channel: EnvelopePulseChannel,
+    wave_channel: WaveChannel,
 }
 
 impl Audio {
     pub fn new() -> Self {
         Self {
             audio: [0; AUDIO_SIZE],
-            wave_pattern: [0; WAVE_PATTERN_SIZE],
 
             sample_buffer: [0.0; SAMPLE_BUFFER_SIZE],
             sample_buffer_pos: 0,
@@ -40,6 +40,7 @@ impl Audio {
             nr52: 0xF1,
             pulse_channel: PulseChannel::new(),
             envelope_pulse_channel: EnvelopePulseChannel::new(),
+            wave_channel: WaveChannel::new(),
         }
     }
 
@@ -54,10 +55,14 @@ impl Audio {
             _ => {}
         }
 
+        match self.wave_channel.read(address) {
+            Some(result) => return Some(result),
+            _ => {}
+        }
+
         match address {
             0xFF10..=0xFF25 => Some(self.audio[(address - 0xFF10) as usize]),
             0xFF26 => Some(self.nr52),
-            0xFF30..=0xFF3F => Some(self.wave_pattern[(address - 0xFF30) as usize]),
             _ => None,
         }
     }
@@ -71,15 +76,16 @@ impl Audio {
             return true;
         }
 
+        if self.wave_channel.write(address, value) {
+            return true;
+        }
+
         match address {
             0xFF10..=0xFF25 => {
                 self.audio[(address - 0xFF10) as usize] = value;
             }
             0xFF26 => {
                 self.write_nr52(value);
-            }
-            0xFF30..=0xFF3F => {
-                self.wave_pattern[(address - 0xFF30) as usize] = value;
             }
             _ => {
                 return false;
@@ -93,7 +99,8 @@ impl Audio {
         self.nr52 = value & 0x80;
         if self.nr52 == 0 {
             self.pulse_channel = PulseChannel::new();
-            self.envelope_pulse_channel = EnvelopePulseChannel::new()
+            self.envelope_pulse_channel = EnvelopePulseChannel::new();
+            self.wave_channel = WaveChannel::new();
         }
     }
 
@@ -107,6 +114,7 @@ impl Audio {
         if self.nr52 & 0x80 != 0 {
             self.pulse_channel.tick();
             self.envelope_pulse_channel.tick();
+            self.wave_channel.tick();
         }
 
         self.cycles += 1;
@@ -120,8 +128,9 @@ impl Audio {
             } else {
                 let output =
                     self.pulse_channel.output() +
-                    self.envelope_pulse_channel.output();
-                output * 0.25
+                    self.envelope_pulse_channel.output() +
+                    self.wave_channel.output();
+                output * 0.2
             };
 
             self.sample_buffer[self.sample_buffer_pos] = sample;
@@ -146,7 +155,6 @@ mod tests {
         let audio = Audio::new();
         // Check arrays are zeroed
         assert!(audio.audio.iter().all(|&x| x == 0));
-        assert!(audio.wave_pattern.iter().all(|&x| x == 0));
     }
 
     #[test]
@@ -161,20 +169,6 @@ mod tests {
         let mut audio = Audio::new();
         assert!(audio.write(0xFF15, 0xAB));
         assert_eq!(audio.audio[0x05], 0xAB);
-    }
-
-    #[test]
-    fn test_read_wave_pattern() {
-        let mut audio = Audio::new();
-        audio.wave_pattern[0x05] = 0xCD;
-        assert_eq!(audio.read(0xFF35), Some(0xCD));
-    }
-
-    #[test]
-    fn test_write_wave_pattern() {
-        let mut audio = Audio::new();
-        assert!(audio.write(0xFF35, 0xCD));
-        assert_eq!(audio.wave_pattern[0x05], 0xCD);
     }
 
     #[test]
