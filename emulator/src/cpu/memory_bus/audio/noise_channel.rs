@@ -38,6 +38,10 @@ impl NoiseChannel {
         result
     }
 
+    pub fn enabled(&self) -> bool {
+        self.enabled
+    }
+
     pub fn read(&self, address: u16) -> Option<u8> {
         match address {
             0xFF20 => Some(0xFF),

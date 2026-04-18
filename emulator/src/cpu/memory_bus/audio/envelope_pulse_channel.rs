@@ -48,6 +48,10 @@ impl EnvelopePulseChannel {
         result
     }
 
+    pub fn enabled(&self) -> bool {
+        self.enabled
+    }
+
     pub fn read(&self, address: u16) -> Option<u8> {
         match address {
             0xFF16 => Some(self.nr1 | 0x3F),
