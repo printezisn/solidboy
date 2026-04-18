@@ -11,6 +11,9 @@ pub struct WaveChannel {
     nr2: u8,
     nr3: u8,
     nr4: u8,
+
+    length_enabled: bool,
+    length_counter: u16,
 }
 
 impl WaveChannel {
@@ -26,10 +29,14 @@ impl WaveChannel {
             nr2: 0x9F,
             nr3: 0xFF,
             nr4: 0xBF,
+
+            length_enabled: false,
+            length_counter: 0,
         };
 
-        result.write_nr30(0x7F);
-        result.write_nr34(0xBF);
+        result.write_nr0(0x7F);
+        result.write_nr1(0xFF);
+        result.write_nr4(0xBF);
 
         result
     }
@@ -48,16 +55,25 @@ impl WaveChannel {
 
     pub fn write(&mut self, address: u16, value: u8) -> bool {
         match address {
-            0xFF1A => self.write_nr30(value),
-            0xFF1B => self.nr1 = value,
+            0xFF1A => self.write_nr0(value),
+            0xFF1B => self.write_nr1(value),
             0xFF1C => self.nr2 = value,
             0xFF1D => self.nr3 = value,
-            0xFF1E => self.write_nr34(value),
+            0xFF1E => self.write_nr4(value),
             0xFF30..=0xFF3F => self.wave_ram[address as usize - 0xFF30] = value,
             _ => return false,
         }
 
         true
+    }
+
+    pub fn length_tick(&mut self) {
+        if self.length_enabled && self.length_counter > 0 {
+            self.length_counter -= 1;
+            if self.length_counter == 0 {
+                self.enabled = false;
+            }
+        }
     }
 
     pub fn tick(&mut self) {
@@ -71,7 +87,7 @@ impl WaveChannel {
         }
     }
 
-    fn write_nr30(&mut self, val: u8) {
+    fn write_nr0(&mut self, val: u8) {
         self.nr0 = val;
         self.dac_enabled = val & 0x80 != 0;
         if !self.dac_enabled {
@@ -79,10 +95,20 @@ impl WaveChannel {
         }
     }
 
-    fn write_nr34(&mut self, val: u8) {
-        self.nr4 = val;
+    fn write_nr1(&mut self, value: u8) {
+        self.nr1 = value;
+        self.length_counter = 256 - value as u16;
+    }
 
-        if val & 0x80 != 0 {
+    fn write_nr4(&mut self, value: u8) {
+        self.nr4 = value;
+        self.length_enabled = value & 0x40 != 0;
+
+        if value & 0x80 != 0 {
+            if self.length_counter == 0 {
+                self.length_counter = 64;
+            }
+
             self.enabled = self.dac_enabled;
             self.wave_pos = 0;
 

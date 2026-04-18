@@ -14,6 +14,7 @@ const SAMPLE_RATE: f32 = 44100.0;
 const CLOCK_RATE: f32 = 4194304.0;
 const SAMPLE_TICK: f32 = SAMPLE_RATE / CLOCK_RATE;
 const CYCLES_PER_FRAME: u32 = 70224;
+const ENVELOPE_TICK_CYCLES: u16 = 8192;
 
 pub struct Audio {
     audio: [u8; AUDIO_SIZE],
@@ -28,6 +29,9 @@ pub struct Audio {
     envelope_pulse_channel: EnvelopePulseChannel,
     wave_channel: WaveChannel,
     noise_channel: NoiseChannel,
+
+    frame_sequencer_counter: u16,
+    frame_sequencer_step: u8,
 }
 
 impl Audio {
@@ -45,6 +49,9 @@ impl Audio {
             envelope_pulse_channel: EnvelopePulseChannel::new(),
             wave_channel: WaveChannel::new(),
             noise_channel: NoiseChannel::new(),
+
+            frame_sequencer_counter: 0,
+            frame_sequencer_step: 0,
         }
     }
 
@@ -109,12 +116,59 @@ impl Audio {
     }
 
     fn write_nr52(&mut self, value: u8) {
-        self.nr52 = value & 0x80;
-        if self.nr52 == 0 {
+        if value & 0x80 == 0 && self.nr52 & 0x80 != 0 {
+            self.frame_sequencer_counter = 0;
+            self.frame_sequencer_step = 0;
             self.pulse_channel = PulseChannel::new();
             self.envelope_pulse_channel = EnvelopePulseChannel::new();
             self.wave_channel = WaveChannel::new();
             self.noise_channel = NoiseChannel::new();
+        }
+        self.nr52 = value & 0x80;
+    }
+
+    fn length_tick(&mut self) {
+        self.pulse_channel.length_tick();
+        self.envelope_pulse_channel.length_tick();
+        self.wave_channel.length_tick();
+        self.noise_channel.length_tick();
+    }
+
+    fn envelope_tick(&mut self) {
+        self.pulse_channel.envelope_tick();
+        self.envelope_pulse_channel.envelope_tick();
+        self.noise_channel.envelope_tick();
+    }
+
+    fn sweep_tick(&mut self) {
+        //self.pulse_channel.sweep_tick();
+    }
+
+    fn tick_frame_sequencer(&mut self) {
+        self.frame_sequencer_counter += 1;
+
+        while self.frame_sequencer_counter >= ENVELOPE_TICK_CYCLES {
+            self.frame_sequencer_counter -= ENVELOPE_TICK_CYCLES;
+
+            match self.frame_sequencer_step {
+                0 => self.length_tick(),
+                1 => {}
+                2 => {
+                    self.length_tick();
+                    self.sweep_tick();
+                }
+                3 => {}
+                4 => self.length_tick(),
+                5 => {}
+                6 => {
+                    self.length_tick();
+                    self.sweep_tick();
+                }
+                7 => self.envelope_tick(),
+                _ => unreachable!(),
+            }
+
+            self.frame_sequencer_step = (self.frame_sequencer_step + 1) % 8;
         }
     }
 
@@ -130,6 +184,8 @@ impl Audio {
             self.envelope_pulse_channel.tick();
             self.wave_channel.tick();
             self.noise_channel.tick();
+
+            self.tick_frame_sequencer();
         }
 
         self.cycles += 1;

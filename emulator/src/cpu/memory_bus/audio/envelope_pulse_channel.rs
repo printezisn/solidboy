@@ -1,5 +1,3 @@
-const ENVELOPE_TICK_CYCLES: u16 = 8192;
-
 const DUTY_PATTERNS: [[u8; 8]; 4] = [
     [0, 0, 0, 0, 0, 0, 0, 1],
     [1, 0, 0, 0, 0, 0, 0, 1],
@@ -20,7 +18,9 @@ pub struct EnvelopePulseChannel {
 
     envelope_enabled: bool,
     envelope_timer: u8,
-    envelope_counter: u16,
+
+    length_enabled: bool,
+    length_counter: u16,
 }
 
 impl EnvelopePulseChannel {
@@ -38,10 +38,13 @@ impl EnvelopePulseChannel {
 
             envelope_enabled: false,
             envelope_timer: 0,
-            envelope_counter: 0,
+
+            length_enabled: false,
+            length_counter: 0,
         };
 
-        result.write_nr14(0xBF);
+        result.write_nr1(0x3F);
+        result.write_nr4(0xBF);
         result
     }
 
@@ -57,10 +60,10 @@ impl EnvelopePulseChannel {
 
     pub fn write(&mut self, address: u16, value: u8) -> bool {
         match address {
-            0xFF16 => self.nr1 = value,
+            0xFF16 => self.write_nr1(value),
             0xFF17 => self.nr2 = value,
             0xFF18 => self.nr3 = value,
-            0xFF19 => self.write_nr14(value),
+            0xFF19 => self.write_nr4(value),
             _ => return false,
         }
 
@@ -76,15 +79,9 @@ impl EnvelopePulseChannel {
         } else {
             self.period_timer -= 1;
         }
-
-        self.envelope_counter += 1;
-        if self.envelope_counter >= ENVELOPE_TICK_CYCLES {
-            self.envelope_counter = 0;
-            self.envelope_tick();
-        }
     }
 
-    fn envelope_tick(&mut self) {
+    pub fn envelope_tick(&mut self) {
         let pace = self.nr2 & 0x07;
         if pace == 0 || !self.envelope_enabled {
             return;
@@ -105,6 +102,15 @@ impl EnvelopePulseChannel {
         }
     }
 
+    pub fn length_tick(&mut self) {
+        if self.length_enabled && self.length_counter > 0 {
+            self.length_counter -= 1;
+            if self.length_counter == 0 {
+                self.enabled = false;
+            }
+        }
+    }
+
     pub fn output(&self) -> f32 {
         if !self.enabled {
             return 0.0;
@@ -117,10 +123,20 @@ impl EnvelopePulseChannel {
         if high { self.volume as f32 / 15.0 } else { 0.0 }
     }
 
-    fn write_nr14(&mut self, value: u8) {
+    fn write_nr1(&mut self, val: u8) {
+        self.nr1 = val;
+        self.length_counter = 64 - (val & 0x3F) as u16;
+    }
+
+    fn write_nr4(&mut self, value: u8) {
         self.nr4 = value;
+        self.length_enabled = value & 0x40 != 0;
 
         if value & 0x80 != 0 {
+            if self.length_counter == 0 {
+                self.length_counter = 64;
+            }
+
             self.enabled = true;
             self.duty_step = 0;
             self.volume = (self.nr2 >> 4) & 0x0F;

@@ -1,5 +1,3 @@
-const ENVELOPE_TICK_CYCLES: u16 = 8192;
-
 pub struct NoiseChannel {
     lfsr: u16,
     period_timer: u16,
@@ -8,7 +6,8 @@ pub struct NoiseChannel {
     volume: u8,
     envelope_timer: u8,
     envelope_enabled: bool,
-    envelope_counter: u16,
+    length_counter: u16,
+    length_enabled: bool,
     nr1: u8,
     nr2: u8,
     nr3: u8,
@@ -25,14 +24,16 @@ impl NoiseChannel {
             volume: 0,
             envelope_timer: 0,
             envelope_enabled: false,
-            envelope_counter: 0,
+            length_counter: 0,
+            length_enabled: false,
             nr1: 0xFF,
             nr2: 0x00,
             nr3: 0x00,
             nr4: 0xBF,
         };
 
-        result.write_nr44(0xBF);
+        result.write_nr1(0xFF);
+        result.write_nr4(0xBF);
 
         result
     }
@@ -49,20 +50,30 @@ impl NoiseChannel {
 
     pub fn write(&mut self, address: u16, value: u8) -> bool {
         match address {
-            0xFF20 => self.nr1 = value,
+            0xFF20 => self.write_nr1(value),
             0xFF21 => self.nr2 = value,
             0xFF22 => self.nr3 = value,
-            0xFF23 => self.write_nr44(value),
+            0xFF23 => self.write_nr4(value),
             _ => return false,
         }
 
         true
     }
 
-    fn write_nr44(&mut self, val: u8) {
-        self.nr4 = val;
+    fn write_nr1(&mut self, value: u8) {
+        self.nr1 = value;
+        self.length_counter = 64 - (value & 0x3F) as u16;
+    }
 
-        if val & 0x80 != 0 {
+    fn write_nr4(&mut self, value: u8) {
+        self.nr4 = value;
+        self.length_enabled = value & 0x40 != 0;
+
+        if value & 0x80 != 0 {
+            if self.length_counter == 0 {
+                self.length_counter = 64;
+            }
+
             self.enabled = self.dac_enabled;
             self.lfsr = 0x7FFF;
 
@@ -86,7 +97,7 @@ impl NoiseChannel {
         divider << s
     }
 
-    fn envelope_tick(&mut self) {
+    pub fn envelope_tick(&mut self) {
         let pace = self.nr2 & 0x07;
         if pace == 0 || !self.envelope_enabled {
             return;
@@ -106,6 +117,15 @@ impl NoiseChannel {
         }
     }
 
+    pub fn length_tick(&mut self) {
+        if self.length_enabled && self.length_counter > 0 {
+            self.length_counter -= 1;
+            if self.length_counter == 0 {
+                self.enabled = false;
+            }
+        }
+    }
+
     pub fn tick(&mut self) {
         if self.period_timer == 0 {
             self.period_timer = self.period();
@@ -119,12 +139,6 @@ impl NoiseChannel {
             }
         } else {
             self.period_timer -= 1;
-        }
-
-        self.envelope_counter += 1;
-        if self.envelope_counter >= ENVELOPE_TICK_CYCLES {
-            self.envelope_counter = 0;
-            self.envelope_tick();
         }
     }
 
