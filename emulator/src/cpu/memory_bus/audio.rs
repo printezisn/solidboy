@@ -1,9 +1,11 @@
-mod pulse_channel;
 mod envelope_pulse_channel;
+mod noise_channel;
+mod pulse_channel;
 mod wave_channel;
 
-use pulse_channel::PulseChannel;
 use envelope_pulse_channel::EnvelopePulseChannel;
+use noise_channel::NoiseChannel;
+use pulse_channel::PulseChannel;
 use wave_channel::WaveChannel;
 
 const AUDIO_SIZE: usize = 0xFF26 - 0xFF10 + 1;
@@ -25,6 +27,7 @@ pub struct Audio {
     pulse_channel: PulseChannel,
     envelope_pulse_channel: EnvelopePulseChannel,
     wave_channel: WaveChannel,
+    noise_channel: NoiseChannel,
 }
 
 impl Audio {
@@ -41,6 +44,7 @@ impl Audio {
             pulse_channel: PulseChannel::new(),
             envelope_pulse_channel: EnvelopePulseChannel::new(),
             wave_channel: WaveChannel::new(),
+            noise_channel: NoiseChannel::new(),
         }
     }
 
@@ -56,6 +60,11 @@ impl Audio {
         }
 
         match self.wave_channel.read(address) {
+            Some(result) => return Some(result),
+            _ => {}
+        }
+
+        match self.noise_channel.read(address) {
             Some(result) => return Some(result),
             _ => {}
         }
@@ -80,6 +89,10 @@ impl Audio {
             return true;
         }
 
+        if self.noise_channel.write(address, value) {
+            return true;
+        }
+
         match address {
             0xFF10..=0xFF25 => {
                 self.audio[(address - 0xFF10) as usize] = value;
@@ -101,6 +114,7 @@ impl Audio {
             self.pulse_channel = PulseChannel::new();
             self.envelope_pulse_channel = EnvelopePulseChannel::new();
             self.wave_channel = WaveChannel::new();
+            self.noise_channel = NoiseChannel::new();
         }
     }
 
@@ -115,22 +129,23 @@ impl Audio {
             self.pulse_channel.tick();
             self.envelope_pulse_channel.tick();
             self.wave_channel.tick();
+            self.noise_channel.tick();
         }
 
         self.cycles += 1;
         self.sample_timer += SAMPLE_TICK;
-        
+
         while self.sample_timer >= 1.0 {
             self.sample_timer -= 1.0;
 
             let sample = if self.nr52 & 0x80 == 0 {
                 0.0
             } else {
-                let output =
-                    self.pulse_channel.output() +
-                    self.envelope_pulse_channel.output() +
-                    self.wave_channel.output();
-                output * 0.2
+                let output = self.pulse_channel.output()
+                    + self.envelope_pulse_channel.output()
+                    + self.wave_channel.output()
+                    + self.noise_channel.output();
+                output * 0.15
             };
 
             self.sample_buffer[self.sample_buffer_pos] = sample;

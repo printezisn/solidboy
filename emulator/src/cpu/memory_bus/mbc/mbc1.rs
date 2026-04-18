@@ -92,7 +92,11 @@ impl MBC1 {
     }
 
     pub fn save_data(&mut self) -> (*const u8, usize, bool) {
-        let result = (self.external_ram.as_ptr(), self.external_ram.len(), self.has_data_to_save);
+        let result = (
+            self.external_ram.as_ptr(),
+            self.external_ram.len(),
+            self.has_data_to_save,
+        );
         self.has_data_to_save = false;
 
         result

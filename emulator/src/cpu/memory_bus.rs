@@ -430,7 +430,8 @@ impl MemoryBus {
 
             for _ in 0..16 {
                 let value = self.read_without_tick(self.hdma.source);
-                self.ppu.write_to_vram(self.hdma.destination - 0x8000, value);
+                self.ppu
+                    .write_to_vram(self.hdma.destination - 0x8000, value);
                 self.hdma.source = self.hdma.source.wrapping_add(1);
                 self.hdma.destination = self.hdma.destination.wrapping_add(1);
             }
@@ -501,7 +502,7 @@ impl MemoryBus {
                 self.tick_hdma(1);
             }
         }
-        
+
         self.mbc.tick(cycles as u32);
         self.tick_dma(cycles);
         if self.hdma.general_purpose {

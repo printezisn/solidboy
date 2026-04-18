@@ -81,7 +81,8 @@ impl PPU {
             mode: 2,
             sprites: Vec::new(),
             frame_buffer: [0; FRAME_BUFFER_ROWS * FRAME_BUFFER_COLS * 4],
-            frame_buffer_pixel_priorities: [PixelPriority::Sprite; FRAME_BUFFER_ROWS * FRAME_BUFFER_COLS],
+            frame_buffer_pixel_priorities: [PixelPriority::Sprite;
+                FRAME_BUFFER_ROWS * FRAME_BUFFER_COLS],
             skip_frame: false,
         }
     }
@@ -327,7 +328,8 @@ impl PPU {
                 self.frame_buffer[frame_buffer_index + 1] = 0xBC;
                 self.frame_buffer[frame_buffer_index + 2] = 0x0F;
                 self.frame_buffer[frame_buffer_index + 3] = 0xFF;
-                self.frame_buffer_pixel_priorities[self.ly as usize * 160 + i as usize] = PixelPriority::Sprite;
+                self.frame_buffer_pixel_priorities[self.ly as usize * 160 + i as usize] =
+                    PixelPriority::Sprite;
 
                 continue;
             }
@@ -371,19 +373,10 @@ impl PPU {
             let y_flip = tile_attributes & 0x40 != 0;
             let bg_priority = tile_attributes & 0x80 != 0;
 
-            let inner_tile_row =
-                if y_flip {
-                    7 - (y % 8)
-                } else {
-                    y % 8
-                } as u16;
-            let inner_tile_col =
-                if x_flip {
-                    7 - (x % 8)
-                } else {
-                    x % 8
-                } as u16;
-            let inner_row_address = VRAM_SIZE as u16 * tile_bank + tile_data_address + inner_tile_row * 2;
+            let inner_tile_row = if y_flip { 7 - (y % 8) } else { y % 8 } as u16;
+            let inner_tile_col = if x_flip { 7 - (x % 8) } else { x % 8 } as u16;
+            let inner_row_address =
+                VRAM_SIZE as u16 * tile_bank + tile_data_address + inner_tile_row * 2;
 
             let color_index = self.calculate_pixel_color_index(inner_row_address, inner_tile_col);
             let (r, g, b, a) = if matches!(self.model_type, ModelType::Color) {
@@ -476,11 +469,14 @@ impl PPU {
                     continue;
                 }
 
-                let pixel_priority = self.frame_buffer_pixel_priorities[self.ly as usize * 160 + screen_x as usize];          
+                let pixel_priority =
+                    self.frame_buffer_pixel_priorities[self.ly as usize * 160 + screen_x as usize];
                 if matches!(pixel_priority, PixelPriority::BG) {
                     continue;
                 }
-                if matches!(pixel_priority, PixelPriority::BGIfSpriteDisabled) && sprite.attributes & 0x80 != 0 {
+                if matches!(pixel_priority, PixelPriority::BGIfSpriteDisabled)
+                    && sprite.attributes & 0x80 != 0
+                {
                     continue;
                 }
 
@@ -538,7 +534,7 @@ impl PPU {
         }
 
         let sort_only_by_priority =
-            matches!(self.model_type, ModelType::Color) && self.object_priority_mode & 0x01 == 0; 
+            matches!(self.model_type, ModelType::Color) && self.object_priority_mode & 0x01 == 0;
 
         self.sprites.sort_by(|a, b| {
             if a.x == b.x || sort_only_by_priority {
@@ -873,7 +869,10 @@ mod tests {
         assert_eq!(ppu.frame_buffer[color_offset + 1], expected.1);
         assert_eq!(ppu.frame_buffer[color_offset + 2], expected.2);
         assert_eq!(ppu.frame_buffer[color_offset + 3], expected.3);
-        assert_eq!(ppu.frame_buffer_pixel_priorities[0], PixelPriority::BGIfSpriteDisabled);
+        assert_eq!(
+            ppu.frame_buffer_pixel_priorities[0],
+            PixelPriority::BGIfSpriteDisabled
+        );
     }
 
     #[test]

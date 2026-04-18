@@ -225,7 +225,11 @@ impl MBC3 {
     }
 
     pub fn save_data(&mut self) -> (*const u8, usize, bool) {
-        let result = (self.external_ram.as_ptr(), self.external_ram.len(), self.has_data_to_save);
+        let result = (
+            self.external_ram.as_ptr(),
+            self.external_ram.len(),
+            self.has_data_to_save,
+        );
         self.has_data_to_save = false;
 
         result
@@ -262,8 +266,7 @@ impl MBC3 {
                     let days = ((days_high & 0x01) as u16) << 8 | self.rtc_days_low() as u16;
                     let new_days = days + 1;
                     self.set_rtc_days_low(new_days as u8);
-                    self.set_rtc_days_high(
-                        (days_high & 0xFE) | ((new_days >> 8) as u8 & 0x01));
+                    self.set_rtc_days_high((days_high & 0xFE) | ((new_days >> 8) as u8 & 0x01));
                     if new_days >= 512 {
                         self.set_rtc_days_high((days_high | 0x80) & !0x01);
                         self.set_rtc_days_low(0);
