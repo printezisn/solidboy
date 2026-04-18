@@ -6,6 +6,7 @@ extern "C" {
     fn emulator_console_error(err: &str);
     fn render_frame_buffer(frame_buffer_ptr: *const u8, length: usize);
     fn save_data(data_ptr: *const u8, length: usize);
+    fn append_audio_sample(data_ptr: *const f32, length: usize);
 }
 
 #[macro_export]
@@ -34,6 +35,13 @@ macro_rules! render_frame_buffer {
 macro_rules! save_data {
     ($($t:tt)*) => {{
         crate::save_data($($t)*);
+    }}
+}
+
+#[macro_export]
+macro_rules! append_audio_sample {
+    ($($t:tt)*) => {{
+        crate::append_audio_sample($($t)*);
     }}
 }
 

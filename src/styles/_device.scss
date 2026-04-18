@@ -285,6 +285,11 @@
     padding: var(--spacing-4);
     overflow: auto;
     aspect-ratio: 10 / 9;
+    color: var(--color-primary-white);
+
+    .error-message {
+      color: var(--color-danger);
+    }
   }
 
   .keyboard-modal {

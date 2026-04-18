@@ -490,6 +490,7 @@ impl MemoryBus {
 
         self.total_cycles += real_speed;
         self.timer.tick(&mut self.if_flag, cycles);
+        self.audio.tick(cycles);
 
         for _ in 0..real_speed {
             let previous_mode = self.ppu.mode();

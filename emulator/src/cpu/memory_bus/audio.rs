@@ -1,9 +1,19 @@
 const AUDIO_SIZE: usize = 0xFF26 - 0xFF10 + 1;
 const WAVE_PATTERN_SIZE: usize = 0xFF3F - 0xFF30 + 1;
+const SAMPLE_BUFFER_SIZE: usize = 4096;
+const SAMPLE_RATE: f32 = 44100.0;
+const CLOCK_RATE: f32 = 4194304.0;
+const SAMPLE_TICK: f32 = SAMPLE_RATE / CLOCK_RATE;
+const CYCLES_PER_FRAME: u32 = 70224;
 
 pub struct Audio {
     audio: [u8; AUDIO_SIZE],
     wave_pattern: [u8; WAVE_PATTERN_SIZE],
+
+    sample_buffer: [f32; SAMPLE_BUFFER_SIZE],
+    sample_buffer_pos: usize,
+    sample_timer: f32,
+    cycles: u32,
 }
 
 impl Audio {
@@ -11,6 +21,11 @@ impl Audio {
         Self {
             audio: [0; AUDIO_SIZE],
             wave_pattern: [0; WAVE_PATTERN_SIZE],
+
+            sample_buffer: [0.0; SAMPLE_BUFFER_SIZE],
+            sample_buffer_pos: 0,
+            sample_timer: 0.0,
+            cycles: 0,
         }
     }
 
@@ -36,6 +51,31 @@ impl Audio {
         }
 
         true
+    }
+
+    pub fn tick(&mut self, cycles: u8) {
+        for _ in 0..cycles {
+            self.single_tick();
+        }
+    }
+
+    fn single_tick(&mut self) {
+        self.cycles += 1;
+        self.sample_timer += SAMPLE_TICK;
+        
+        while self.sample_timer >= 1.0 {
+            self.sample_timer -= 1.0;
+
+            self.sample_buffer[self.sample_buffer_pos] = 0.0;
+            self.sample_buffer[self.sample_buffer_pos + 1] = 0.0;
+            self.sample_buffer_pos += 2;
+        }
+
+        while self.cycles > CYCLES_PER_FRAME {
+            self.cycles -= CYCLES_PER_FRAME;
+            append_audio_sample!(self.sample_buffer.as_ptr(), self.sample_buffer_pos);
+            self.sample_buffer_pos = 0;
+        }
     }
 }
 

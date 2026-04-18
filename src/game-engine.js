@@ -1,6 +1,7 @@
 import { init_emulator, execute, emulator_memory } from 'solidboy-emulator';
 import { initJoypad, pressedButtons, pressedDirections } from './joypad';
 import { fetchGameData, saveGameData } from './storage';
+import { appendSample, initAudio, resumeAudio } from './audio';
 
 const CYCLES_PER_MILLI = 4194;
 const MAX_FRAME_DIFF = 20;
@@ -31,7 +32,9 @@ const onFrame = () => {
 
   lastFrameTime = now;
 
+  resumeAudio();
   renderFrameBuffer();
+
   if (dataToBeSaved) {
     saveGameData(gameName, dataToBeSaved);
     dataToBeSaved = null;
@@ -63,6 +66,11 @@ export const initGameEngine = () => {
     dataToBeSaved = new Uint8ClampedArray(memory.buffer, data_ptr, length);
   };
 
+  window.append_audio_sample = (data_ptr, length) => {
+    const buffer = new Float32Array(data_ptr, length);
+    appendSample(buffer);
+  };
+
   document.getElementById('rom-file').addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -80,6 +88,7 @@ export const initGameEngine = () => {
       const rom = new Uint8Array(reader.result);
       const gameData = await fetchGameData(gameName);
 
+      await initAudio();
       init_emulator(rom, gameData);
       initJoypad();
 
