@@ -67,7 +67,7 @@ export const initGameEngine = () => {
   };
 
   window.append_audio_sample = (data_ptr, length) => {
-    const buffer = new Float32Array(data_ptr, length);
+    const buffer = new Float32Array(memory.buffer, data_ptr, length);
     appendSample(buffer);
   };
 

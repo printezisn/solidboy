@@ -1,3 +1,7 @@
+mod pulse_channel;
+
+use pulse_channel::PulseChannel;
+
 const AUDIO_SIZE: usize = 0xFF26 - 0xFF10 + 1;
 const WAVE_PATTERN_SIZE: usize = 0xFF3F - 0xFF30 + 1;
 const SAMPLE_BUFFER_SIZE: usize = 4096;
@@ -14,6 +18,9 @@ pub struct Audio {
     sample_buffer_pos: usize,
     sample_timer: f32,
     cycles: u32,
+
+    nr52: u8,
+    pulse_channel: PulseChannel
 }
 
 impl Audio {
@@ -26,21 +33,37 @@ impl Audio {
             sample_buffer_pos: 0,
             sample_timer: 0.0,
             cycles: 0,
+
+            nr52: 0xF1,
+            pulse_channel: PulseChannel::new()
         }
     }
 
     pub fn read(&self, address: u16) -> Option<u8> {
+        match self.pulse_channel.read(address) {
+            Some(result) => return Some(result),
+            _ => {}
+        }
+
         match address {
-            0xFF10..=0xFF26 => Some(self.audio[(address - 0xFF10) as usize]),
+            0xFF10..=0xFF25 => Some(self.audio[(address - 0xFF10) as usize]),
+            0xFF26 => Some(self.nr52),
             0xFF30..=0xFF3F => Some(self.wave_pattern[(address - 0xFF30) as usize]),
             _ => None,
         }
     }
 
     pub fn write(&mut self, address: u16, value: u8) -> bool {
+        if self.pulse_channel.write(address, value) {
+            return true;
+        }
+
         match address {
-            0xFF10..=0xFF26 => {
+            0xFF10..=0xFF25 => {
                 self.audio[(address - 0xFF10) as usize] = value;
+            }
+            0xFF26 => {
+                self.write_nr52(value);
             }
             0xFF30..=0xFF3F => {
                 self.wave_pattern[(address - 0xFF30) as usize] = value;
@@ -53,6 +76,13 @@ impl Audio {
         true
     }
 
+    fn write_nr52(&mut self, value: u8) {
+        self.nr52 = value & 0x80;
+        if self.nr52 == 0 {
+            self.pulse_channel = PulseChannel::new();
+        }
+    }
+
     pub fn tick(&mut self, cycles: u8) {
         for _ in 0..cycles {
             self.single_tick();
@@ -60,14 +90,24 @@ impl Audio {
     }
 
     fn single_tick(&mut self) {
+        if self.nr52 & 0x80 != 0 {
+            self.pulse_channel.tick();
+        }
+
         self.cycles += 1;
         self.sample_timer += SAMPLE_TICK;
         
         while self.sample_timer >= 1.0 {
             self.sample_timer -= 1.0;
 
-            self.sample_buffer[self.sample_buffer_pos] = 0.0;
-            self.sample_buffer[self.sample_buffer_pos + 1] = 0.0;
+            let sample = if self.nr52 & 0x80 == 0 {
+                0.0
+            } else {
+                self.pulse_channel.output() * 0.25
+            };
+
+            self.sample_buffer[self.sample_buffer_pos] = sample;
+            self.sample_buffer[self.sample_buffer_pos + 1] = sample;
             self.sample_buffer_pos += 2;
         }
 

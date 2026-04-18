@@ -22,5 +22,5 @@ export const resumeAudio = () => {
 };
 
 export const appendSample = (sample) => {
-  audioWorkletNode.port.postMessage(sample, [sample.buffer]);
+  audioWorkletNode.port.postMessage(sample);
 };
