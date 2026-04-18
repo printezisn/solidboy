@@ -141,7 +141,7 @@ impl Audio {
     }
 
     fn sweep_tick(&mut self) {
-        //self.pulse_channel.sweep_tick();
+        self.pulse_channel.sweep_tick();
     }
 
     fn tick_frame_sequencer(&mut self) {

@@ -22,6 +22,10 @@ pub struct PulseChannel {
 
     length_enabled: bool,
     length_counter: u16,
+
+    sweep_enabled: bool,
+    sweep_timer: u8,
+    sweep_period: u16,
 }
 
 impl PulseChannel {
@@ -43,6 +47,10 @@ impl PulseChannel {
 
             length_enabled: false,
             length_counter: 0,
+
+            sweep_enabled: false,
+            sweep_timer: 0,
+            sweep_period: 0,
         };
 
         result.write_nr1(0xBF);
@@ -120,6 +128,30 @@ impl PulseChannel {
         }
     }
 
+    pub fn sweep_tick(&mut self) {
+        if self.sweep_timer > 0 {
+            self.sweep_timer -= 1;
+        }
+        
+        if self.sweep_timer == 0 {
+            let pace = (self.nr0 >> 4) & 0x07;
+            self.sweep_timer = if pace == 0 { 8 } else { pace };
+            
+            if self.sweep_enabled && pace != 0 {
+                if let Some(new_period) = self.calculate_new_period() {
+                    let shift = self.nr0 & 0x07;
+                    if shift != 0 {
+                        self.sweep_period = new_period;
+                        self.nr3 = new_period as u8;
+                        self.nr4 = (self.nr4 & 0xF8) | ((new_period >> 8) as u8 & 0x07);
+                        
+                        self.calculate_new_period();
+                    }
+                }
+            }
+        }
+    }
+
     pub fn output(&self) -> f32 {
         if !self.enabled {
             return 0.0;
@@ -154,6 +186,36 @@ impl PulseChannel {
             if self.nr2 & 0xF8 == 0 {
                 self.enabled = false;
             }
+
+            let pace  = (self.nr0 >> 4) & 0x07;
+            let shift = self.nr0 & 0x07;
+            
+            self.sweep_period = ((self.nr4 & 0x07) as u16) << 8 | self.nr3 as u16;
+            self.sweep_timer = if pace == 0 { 8 } else { pace };
+            self.sweep_enabled = pace != 0 || shift != 0;
+            
+            if shift != 0 {
+                self.calculate_new_period();
+            }
+        }
+    }
+
+    fn calculate_new_period(&mut self) -> Option<u16> {
+        let shift = self.nr0 & 0x07;
+        let direction = (self.nr0 >> 3) & 0x01;
+        
+        let delta = self.sweep_period >> shift;
+        let new_period = if direction == 1 {
+            self.sweep_period.wrapping_sub(delta)
+        } else {
+            self.sweep_period + delta
+        };
+        
+        if new_period > 2047 {
+            self.enabled = false;
+            None
+        } else {
+            Some(new_period)
         }
     }
 }
