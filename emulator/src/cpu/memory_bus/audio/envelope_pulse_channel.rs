@@ -7,8 +7,7 @@ const DUTY_PATTERNS: [[u8; 8]; 4] = [
     [0, 1, 1, 1, 1, 1, 1, 0],
 ];
 
-pub struct PulseChannel {
-    nr0: u8,
+pub struct EnvelopePulseChannel {
     nr1: u8,
     nr2: u8,
     nr3: u8,
@@ -24,12 +23,11 @@ pub struct PulseChannel {
     envelope_counter: u16,
 }
 
-impl PulseChannel {
+impl EnvelopePulseChannel {
     pub fn new() -> Self {
       let mut result = Self {
-        nr0: 0x80,
-        nr1: 0xBF,
-        nr2: 0xF3,
+        nr1: 0x3F,
+        nr2: 0x00,
         nr3: 0xFF,
         nr4: 0xBF,
 
@@ -49,22 +47,20 @@ impl PulseChannel {
 
     pub fn read(&self, address: u16) -> Option<u8> {
       match address {
-        0xFF10 => Some(self.nr0 | 0x80),
-        0xFF11 => Some(self.nr1 | 0x3F),
-        0xFF12 => Some(self.nr2),
-        0xFF13 => Some(0xFF),
-        0xFF14 => Some(self.nr4 | 0xBF),
+        0xFF16 => Some(self.nr1 | 0x3F),
+        0xFF17 => Some(self.nr2),
+        0xFF18 => Some(0xFF),
+        0xFF19 => Some(self.nr4 | 0xBF),
         _ => None
       }
     }
 
     pub fn write(&mut self, address: u16, value: u8) -> bool {
       match address {
-        0xFF10 => self.nr0 = value,
-        0xFF11 => self.nr1= value,
-        0xFF12 => self.nr2 = value,
-        0xFF13 => self.nr3 = value,
-        0xFF14 => self.write_nr14(value),
+        0xFF16 => self.nr1= value,
+        0xFF17 => self.nr2 = value,
+        0xFF18 => self.nr3 = value,
+        0xFF19 => self.write_nr14(value),
         _ => return false
       }
 

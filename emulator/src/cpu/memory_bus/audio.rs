@@ -1,6 +1,8 @@
 mod pulse_channel;
+mod envelope_pulse_channel;
 
 use pulse_channel::PulseChannel;
+use envelope_pulse_channel::EnvelopePulseChannel;
 
 const AUDIO_SIZE: usize = 0xFF26 - 0xFF10 + 1;
 const WAVE_PATTERN_SIZE: usize = 0xFF3F - 0xFF30 + 1;
@@ -20,7 +22,8 @@ pub struct Audio {
     cycles: u32,
 
     nr52: u8,
-    pulse_channel: PulseChannel
+    pulse_channel: PulseChannel,
+    envelope_pulse_channel: EnvelopePulseChannel,
 }
 
 impl Audio {
@@ -35,12 +38,18 @@ impl Audio {
             cycles: 0,
 
             nr52: 0xF1,
-            pulse_channel: PulseChannel::new()
+            pulse_channel: PulseChannel::new(),
+            envelope_pulse_channel: EnvelopePulseChannel::new(),
         }
     }
 
     pub fn read(&self, address: u16) -> Option<u8> {
         match self.pulse_channel.read(address) {
+            Some(result) => return Some(result),
+            _ => {}
+        }
+
+        match self.envelope_pulse_channel.read(address) {
             Some(result) => return Some(result),
             _ => {}
         }
@@ -55,6 +64,10 @@ impl Audio {
 
     pub fn write(&mut self, address: u16, value: u8) -> bool {
         if self.pulse_channel.write(address, value) {
+            return true;
+        }
+
+        if self.envelope_pulse_channel.write(address, value) {
             return true;
         }
 
@@ -80,6 +93,7 @@ impl Audio {
         self.nr52 = value & 0x80;
         if self.nr52 == 0 {
             self.pulse_channel = PulseChannel::new();
+            self.envelope_pulse_channel = EnvelopePulseChannel::new()
         }
     }
 
@@ -92,6 +106,7 @@ impl Audio {
     fn single_tick(&mut self) {
         if self.nr52 & 0x80 != 0 {
             self.pulse_channel.tick();
+            self.envelope_pulse_channel.tick();
         }
 
         self.cycles += 1;
@@ -103,7 +118,10 @@ impl Audio {
             let sample = if self.nr52 & 0x80 == 0 {
                 0.0
             } else {
-                self.pulse_channel.output() * 0.25
+                let output =
+                    self.pulse_channel.output() +
+                    self.envelope_pulse_channel.output();
+                output * 0.25
             };
 
             self.sample_buffer[self.sample_buffer_pos] = sample;
