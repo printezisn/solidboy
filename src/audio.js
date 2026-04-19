@@ -22,5 +22,14 @@ export const resumeAudio = () => {
 };
 
 export const appendSample = (sample) => {
-  audioWorkletNode.port.postMessage(sample);
+  audioWorkletNode.port.postMessage({ sample });
+};
+
+export const isMuted = () => localStorage.getItem('muted')?.trim() === 'true';
+
+export const setMuted = (value) => {
+  localStorage.setItem('muted', value ? 'true' : 'false');
+  if (audioWorkletNode) {
+    audioWorkletNode.port.postMessage({ muted: isMuted() });
+  }
 };

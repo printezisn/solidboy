@@ -1,7 +1,13 @@
 import { init_emulator, execute, emulator_memory } from 'solidboy-emulator';
 import { initJoypad, pressedButtons, pressedDirections } from './joypad';
 import { fetchGameData, saveGameData } from './storage';
-import { appendSample, initAudio, resumeAudio } from './audio';
+import {
+  appendSample,
+  initAudio,
+  isMuted,
+  resumeAudio,
+  setMuted,
+} from './audio';
 
 const CYCLES_PER_MILLI = 4194;
 const MAX_FRAME_DIFF = 20;
@@ -89,6 +95,7 @@ export const initGameEngine = () => {
       const gameData = await fetchGameData(gameName);
 
       await initAudio();
+      setMuted(isMuted());
       init_emulator(rom, gameData);
       initJoypad();
 

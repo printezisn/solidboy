@@ -205,23 +205,23 @@ var i = "data:application/wasm;base64,AGFzbQEAAAABXA5gAn9/AGACf38Bf2ADf39/AX9gA3
 //#endregion
 //#region emulator/pkg/solidboy_emulator_bg.js
 function o() {
-	return x.emulator_memory();
+	return S.emulator_memory();
 }
 function s(e, t, n) {
-	x.execute(e, t, n);
+	S.execute(e, t, n);
 }
 function c(e, t) {
-	let n = g(e, x.__wbindgen_malloc), r = b, i = g(t, x.__wbindgen_malloc), a = b;
-	x.init_emulator(n, r, i, a);
+	let n = _(e, S.__wbindgen_malloc), r = x, i = _(t, S.__wbindgen_malloc), a = x;
+	S.init_emulator(n, r, i, a);
 }
 function l() {
-	return x.memory;
+	return S.memory;
 }
 function u(e, t) {
 	append_audio_sample(e >>> 0, t >>> 0);
 }
 function d(e, t) {
-	emulator_console_error(te(e, t));
+	emulator_console_error(m(e, t));
 }
 function f(e, t) {
 	render_frame_buffer(e >>> 0, t >>> 0);
@@ -230,50 +230,50 @@ function p(e, t) {
 	save_data(e >>> 0, t >>> 0);
 }
 function ee() {
-	let e = x.__wbindgen_externrefs, t = e.grow(4);
+	let e = S.__wbindgen_externrefs, t = e.grow(4);
 	e.set(0, void 0), e.set(t + 0, void 0), e.set(t + 1, null), e.set(t + 2, !0), e.set(t + 3, !1);
 }
-function te(e, t) {
-	return e >>>= 0, ne(e, t);
+function m(e, t) {
+	return e >>>= 0, te(e, t);
 }
-var m = null;
-function h() {
-	return (m === null || m.byteLength === 0) && (m = new Uint8Array(x.memory.buffer)), m;
+var h = null;
+function g() {
+	return (h === null || h.byteLength === 0) && (h = new Uint8Array(S.memory.buffer)), h;
 }
-function g(e, t) {
+function _(e, t) {
 	let n = t(e.length * 1, 1) >>> 0;
-	return h().set(e, n / 1), b = e.length, n;
+	return g().set(e, n / 1), x = e.length, n;
 }
-var _ = new TextDecoder("utf-8", {
+var v = new TextDecoder("utf-8", {
 	ignoreBOM: !0,
 	fatal: !0
 });
-_.decode();
-var v = 2146435072, y = 0;
-function ne(e, t) {
-	return y += t, y >= v && (_ = new TextDecoder("utf-8", {
+v.decode();
+var y = 2146435072, b = 0;
+function te(e, t) {
+	return b += t, b >= y && (v = new TextDecoder("utf-8", {
 		ignoreBOM: !0,
 		fatal: !0
-	}), _.decode(), y = t), _.decode(h().subarray(e, e + t));
+	}), v.decode(), b = t), v.decode(g().subarray(e, e + t));
 }
-var b = 0, x;
-function S(e) {
-	x = e;
+var x = 0, S;
+function C(e) {
+	S = e;
 }
 //#endregion
 //#region emulator/pkg/solidboy_emulator_bg.wasm
-var C = /* @__PURE__ */ t({
-	__wbindgen_externrefs: () => D,
-	__wbindgen_malloc: () => O,
-	__wbindgen_start: () => k,
-	emulator_memory: () => T,
-	execute: () => w,
-	init: () => E,
-	init_emulator: () => ie,
-	memory: () => re
+var w = /* @__PURE__ */ t({
+	__wbindgen_externrefs: () => ae,
+	__wbindgen_malloc: () => oe,
+	__wbindgen_start: () => D,
+	emulator_memory: () => re,
+	execute: () => ne,
+	init: () => ie,
+	init_emulator: () => E,
+	memory: () => T
 });
 URL = globalThis.URL;
-var { memory: re, init_emulator: ie, execute: w, emulator_memory: T, init: E, __wbindgen_externrefs: D, __wbindgen_malloc: O, __wbindgen_start: k } = await a({ "./solidboy_emulator_bg.js": {
+var { memory: T, init_emulator: E, execute: ne, emulator_memory: re, init: ie, __wbindgen_externrefs: ae, __wbindgen_malloc: oe, __wbindgen_start: D } = await a({ "./solidboy_emulator_bg.js": {
 	__wbg_emulator_console_error_0e41d9e099af87bf: d,
 	__wbg_render_frame_buffer_9cf1360b11ecab81: f,
 	__wbg_save_data_0d1e8ef359f1c7c9: p,
@@ -281,10 +281,10 @@ var { memory: re, init_emulator: ie, execute: w, emulator_memory: T, init: E, __
 	__wbg___wbindgen_memory_edb3f01e3930bbf6: l,
 	__wbindgen_init_externref_table: ee
 } }, i);
-S(C), k();
+C(w), D();
 //#endregion
 //#region src/joypad.js
-var A = {
+var O = {
 	"down-direction": {
 		pressed: !1,
 		bit: 8,
@@ -325,99 +325,104 @@ var A = {
 		bit: 1,
 		key: "s"
 	}
-}, j = () => {
+}, se = () => {
 	let e = 0;
-	for (let t in A) t.includes("-direction") && A[t].pressed && (e |= A[t].bit);
+	for (let t in O) t.includes("-direction") && O[t].pressed && (e |= O[t].bit);
 	return ~e & 15;
-}, M = () => {
+}, ce = () => {
 	let e = 0;
-	for (let t in A) t.includes("-button") && A[t].pressed && (e |= A[t].bit);
+	for (let t in O) t.includes("-button") && O[t].pressed && (e |= O[t].bit);
 	return ~e & 15;
-}, N = () => {
-	for (let e in A) {
+}, k = () => {
+	for (let e in O) {
 		let t = document.getElementById(e);
 		t.addEventListener("pointerdown", (n) => {
-			n.preventDefault(), A[e].pressed = !0, t.classList.add("pressed");
+			n.preventDefault(), O[e].pressed = !0, t.classList.add("pressed");
 		}), t.addEventListener("pointerup", (n) => {
-			n.preventDefault(), A[e].pressed = !1, t.classList.remove("pressed");
+			n.preventDefault(), O[e].pressed = !1, t.classList.remove("pressed");
 		});
 	}
 	document.addEventListener("keydown", (e) => {
-		for (let t in A) if (e.key === A[t].key) {
-			A[t].pressed = !0, document.getElementById(t).classList.add("pressed"), e.preventDefault();
+		for (let t in O) if (e.key === O[t].key) {
+			O[t].pressed = !0, document.getElementById(t).classList.add("pressed"), e.preventDefault();
 			break;
 		}
 	}), document.addEventListener("keyup", (e) => {
-		for (let t in A) if (e.key === A[t].key) {
-			A[t].pressed = !1, document.getElementById(t).classList.remove("pressed"), e.preventDefault();
+		for (let t in O) if (e.key === O[t].key) {
+			O[t].pressed = !1, document.getElementById(t).classList.remove("pressed"), e.preventDefault();
 			break;
 		}
 	});
-}, P = "game-data", F = 1, I = "game-data", L = () => new Promise((e, t) => {
-	let n = indexedDB.open(P, F);
+}, A = "game-data", j = 1, M = "game-data", N = () => new Promise((e, t) => {
+	let n = indexedDB.open(A, j);
 	n.onupgradeneeded = (e) => {
 		let t = e.target.result;
-		t.objectStoreNames.contains(I) || t.createObjectStore(I);
+		t.objectStoreNames.contains(M) || t.createObjectStore(M);
 	}, n.onsuccess = (t) => e(t.target.result), n.onerror = (e) => t(e.target.error);
-}), R = async (e, t) => {
-	let n = await L();
+}), P = async (e, t) => {
+	let n = await N();
 	return new Promise((r, i) => {
-		let a = n.transaction(I, "readwrite").objectStore(I).put(t, e);
+		let a = n.transaction(M, "readwrite").objectStore(M).put(t, e);
 		a.onsuccess = () => r(), a.onerror = () => i(a.error);
 	});
-}, z = async (e) => {
-	let t = await L();
+}, F = async (e) => {
+	let t = await N();
 	return new Promise((n, r) => {
-		let i = t.transaction(I, "readonly").objectStore(I).get(e);
+		let i = t.transaction(M, "readonly").objectStore(M).get(e);
 		i.onsuccess = () => n(i.result || new Uint8ClampedArray()), i.onerror = () => r(i.error);
 	});
-}, B = "/assets/audio-processor-DLhR2Ilg.js", V, H, U = async () => {
-	V = new AudioContext({ sampleRate: 44100 }), await V.audioWorklet.addModule(B), H = new AudioWorkletNode(V, "game-audio", { outputChannelCount: [2] }), H.connect(V.destination);
-}, W = () => {
-	V && V.state === "suspended" && V.resume();
-}, G = (e) => {
-	H.port.postMessage(e);
-}, ae = 4194, K = 20, q = null, J = new Uint8ClampedArray(23040 * 4), Y = null, X = null, Z = null, Q = document.getElementById("console"), oe = () => {
-	let e = new ImageData(J, 160, 144);
-	q.getContext("2d").putImageData(e, 0, 0);
-}, $ = () => {
+}, I = "/assets/audio-processor-Dg9BJw9U.js", L, R, z = async () => {
+	L = new AudioContext({ sampleRate: 44100 }), await L.audioWorklet.addModule(I), R = new AudioWorkletNode(L, "game-audio", { outputChannelCount: [2] }), R.connect(L.destination);
+}, B = () => {
+	L && L.state === "suspended" && L.resume();
+}, V = (e) => {
+	R.port.postMessage({ sample: e });
+}, H = () => localStorage.getItem("muted")?.trim() === "true", U = (e) => {
+	localStorage.setItem("muted", e ? "true" : "false"), R && R.port.postMessage({ muted: H() });
+}, W = 4194, le = 20, G = null, K = new Uint8ClampedArray(23040 * 4), q = null, J = null, Y = null, X = document.getElementById("console"), ue = () => {
+	let e = new ImageData(K, 160, 144);
+	G.getContext("2d").putImageData(e, 0, 0);
+}, Z = () => {
 	let e = performance.now();
-	Y ??= e, s(Math.min(K, e - Y) * ae, j(), M()), Y = e, W(), oe(), Z &&= (R(X, Z), null), requestAnimationFrame($);
-}, se = () => {
+	q ??= e, s(Math.min(le, e - q) * W, se(), ce()), q = e, B(), ue(), Y &&= (P(J, Y), null), requestAnimationFrame(Z);
+}, de = () => {
 	let e = o();
 	window.emulator_console_log = (e) => {
-		Q.innerHTML += e;
+		X.innerHTML += e;
 	}, window.emulator_console_error = (e) => {
-		Q.innerHTML += `<span class="error-message">${e}</span>`;
+		X.innerHTML += `<span class="error-message">${e}</span>`;
 	}, window.render_frame_buffer = (t, n) => {
-		J = new Uint8ClampedArray(e.buffer, t, n);
+		K = new Uint8ClampedArray(e.buffer, t, n);
 	}, window.save_data = (t, n) => {
-		Z = new Uint8ClampedArray(e.buffer, t, n);
+		Y = new Uint8ClampedArray(e.buffer, t, n);
 	}, window.append_audio_sample = (t, n) => {
-		G(new Float32Array(e.buffer, t, n));
+		V(new Float32Array(e.buffer, t, n));
 	}, document.getElementById("rom-file").addEventListener("change", (e) => {
 		let t = e.target.files[0];
 		if (!t) return;
-		X = t.name;
+		J = t.name;
 		let n = new FileReader();
 		n.onload = async () => {
-			q = document.createElement("canvas"), q.width = 160, q.height = 144, document.getElementById("insert-rom-container").remove(), document.getElementById("screen-container").appendChild(q);
-			let e = new Uint8Array(n.result), t = await z(X);
-			await U(), c(e, t), N(), $();
+			G = document.createElement("canvas"), G.width = 160, G.height = 144, document.getElementById("insert-rom-container").remove(), document.getElementById("screen-container").appendChild(G);
+			let e = new Uint8Array(n.result), t = await F(J);
+			await z(), U(H()), c(e, t), k(), Z();
 		}, n.readAsArrayBuffer(t);
 	});
-}, ce = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"feather feather-upload\"><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\"></path><polyline points=\"17 8 12 3 7 8\"></polyline><line x1=\"12\" y1=\"3\" x2=\"12\" y2=\"15\"></line></svg>", le = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"feather feather-terminal\"><polyline points=\"4 17 10 11 4 5\"></polyline><line x1=\"12\" y1=\"19\" x2=\"20\" y2=\"19\"></line></svg>", ue = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"feather feather-volume\"><polygon points=\"11 5 6 9 2 9 2 15 6 15 11 19 11 5\"></polygon></svg>", de = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"feather feather-x\"><line x1=\"18\" y1=\"6\" x2=\"6\" y2=\"18\"></line><line x1=\"6\" y1=\"6\" x2=\"18\" y2=\"18\"></line></svg>", fe = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"feather feather-table\"><path d=\"M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18\"></path></svg>", pe = () => {
-	document.getElementById("current-year").innerHTML = (/* @__PURE__ */ new Date()).getFullYear(), Array.from(document.getElementsByClassName("upload-icon")).forEach((e) => {
-		e.innerHTML = ce;
-	}), Array.from(document.getElementsByClassName("terminal-icon")).forEach((e) => {
-		e.innerHTML = le;
-	}), Array.from(document.getElementsByClassName("volume-icon")).forEach((e) => {
-		e.innerHTML = ue;
-	}), Array.from(document.getElementsByClassName("x-icon")).forEach((e) => {
-		e.innerHTML = de;
-	}), Array.from(document.getElementsByClassName("table-icon")).forEach((e) => {
+}, fe = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"feather feather-upload\"><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\"></path><polyline points=\"17 8 12 3 7 8\"></polyline><line x1=\"12\" y1=\"3\" x2=\"12\" y2=\"15\"></line></svg>", pe = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"feather feather-terminal\"><polyline points=\"4 17 10 11 4 5\"></polyline><line x1=\"12\" y1=\"19\" x2=\"20\" y2=\"19\"></line></svg>", me = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"feather feather-volume\"><polygon points=\"11 5 6 9 2 9 2 15 6 15 11 19 11 5\"></polygon></svg>", Q = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"feather feather-volume-x\"><polygon points=\"11 5 6 9 2 9 2 15 6 15 11 19 11 5\"></polygon><line x1=\"23\" y1=\"9\" x2=\"17\" y2=\"15\"></line><line x1=\"17\" y1=\"9\" x2=\"23\" y2=\"15\"></line></svg>", he = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"feather feather-x\"><line x1=\"18\" y1=\"6\" x2=\"6\" y2=\"18\"></line><line x1=\"6\" y1=\"6\" x2=\"18\" y2=\"18\"></line></svg>", ge = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"feather feather-table\"><path d=\"M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18\"></path></svg>", $ = (e) => {
+	e.innerHTML = H() ? `<span class="volume-icon" aria-hidden="true">${Q}</span> Unmute` : `<span class="volume-icon" aria-hidden="true">${me}</span> Mute`;
+}, _e = () => {
+	let e = document.getElementById("volume-button");
+	$(e), document.getElementById("current-year").innerHTML = (/* @__PURE__ */ new Date()).getFullYear(), Array.from(document.getElementsByClassName("upload-icon")).forEach((e) => {
 		e.innerHTML = fe;
-	}), se();
+	}), Array.from(document.getElementsByClassName("terminal-icon")).forEach((e) => {
+		e.innerHTML = pe;
+	}), Array.from(document.getElementsByClassName("x-icon")).forEach((e) => {
+		e.innerHTML = he;
+	}), Array.from(document.getElementsByClassName("table-icon")).forEach((e) => {
+		e.innerHTML = ge;
+	}), e.addEventListener("click", () => {
+		U(!H()), $(e);
+	}), de();
 };
 //#endregion
-export { pe as initEmulator };
+export { _e as initEmulator };
