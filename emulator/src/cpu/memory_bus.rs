@@ -168,6 +168,7 @@ impl MemoryBus {
             }
             0xFF04 => {
                 self.timer.reset_div();
+                self.audio.reset_frame_sequencer_counter();
             }
             0xFF05 => {
                 self.timer.set_tima(value);
@@ -491,7 +492,7 @@ impl MemoryBus {
 
         self.total_cycles += real_speed;
         self.timer.tick(&mut self.if_flag, cycles);
-        self.audio.tick(cycles);
+        self.audio.tick(real_speed);
 
         for _ in 0..real_speed {
             let previous_mode = self.ppu.mode();

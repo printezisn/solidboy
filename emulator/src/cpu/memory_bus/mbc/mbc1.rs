@@ -43,7 +43,9 @@ impl MBC1 {
 
                 Some(self.rom[bank * 0x4000 + address as usize])
             }
-            0x4000..=0x7FFF => Some(self.rom[self.rom_bank() * 0x4000 + address as usize - 0x4000]),
+            0x4000..=0x7FFF => {
+                Some(self.rom[self.rom_bank() * 0x4000 + address as usize - 0x4000])
+            },
             0xA000..=0xBFFF => {
                 if !self.ram_enabled {
                     return Some(0xFF);
@@ -113,7 +115,8 @@ impl MBC1 {
             bank = 1;
         }
 
-        bank
+        let num_banks = self.rom.len() / 0x4000;
+        bank & (num_banks - 1)
     }
 
     fn ram_bank(&self) -> usize {

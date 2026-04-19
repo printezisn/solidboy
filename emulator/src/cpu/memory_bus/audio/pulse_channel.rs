@@ -13,6 +13,7 @@ pub struct PulseChannel {
     nr4: u8,
 
     enabled: bool,
+    dac_enabled: bool,
     duty_step: u8,
     period_timer: u16,
     volume: u8,
@@ -26,6 +27,7 @@ pub struct PulseChannel {
     sweep_enabled: bool,
     sweep_timer: u8,
     sweep_period: u16,
+    sweep_negate_used: bool,
 }
 
 impl PulseChannel {
@@ -38,6 +40,7 @@ impl PulseChannel {
             nr4: 0xBF,
 
             enabled: false,
+            dac_enabled: false,
             duty_step: 0,
             period_timer: 0,
             volume: 0,
@@ -51,11 +54,36 @@ impl PulseChannel {
             sweep_enabled: false,
             sweep_timer: 0,
             sweep_period: 0,
+            sweep_negate_used: false,
         };
 
         result.write_nr1(0xBF);
-        result.write_nr4(0xBF);
+        result.write_nr2(0xF3);
+        result.write_nr4(0, 0xBF);
         result
+    }
+
+    pub fn clear(&mut self) {
+        self.enabled = false;
+        self.duty_step = 0;
+        self.period_timer = 0;
+        self.volume = 0;
+
+        self.envelope_enabled = false;
+        self.envelope_timer = 0;
+
+        self.length_enabled = false;
+        self.length_counter = 0;
+
+        self.sweep_enabled = false;
+        self.sweep_timer = 0;
+        self.sweep_period = 0;
+
+        self.write_nr0(0);
+        self.write_nr1(0);
+        self.write_nr2(0);
+        self.nr3 = 0;
+        self.write_nr4(0, 0);
     }
 
     pub fn enabled(&self) -> bool {
@@ -73,13 +101,13 @@ impl PulseChannel {
         }
     }
 
-    pub fn write(&mut self, address: u16, value: u8) -> bool {
+    pub fn write(&mut self, frame_sequencer_step: u8, address: u16, value: u8) -> bool {
         match address {
-            0xFF10 => self.nr0 = value,
+            0xFF10 => self.write_nr0(value),
             0xFF11 => self.write_nr1(value),
-            0xFF12 => self.nr2 = value,
+            0xFF12 => self.write_nr2(value),
             0xFF13 => self.nr3 = value,
-            0xFF14 => self.write_nr4(value),
+            0xFF14 => self.write_nr4(frame_sequencer_step, value),
             _ => return false,
         }
 
@@ -89,6 +117,14 @@ impl PulseChannel {
     fn write_nr1(&mut self, value: u8) {
         self.nr1 = value;
         self.length_counter = 64 - (value & 0x3F) as u16;
+    }
+
+    pub fn write_nr2(&mut self, value: u8) {
+        self.nr2 = value;
+        self.dac_enabled = value & 0xF8 != 0;
+        if !self.dac_enabled {
+            self.enabled = false;
+        }
     }
 
     pub fn tick(&mut self) {
@@ -132,23 +168,26 @@ impl PulseChannel {
         }
     }
 
-    pub fn sweep_tick(&mut self) {
+    pub fn sweep_tick(&mut self, frame_sequencer_step: u8) {
         if self.sweep_timer > 0 {
             self.sweep_timer -= 1;
         }
-        
+
         if self.sweep_timer == 0 {
             let pace = (self.nr0 >> 4) & 0x07;
             self.sweep_timer = if pace == 0 { 8 } else { pace };
-            
+
             if self.sweep_enabled && pace != 0 {
                 if let Some(new_period) = self.calculate_new_period() {
                     let shift = self.nr0 & 0x07;
                     if shift != 0 {
                         self.sweep_period = new_period;
                         self.nr3 = new_period as u8;
-                        self.nr4 = (self.nr4 & 0xF8) | ((new_period >> 8) as u8 & 0x07);
-                        
+                        self.write_nr4(
+                            frame_sequencer_step,
+                            (self.nr4 & 0xF8) | ((new_period >> 8) as u8 & 0x07),
+                        );
+
                         self.calculate_new_period();
                     }
                 }
@@ -157,7 +196,7 @@ impl PulseChannel {
     }
 
     pub fn output(&self) -> f32 {
-        if !self.enabled {
+        if !self.enabled || !self.dac_enabled {
             return 0.0;
         }
 
@@ -168,16 +207,44 @@ impl PulseChannel {
         if high { self.volume as f32 / 15.0 } else { 0.0 }
     }
 
-    fn write_nr4(&mut self, value: u8) {
+    fn write_nr0(&mut self, value: u8) {
+        let old_negate = self.nr0 & 0x08 != 0;
+        let new_negate = value & 0x08 != 0;
+        
+        if old_negate && !new_negate && self.sweep_negate_used {
+            self.enabled = false;
+        }
+        
+        self.nr0 = value;
+    }
+
+    fn write_nr4(&mut self, frame_sequencer_step: u8, value: u8) {
+        let was_length_enabled = self.length_enabled;
+        let new_length_enabled = value & 0x40 != 0;
+
+        if !was_length_enabled && new_length_enabled {
+            if frame_sequencer_step % 2 == 1 && self.length_counter > 0 {
+                self.length_counter -= 1;
+                if self.length_counter == 0 {
+                    self.enabled = false;
+                }
+            }
+        }
+
         self.nr4 = value;
-        self.length_enabled = value & 0x40 != 0;
+        self.length_enabled = new_length_enabled;
 
         if value & 0x80 != 0 {
             if self.length_counter == 0 {
-                self.length_counter = 64;
+                self.length_counter = if new_length_enabled && frame_sequencer_step % 2 == 1 {
+                    63
+                } else {
+                    64
+                };
             }
 
-            self.enabled = true;
+            self.sweep_negate_used = false;
+            self.enabled = self.dac_enabled;
             self.duty_step = 0;
             self.volume = (self.nr2 >> 4) & 0x0F;
 
@@ -187,17 +254,13 @@ impl PulseChannel {
             let period = ((self.nr4 & 0x07) as u16) << 8 | self.nr3 as u16;
             self.period_timer = (2048 - period) * 4;
 
-            if self.nr2 & 0xF8 == 0 {
-                self.enabled = false;
-            }
-
-            let pace  = (self.nr0 >> 4) & 0x07;
+            let pace = (self.nr0 >> 4) & 0x07;
             let shift = self.nr0 & 0x07;
-            
+
             self.sweep_period = ((self.nr4 & 0x07) as u16) << 8 | self.nr3 as u16;
             self.sweep_timer = if pace == 0 { 8 } else { pace };
             self.sweep_enabled = pace != 0 || shift != 0;
-            
+
             if shift != 0 {
                 self.calculate_new_period();
             }
@@ -207,14 +270,15 @@ impl PulseChannel {
     fn calculate_new_period(&mut self) -> Option<u16> {
         let shift = self.nr0 & 0x07;
         let direction = (self.nr0 >> 3) & 0x01;
-        
+
         let delta = self.sweep_period >> shift;
         let new_period = if direction == 1 {
+            self.sweep_negate_used = true;
             self.sweep_period.wrapping_sub(delta)
         } else {
             self.sweep_period + delta
         };
-        
+
         if new_period > 2047 {
             self.enabled = false;
             None

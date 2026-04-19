@@ -36,9 +36,23 @@ impl WaveChannel {
 
         result.write_nr0(0x7F);
         result.write_nr1(0xFF);
-        result.write_nr4(0xBF);
+        result.write_nr4(0, 0xBF);
 
         result
+    }
+
+    pub fn clear(&mut self) {
+        self.period_timer = 0;
+        self.enabled = false;
+        self.dac_enabled = false;
+        self.length_enabled = false;
+        self.length_counter = 0;
+
+        self.write_nr0(0);
+        self.write_nr1(0);
+        self.nr2 = 0;
+        self.nr3 = 0;
+        self.write_nr4(0, 0);
     }
 
     pub fn enabled(&self) -> bool {
@@ -52,19 +66,31 @@ impl WaveChannel {
             0xFF1C => Some(self.nr2 | 0x9F),
             0xFF1D => Some(0xFF),
             0xFF1E => Some(self.nr4 | 0xBF),
-            0xFF30..=0xFF3F => Some(self.wave_ram[address as usize - 0xFF30]),
+            0xFF30..=0xFF3F => {
+                if self.enabled {
+                    Some(self.wave_ram[(self.wave_pos / 2) as usize])
+                } else {
+                    Some(self.wave_ram[address as usize - 0xFF30])
+                }
+            },
             _ => None,
         }
     }
 
-    pub fn write(&mut self, address: u16, value: u8) -> bool {
+    pub fn write(&mut self, frame_sequencer_step: u8, address: u16, value: u8) -> bool {
         match address {
             0xFF1A => self.write_nr0(value),
             0xFF1B => self.write_nr1(value),
             0xFF1C => self.nr2 = value,
             0xFF1D => self.nr3 = value,
-            0xFF1E => self.write_nr4(value),
-            0xFF30..=0xFF3F => self.wave_ram[address as usize - 0xFF30] = value,
+            0xFF1E => self.write_nr4(frame_sequencer_step, value),
+            0xFF30..=0xFF3F => {
+                if self.enabled {
+                    self.wave_ram[(self.wave_pos / 2) as usize] = value;
+                } else {
+                    self.wave_ram[address as usize - 0xFF30] = value;
+                }
+            },
             _ => return false,
         }
 
@@ -104,13 +130,29 @@ impl WaveChannel {
         self.length_counter = 256 - value as u16;
     }
 
-    fn write_nr4(&mut self, value: u8) {
+    fn write_nr4(&mut self, frame_sequencer_step: u8, value: u8) {
+        let was_length_enabled = self.length_enabled;
+        let new_length_enabled = value & 0x40 != 0;
+
+        if !was_length_enabled && new_length_enabled {
+            if frame_sequencer_step % 2 == 1 && self.length_counter > 0 {
+                self.length_counter -= 1;
+                if self.length_counter == 0 {
+                    self.enabled = false;
+                }
+            }
+        }
+
         self.nr4 = value;
-        self.length_enabled = value & 0x40 != 0;
+        self.length_enabled = new_length_enabled;
 
         if value & 0x80 != 0 {
             if self.length_counter == 0 {
-                self.length_counter = 64;
+                self.length_counter = if new_length_enabled && frame_sequencer_step % 2 == 1 {
+                    255
+                } else {
+                    256
+                };
             }
 
             self.enabled = self.dac_enabled;

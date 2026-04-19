@@ -75,3 +75,10 @@ pub fn execute(cycles: i32, joypad_pressed_directions: u8, joypad_pressed_button
 pub fn emulator_memory() -> JsValue {
     wasm_bindgen::memory()
 }
+
+#[wasm_bindgen(start)]
+pub fn init() {
+    std::panic::set_hook(Box::new(|info| {
+        console_error!("{info}\n");
+    }));
+}

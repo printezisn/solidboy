@@ -33,9 +33,27 @@ impl NoiseChannel {
         };
 
         result.write_nr1(0xFF);
-        result.write_nr4(0xBF);
+        result.write_nr2(0x00);
+        result.write_nr4(0, 0xBF);
 
         result
+    }
+
+    pub fn clear(&mut self) {
+        self.lfsr = 0;
+        self.period_timer = 0;
+        self.enabled = false;
+        self.dac_enabled = false;
+        self.volume = 0;
+        self.envelope_timer = 0;
+        self.envelope_enabled = false;
+        self.length_counter = 0;
+        self.length_enabled = false;
+
+        self.write_nr1(0);
+        self.write_nr2(0);
+        self.nr3 = 0;
+        self.write_nr4(0, 0);
     }
 
     pub fn enabled(&self) -> bool {
@@ -52,12 +70,12 @@ impl NoiseChannel {
         }
     }
 
-    pub fn write(&mut self, address: u16, value: u8) -> bool {
+    pub fn write(&mut self, frame_sequencer_step: u8, address: u16, value: u8) -> bool {
         match address {
             0xFF20 => self.write_nr1(value),
-            0xFF21 => self.nr2 = value,
+            0xFF21 => self.write_nr2(value),
             0xFF22 => self.nr3 = value,
-            0xFF23 => self.write_nr4(value),
+            0xFF23 => self.write_nr4(frame_sequencer_step, value),
             _ => return false,
         }
 
@@ -69,13 +87,37 @@ impl NoiseChannel {
         self.length_counter = 64 - (value & 0x3F) as u16;
     }
 
-    fn write_nr4(&mut self, value: u8) {
+    pub fn write_nr2(&mut self, value: u8) {
+        self.nr2 = value;
+        self.dac_enabled = value & 0xF8 != 0;
+        if !self.dac_enabled {
+            self.enabled = false;
+        }
+    }
+
+    fn write_nr4(&mut self, frame_sequencer_step: u8, value: u8) {
+        let was_length_enabled = self.length_enabled;
+        let new_length_enabled = value & 0x40 != 0;
+
+        if !was_length_enabled && new_length_enabled {
+            if frame_sequencer_step % 2 == 1 && self.length_counter > 0 {
+                self.length_counter -= 1;
+                if self.length_counter == 0 {
+                    self.enabled = false;
+                }
+            }
+        }
+
         self.nr4 = value;
-        self.length_enabled = value & 0x40 != 0;
+        self.length_enabled = new_length_enabled;
 
         if value & 0x80 != 0 {
             if self.length_counter == 0 {
-                self.length_counter = 64;
+                self.length_counter = if new_length_enabled && frame_sequencer_step % 2 == 1 {
+                    63
+                } else {
+                    64
+                };
             }
 
             self.enabled = self.dac_enabled;
@@ -84,10 +126,6 @@ impl NoiseChannel {
             self.volume = (self.nr2 >> 4) & 0x0F;
             self.envelope_timer = self.nr2 & 0x07;
             self.envelope_enabled = true;
-
-            if self.nr2 & 0xF8 == 0 {
-                self.enabled = false;
-            }
 
             self.period_timer = self.period();
         }

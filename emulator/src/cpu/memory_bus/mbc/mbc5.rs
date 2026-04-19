@@ -94,7 +94,10 @@ impl MBC5 {
     }
 
     fn rom_bank(&self) -> usize {
-        (self.rom_bank_low as usize) | ((self.rom_bank_high as usize) << 8)
+        let bank = (self.rom_bank_low as usize) | ((self.rom_bank_high as usize) << 8);
+
+        let num_banks = self.rom.len() / 0x4000;
+        bank & (num_banks - 1)
     }
 
     fn ram_bank(&self) -> usize {

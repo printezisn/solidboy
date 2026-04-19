@@ -13,7 +13,7 @@ const SAMPLE_RATE: f32 = 44100.0;
 const CLOCK_RATE: f32 = 4194304.0;
 const SAMPLE_TICK: f32 = SAMPLE_RATE / CLOCK_RATE;
 const CYCLES_PER_FRAME: u32 = 70224;
-const ENVELOPE_TICK_CYCLES: u16 = 8192;
+const FREQUENCER_TICK_CYCLES: u16 = 8192;
 
 pub struct Audio {
     sample_buffer: [f32; SAMPLE_BUFFER_SIZE],
@@ -79,40 +79,74 @@ impl Audio {
             0xFF10..=0xFF23 => Some(0xFF),
             0xFF24 => Some(self.nr50),
             0xFF25 => Some(self.nr51),
-            0xFF26 => Some(self.nr52 
-                    | (if self.pulse_channel.enabled() { 0x01 } else { 0 })
-                    | (if self.envelope_pulse_channel.enabled() { 0x02 } else { 0 })
+            0xFF26 => Some(
+                (self.nr52 & 0x80)
+                    | (if self.pulse_channel.enabled() {
+                        0x01
+                    } else {
+                        0
+                    })
+                    | (if self.envelope_pulse_channel.enabled() {
+                        0x02
+                    } else {
+                        0
+                    })
                     | (if self.wave_channel.enabled() { 0x04 } else { 0 })
-                    | (if self.noise_channel.enabled() { 0x08 } else { 0 })
-                    | 0x70),
+                    | (if self.noise_channel.enabled() {
+                        0x08
+                    } else {
+                        0
+                    })
+                    | 0x70,
+            ),
             0xFF27..=0xFF3F => Some(0xFF),
             _ => None,
         }
     }
 
     pub fn write(&mut self, address: u16, value: u8) -> bool {
-        if self.pulse_channel.write(address, value) {
+        if address < 0xFF10 || address > 0xFF3F {
+            return false;
+        }
+
+        if self.nr52 & 0x80 == 0 && address != 0xFF26 && (address < 0xFF30 || address > 0xFF3F) {
             return true;
         }
 
-        if self.envelope_pulse_channel.write(address, value) {
+        if self
+            .pulse_channel
+            .write(self.frame_sequencer_step, address, value)
+        {
             return true;
         }
 
-        if self.wave_channel.write(address, value) {
+        if self
+            .envelope_pulse_channel
+            .write(self.frame_sequencer_step, address, value)
+        {
             return true;
         }
 
-        if self.noise_channel.write(address, value) {
+        if self
+            .wave_channel
+            .write(self.frame_sequencer_step, address, value)
+        {
+            return true;
+        }
+
+        if self
+            .noise_channel
+            .write(self.frame_sequencer_step, address, value)
+        {
             return true;
         }
 
         match address {
-            0xFF10..=0xFF23 => {},
+            0xFF10..=0xFF23 => {}
             0xFF24 => self.nr50 = value,
             0xFF25 => self.nr51 = value,
             0xFF26 => self.write_nr52(value),
-            0xFF27..=0xFF3F => {},
+            0xFF27..=0xFF3F => {}
             _ => {
                 return false;
             }
@@ -121,14 +155,20 @@ impl Audio {
         true
     }
 
+    pub fn reset_frame_sequencer_counter(&mut self) {
+        self.frame_sequencer_counter = 0;
+    }
+
     fn write_nr52(&mut self, value: u8) {
         if value & 0x80 == 0 && self.nr52 & 0x80 != 0 {
-            self.frame_sequencer_counter = 0;
+            self.nr50 = 0;
+            self.nr51 = 0;
+
+            self.pulse_channel.clear();
+            self.envelope_pulse_channel.clear();
+            self.wave_channel.clear();
+            self.noise_channel.clear();
             self.frame_sequencer_step = 0;
-            self.pulse_channel = PulseChannel::new();
-            self.envelope_pulse_channel = EnvelopePulseChannel::new();
-            self.wave_channel = WaveChannel::new();
-            self.noise_channel = NoiseChannel::new();
         }
         self.nr52 = value & 0x80;
     }
@@ -147,34 +187,36 @@ impl Audio {
     }
 
     fn sweep_tick(&mut self) {
-        self.pulse_channel.sweep_tick();
+        self.pulse_channel.sweep_tick(self.frame_sequencer_step);
     }
 
     fn tick_frame_sequencer(&mut self) {
         self.frame_sequencer_counter += 1;
 
-        while self.frame_sequencer_counter >= ENVELOPE_TICK_CYCLES {
-            self.frame_sequencer_counter -= ENVELOPE_TICK_CYCLES;
+        while self.frame_sequencer_counter >= FREQUENCER_TICK_CYCLES {
+            self.frame_sequencer_counter -= FREQUENCER_TICK_CYCLES;
 
-            match self.frame_sequencer_step {
-                0 => self.length_tick(),
-                1 => {}
-                2 => {
-                    self.length_tick();
-                    self.sweep_tick();
+            if self.nr52 & 0x80 != 0 {
+                match self.frame_sequencer_step {
+                    0 => self.length_tick(),
+                    1 => {}
+                    2 => {
+                        self.length_tick();
+                        self.sweep_tick();
+                    }
+                    3 => {}
+                    4 => self.length_tick(),
+                    5 => {}
+                    6 => {
+                        self.length_tick();
+                        self.sweep_tick();
+                    }
+                    7 => self.envelope_tick(),
+                    _ => unreachable!(),
                 }
-                3 => {}
-                4 => self.length_tick(),
-                5 => {}
-                6 => {
-                    self.length_tick();
-                    self.sweep_tick();
-                }
-                7 => self.envelope_tick(),
-                _ => unreachable!(),
+
+                self.frame_sequencer_step = (self.frame_sequencer_step + 1) % 8;
             }
-
-            self.frame_sequencer_step = (self.frame_sequencer_step + 1) % 8;
         }
     }
 
@@ -183,25 +225,41 @@ impl Audio {
         let ch2 = self.envelope_pulse_channel.output();
         let ch3 = self.wave_channel.output();
         let ch4 = self.noise_channel.output();
-        
+
         let mut left = 0.0f32;
-        if self.nr51 & 0x10 != 0 { left += ch1; }
-        if self.nr51 & 0x20 != 0 { left += ch2; }
-        if self.nr51 & 0x40 != 0 { left += ch3; }
-        if self.nr51 & 0x80 != 0 { left += ch4; }
-        
+        if self.nr51 & 0x10 != 0 {
+            left += ch1;
+        }
+        if self.nr51 & 0x20 != 0 {
+            left += ch2;
+        }
+        if self.nr51 & 0x40 != 0 {
+            left += ch3;
+        }
+        if self.nr51 & 0x80 != 0 {
+            left += ch4;
+        }
+
         let mut right = 0.0f32;
-        if self.nr51 & 0x01 != 0 { right += ch1; }
-        if self.nr51 & 0x02 != 0 { right += ch2; }
-        if self.nr51 & 0x04 != 0 { right += ch3; }
-        if self.nr51 & 0x08 != 0 { right += ch4; }
-        
-        let left_vol  = ((self.nr50 >> 4) & 0x07) as f32 + 1.0;
+        if self.nr51 & 0x01 != 0 {
+            right += ch1;
+        }
+        if self.nr51 & 0x02 != 0 {
+            right += ch2;
+        }
+        if self.nr51 & 0x04 != 0 {
+            right += ch3;
+        }
+        if self.nr51 & 0x08 != 0 {
+            right += ch4;
+        }
+
+        let left_vol = ((self.nr50 >> 4) & 0x07) as f32 + 1.0;
         let right_vol = (self.nr50 & 0x07) as f32 + 1.0;
-        
-        left  *= left_vol  / 8.0;
+
+        left *= left_vol / 8.0;
         right *= right_vol / 8.0;
-        
+
         (left / 4.0, right / 4.0)
     }
 
@@ -217,9 +275,9 @@ impl Audio {
             self.envelope_pulse_channel.tick();
             self.wave_channel.tick();
             self.noise_channel.tick();
-
-            self.tick_frame_sequencer();
         }
+
+        self.tick_frame_sequencer();
 
         self.cycles += 1;
         self.sample_timer += SAMPLE_TICK;

@@ -221,7 +221,8 @@ impl MBC3 {
     }
 
     fn rom_bank(&self) -> usize {
-        self.rom_bank as usize
+        let num_banks = self.rom.len() / 0x4000;
+        self.rom_bank as usize & (num_banks - 1)
     }
 
     pub fn save_data(&mut self) -> (*const u8, usize, bool) {
@@ -319,7 +320,7 @@ mod tests {
 
     #[test]
     fn test_rom_read_switchable_bank() {
-        let mut rom = make_test_rom(0x18000);
+        let mut rom = make_test_rom(65536);
         // Bank 1 (default) at switchable area (0x4000-0x7FFF): rom offset 0x4000
         rom[0x4000] = 0x11;
         // Bank 2 at switchable area (0x4000-0x7FFF): rom offset 0x8000
