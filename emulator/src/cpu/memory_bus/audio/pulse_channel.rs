@@ -1,3 +1,5 @@
+use crate::cpu::memory_bus::types::ModelType;
+
 const DUTY_PATTERNS: [[u8; 8]; 4] = [
     [0, 0, 0, 0, 0, 0, 0, 1],
     [1, 0, 0, 0, 0, 0, 0, 1],
@@ -28,10 +30,12 @@ pub struct PulseChannel {
     sweep_timer: u8,
     sweep_period: u16,
     sweep_negate_used: bool,
+
+    model_type: ModelType,
 }
 
 impl PulseChannel {
-    pub fn new() -> Self {
+    pub fn new(model_type: ModelType) -> Self {
         let mut result = Self {
             nr0: 0x80,
             nr1: 0xBF,
@@ -55,6 +59,8 @@ impl PulseChannel {
             sweep_timer: 0,
             sweep_period: 0,
             sweep_negate_used: false,
+
+            model_type,
         };
 
         result.write_nr1(0xBF);
@@ -80,7 +86,13 @@ impl PulseChannel {
         self.sweep_period = 0;
 
         self.write_nr0(0);
-        self.write_nr1(0);
+
+        if matches!(self.model_type, ModelType::Color) {
+            self.write_nr1(0);
+        } else {
+            self.write_nr1(self.nr1 & 0x3F);
+        }
+        
         self.write_nr2(0);
         self.nr3 = 0;
         self.write_nr4(0, 0);
@@ -101,10 +113,20 @@ impl PulseChannel {
         }
     }
 
-    pub fn write(&mut self, frame_sequencer_step: u8, address: u16, value: u8) -> bool {
+    pub fn write(&mut self, audio_enabled: bool, frame_sequencer_step: u8, address: u16, value: u8) -> bool {
+        if !audio_enabled && (matches!(self.model_type, ModelType::Color) || address != 0xFF11) {
+            return address >= 0xFF10 && address <= 0xFF14;
+        }
+
         match address {
             0xFF10 => self.write_nr0(value),
-            0xFF11 => self.write_nr1(value),
+            0xFF11 => {
+                if !audio_enabled {
+                    self.write_nr1((self.nr1 & !0x3F) | (value & 0x3F));
+                } else {
+                    self.write_nr1(value);
+                }
+            },
             0xFF12 => self.write_nr2(value),
             0xFF13 => self.nr3 = value,
             0xFF14 => self.write_nr4(frame_sequencer_step, value),

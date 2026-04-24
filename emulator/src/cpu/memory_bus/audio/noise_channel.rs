@@ -1,3 +1,5 @@
+use crate::cpu::memory_bus::types::ModelType;
+
 pub struct NoiseChannel {
     lfsr: u16,
     period_timer: u16,
@@ -12,10 +14,12 @@ pub struct NoiseChannel {
     nr2: u8,
     nr3: u8,
     nr4: u8,
+
+    model_type: ModelType,
 }
 
 impl NoiseChannel {
-    pub fn new() -> Self {
+    pub fn new(model_type: ModelType) -> Self {
         let mut result = Self {
             lfsr: 0,
             period_timer: 0,
@@ -30,6 +34,8 @@ impl NoiseChannel {
             nr2: 0x00,
             nr3: 0x00,
             nr4: 0xBF,
+
+            model_type,
         };
 
         result.write_nr1(0xFF);
@@ -50,7 +56,12 @@ impl NoiseChannel {
         self.length_counter = 0;
         self.length_enabled = false;
 
-        self.write_nr1(0);
+        if matches!(self.model_type, ModelType::Color) {
+            self.write_nr1(0);
+        } else {
+            self.write_nr1(self.nr1 & 0x3F);
+        }
+        
         self.write_nr2(0);
         self.nr3 = 0;
         self.write_nr4(0, 0);
@@ -70,9 +81,19 @@ impl NoiseChannel {
         }
     }
 
-    pub fn write(&mut self, frame_sequencer_step: u8, address: u16, value: u8) -> bool {
+    pub fn write(&mut self, audio_enabled: bool, frame_sequencer_step: u8, address: u16, value: u8) -> bool {
+        if !audio_enabled && (matches!(self.model_type, ModelType::Color) || address != 0xFF20) {
+            return address >= 0xFF20 && address <= 0xFF23;
+        }
+
         match address {
-            0xFF20 => self.write_nr1(value),
+            0xFF20 => {
+                if !audio_enabled {
+                    self.write_nr1((self.nr1 & !0x3F) | (value & 0x3F));
+                } else {
+                    self.write_nr1(value);
+                }
+            },
             0xFF21 => self.write_nr2(value),
             0xFF22 => self.nr3 = value,
             0xFF23 => self.write_nr4(frame_sequencer_step, value),

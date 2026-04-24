@@ -7,6 +7,7 @@ use envelope_pulse_channel::EnvelopePulseChannel;
 use noise_channel::NoiseChannel;
 use pulse_channel::PulseChannel;
 use wave_channel::WaveChannel;
+use crate::cpu::memory_bus::types::ModelType;
 
 const SAMPLE_BUFFER_SIZE: usize = 4096;
 const SAMPLE_RATE: f32 = 44100.0;
@@ -34,7 +35,7 @@ pub struct Audio {
 }
 
 impl Audio {
-    pub fn new() -> Self {
+    pub fn new(model_type: ModelType) -> Self {
         Self {
             sample_buffer: [0.0; SAMPLE_BUFFER_SIZE],
             sample_buffer_pos: 0,
@@ -44,10 +45,10 @@ impl Audio {
             nr50: 0x77,
             nr51: 0xF3,
             nr52: 0xF1,
-            pulse_channel: PulseChannel::new(),
-            envelope_pulse_channel: EnvelopePulseChannel::new(),
-            wave_channel: WaveChannel::new(),
-            noise_channel: NoiseChannel::new(),
+            pulse_channel: PulseChannel::new(model_type.clone()),
+            envelope_pulse_channel: EnvelopePulseChannel::new(model_type.clone()),
+            wave_channel: WaveChannel::new(model_type.clone()),
+            noise_channel: NoiseChannel::new(model_type.clone()),
 
             frame_sequencer_counter: 0,
             frame_sequencer_step: 0,
@@ -109,35 +110,37 @@ impl Audio {
             return false;
         }
 
-        if self.nr52 & 0x80 == 0 && address != 0xFF26 && (address < 0xFF30 || address > 0xFF3F) {
-            return true;
-        }
+        let enabled = self.nr52 & 0x80 != 0;
 
         if self
             .pulse_channel
-            .write(self.frame_sequencer_step, address, value)
+            .write(enabled, self.frame_sequencer_step, address, value)
         {
             return true;
         }
 
         if self
             .envelope_pulse_channel
-            .write(self.frame_sequencer_step, address, value)
+            .write(enabled, self.frame_sequencer_step, address, value)
         {
             return true;
         }
 
         if self
             .wave_channel
-            .write(self.frame_sequencer_step, address, value)
+            .write(enabled, self.frame_sequencer_step, address, value)
         {
             return true;
         }
 
         if self
             .noise_channel
-            .write(self.frame_sequencer_step, address, value)
+            .write(enabled, self.frame_sequencer_step, address, value)
         {
+            return true;
+        }
+
+        if !enabled && address != 0xFF26 {
             return true;
         }
 

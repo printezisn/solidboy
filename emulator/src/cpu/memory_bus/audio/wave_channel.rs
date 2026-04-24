@@ -1,3 +1,5 @@
+use crate::cpu::memory_bus::types::ModelType;
+
 const WAVE_RAM_SIZE: usize = 0xFF3F - 0xFF30 + 1;
 
 pub struct WaveChannel {
@@ -14,10 +16,12 @@ pub struct WaveChannel {
 
     length_enabled: bool,
     length_counter: u16,
+
+    model_type: ModelType,
 }
 
 impl WaveChannel {
-    pub fn new() -> Self {
+    pub fn new(model_type: ModelType) -> Self {
         let mut result = Self {
             wave_ram: [0; WAVE_RAM_SIZE],
             wave_pos: 0,
@@ -32,6 +36,8 @@ impl WaveChannel {
 
             length_enabled: false,
             length_counter: 0,
+
+            model_type,
         };
 
         result.write_nr0(0x7F);
@@ -49,7 +55,9 @@ impl WaveChannel {
         self.length_counter = 0;
 
         self.write_nr0(0);
-        self.write_nr1(0);
+        if matches!(self.model_type, ModelType::Color) {
+            self.write_nr1(0);
+        }
         self.nr2 = 0;
         self.nr3 = 0;
         self.write_nr4(0, 0);
@@ -77,7 +85,13 @@ impl WaveChannel {
         }
     }
 
-    pub fn write(&mut self, frame_sequencer_step: u8, address: u16, value: u8) -> bool {
+    pub fn write(&mut self, audio_enabled: bool, frame_sequencer_step: u8, address: u16, value: u8) -> bool {
+        if !audio_enabled && (address < 0xFF30 || address > 0xFF3F) {
+            if matches!(self.model_type, ModelType::Color) || address != 0xFF1B {
+                return address >= 0xFF1A && address <= 0xFF1E;
+            }
+        }
+
         match address {
             0xFF1A => self.write_nr0(value),
             0xFF1B => self.write_nr1(value),

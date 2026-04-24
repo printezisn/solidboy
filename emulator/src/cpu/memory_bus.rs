@@ -75,7 +75,7 @@ impl MemoryBus {
         MemoryBus {
             mbc: MBC::new(rom, external_ram),
             ppu: PPU::new(model_type.clone()),
-            audio: Audio::new(),
+            audio: Audio::new(model_type.clone()),
             timer: Timer::new(),
             dma: DMA {
                 active: false,
