@@ -61,7 +61,7 @@ impl NoiseChannel {
         } else {
             self.write_nr1(self.nr1 & 0x3F);
         }
-        
+
         self.write_nr2(0);
         self.nr3 = 0;
         self.write_nr4(0, 0);
@@ -81,7 +81,13 @@ impl NoiseChannel {
         }
     }
 
-    pub fn write(&mut self, audio_enabled: bool, frame_sequencer_step: u8, address: u16, value: u8) -> bool {
+    pub fn write(
+        &mut self,
+        audio_enabled: bool,
+        frame_sequencer_step: u8,
+        address: u16,
+        value: u8,
+    ) -> bool {
         if !audio_enabled && (matches!(self.model_type, ModelType::Color) || address != 0xFF20) {
             return address >= 0xFF20 && address <= 0xFF23;
         }
@@ -93,7 +99,7 @@ impl NoiseChannel {
                 } else {
                     self.write_nr1(value);
                 }
-            },
+            }
             0xFF21 => self.write_nr2(value),
             0xFF22 => self.nr3 = value,
             0xFF23 => self.write_nr4(frame_sequencer_step, value),

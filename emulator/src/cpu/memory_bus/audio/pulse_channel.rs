@@ -92,7 +92,7 @@ impl PulseChannel {
         } else {
             self.write_nr1(self.nr1 & 0x3F);
         }
-        
+
         self.write_nr2(0);
         self.nr3 = 0;
         self.write_nr4(0, 0);
@@ -113,7 +113,13 @@ impl PulseChannel {
         }
     }
 
-    pub fn write(&mut self, audio_enabled: bool, frame_sequencer_step: u8, address: u16, value: u8) -> bool {
+    pub fn write(
+        &mut self,
+        audio_enabled: bool,
+        frame_sequencer_step: u8,
+        address: u16,
+        value: u8,
+    ) -> bool {
         if !audio_enabled && (matches!(self.model_type, ModelType::Color) || address != 0xFF11) {
             return address >= 0xFF10 && address <= 0xFF14;
         }
@@ -126,7 +132,7 @@ impl PulseChannel {
                 } else {
                     self.write_nr1(value);
                 }
-            },
+            }
             0xFF12 => self.write_nr2(value),
             0xFF13 => self.nr3 = value,
             0xFF14 => self.write_nr4(frame_sequencer_step, value),
@@ -190,7 +196,7 @@ impl PulseChannel {
         }
     }
 
-    pub fn sweep_tick(&mut self, frame_sequencer_step: u8) {
+    pub fn sweep_tick(&mut self) {
         if self.sweep_timer > 0 {
             self.sweep_timer -= 1;
         }
@@ -205,10 +211,7 @@ impl PulseChannel {
                     if shift != 0 {
                         self.sweep_period = new_period;
                         self.nr3 = new_period as u8;
-                        self.write_nr4(
-                            frame_sequencer_step,
-                            (self.nr4 & 0xF8) | ((new_period >> 8) as u8 & 0x07),
-                        );
+                        self.nr4 = (self.nr4 & 0xF8) | ((new_period >> 8) as u8 & 0x07);
 
                         self.calculate_new_period();
                     }
@@ -232,11 +235,11 @@ impl PulseChannel {
     fn write_nr0(&mut self, value: u8) {
         let old_negate = self.nr0 & 0x08 != 0;
         let new_negate = value & 0x08 != 0;
-        
+
         if old_negate && !new_negate && self.sweep_negate_used {
             self.enabled = false;
         }
-        
+
         self.nr0 = value;
     }
 
@@ -296,7 +299,11 @@ impl PulseChannel {
         let delta = self.sweep_period >> shift;
         let new_period = if direction == 1 {
             self.sweep_negate_used = true;
-            self.sweep_period.wrapping_sub(delta)
+            if self.sweep_period < delta {
+                0
+            } else {
+                self.sweep_period - delta
+            }
         } else {
             self.sweep_period + delta
         };

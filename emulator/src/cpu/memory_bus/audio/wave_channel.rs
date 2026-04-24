@@ -80,12 +80,18 @@ impl WaveChannel {
                 } else {
                     Some(self.wave_ram[address as usize - 0xFF30])
                 }
-            },
+            }
             _ => None,
         }
     }
 
-    pub fn write(&mut self, audio_enabled: bool, frame_sequencer_step: u8, address: u16, value: u8) -> bool {
+    pub fn write(
+        &mut self,
+        audio_enabled: bool,
+        frame_sequencer_step: u8,
+        address: u16,
+        value: u8,
+    ) -> bool {
         if !audio_enabled && (address < 0xFF30 || address > 0xFF3F) {
             if matches!(self.model_type, ModelType::Color) || address != 0xFF1B {
                 return address >= 0xFF1A && address <= 0xFF1E;
@@ -104,7 +110,7 @@ impl WaveChannel {
                 } else {
                     self.wave_ram[address as usize - 0xFF30] = value;
                 }
-            },
+            }
             _ => return false,
         }
 

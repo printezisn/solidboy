@@ -3,11 +3,11 @@ mod noise_channel;
 mod pulse_channel;
 mod wave_channel;
 
+use crate::cpu::memory_bus::types::ModelType;
 use envelope_pulse_channel::EnvelopePulseChannel;
 use noise_channel::NoiseChannel;
 use pulse_channel::PulseChannel;
 use wave_channel::WaveChannel;
-use crate::cpu::memory_bus::types::ModelType;
 
 const SAMPLE_BUFFER_SIZE: usize = 4096;
 const SAMPLE_RATE: f32 = 44100.0;
@@ -190,7 +190,7 @@ impl Audio {
     }
 
     fn sweep_tick(&mut self) {
-        self.pulse_channel.sweep_tick(self.frame_sequencer_step);
+        self.pulse_channel.sweep_tick();
     }
 
     fn tick_frame_sequencer(&mut self) {

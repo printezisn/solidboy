@@ -129,7 +129,7 @@ The JavaScript frontend (using Vite) handles UI, input events, and Web Audio API
 - Graphics processing unit (PPU) for video output
 - Complete audio emulation (pulse, wave, noise channels with effects)
 - Joypad input
-- Save data persistence
+- Save data persistence (with IndexedDB)
 - WebAssembly-based web frontend
 - Support for both DMG (original Game Boy) and GBC (Game Boy Color) games.
 

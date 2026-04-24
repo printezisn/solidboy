@@ -95,7 +95,13 @@ impl EnvelopePulseChannel {
         }
     }
 
-    pub fn write(&mut self, audio_enabled: bool, frame_sequencer_step: u8, address: u16, value: u8) -> bool {
+    pub fn write(
+        &mut self,
+        audio_enabled: bool,
+        frame_sequencer_step: u8,
+        address: u16,
+        value: u8,
+    ) -> bool {
         if !audio_enabled && (matches!(self.model_type, ModelType::Color) || address != 0xFF16) {
             return address >= 0xFF16 && address <= 0xFF19;
         }
@@ -107,7 +113,7 @@ impl EnvelopePulseChannel {
                 } else {
                     self.write_nr1(value);
                 }
-            },
+            }
             0xFF17 => self.write_nr2(value),
             0xFF18 => self.nr3 = value,
             0xFF19 => self.write_nr4(frame_sequencer_step, value),
