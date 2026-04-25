@@ -16,8 +16,8 @@ const SAMPLE_TICK: f32 = SAMPLE_RATE / CLOCK_RATE;
 const CYCLES_PER_FRAME: u32 = 70224;
 const FREQUENCER_TICK_CYCLES: u16 = 8192;
 
-const HP_FACTOR: f32 = 0.999;
-const LP_FACTOR: f32 = 0.9;
+const HP_FACTOR: f32 = 1.0;
+const LP_FACTOR: f32 = 0.85;
 
 pub struct Audio {
     sample_buffer: [f32; SAMPLE_BUFFER_SIZE],
@@ -40,6 +40,10 @@ pub struct Audio {
     high_pass_right: f32,
     low_pass_left: f32,
     low_pass_right: f32,
+
+    accumulator_left: f32,
+    accumulator_right: f32,
+    accumulator_count: u32,
 }
 
 impl Audio {
@@ -65,6 +69,10 @@ impl Audio {
             high_pass_right: 0.0,
             low_pass_left: 0.0,
             low_pass_right: 0.0,
+
+            accumulator_left: 0.0,
+            accumulator_right: 0.0,
+            accumulator_count: 0,
         }
     }
 
@@ -239,10 +247,10 @@ impl Audio {
     fn apply_filters(&mut self, left: f32, right: f32) {
         self.high_pass_left = self.high_pass_left * HP_FACTOR + left * (1.0 - HP_FACTOR);
         self.high_pass_right = self.high_pass_right * HP_FACTOR + right * (1.0 - HP_FACTOR);
-        
+
         let left_filtered = left - self.high_pass_left;
         let right_filtered = right - self.high_pass_right;
-        
+
         self.low_pass_left = self.low_pass_left * LP_FACTOR + left_filtered * (1.0 - LP_FACTOR);
         self.low_pass_right = self.low_pass_right * LP_FACTOR + right_filtered * (1.0 - LP_FACTOR);
     }
@@ -287,9 +295,7 @@ impl Audio {
         left *= left_vol / 8.0;
         right *= right_vol / 8.0;
 
-        self.apply_filters(left / 4.0, right / 4.0);
-
-        (self.low_pass_left, self.low_pass_right)
+        (left / 4.0, right / 4.0)
     }
 
     pub fn tick(&mut self, cycles: u8) {
@@ -306,6 +312,15 @@ impl Audio {
             self.noise_channel.tick();
         }
 
+        let (raw_left, raw_right) = if self.nr52 & 0x80 == 0 {
+            (0.0, 0.0)
+        } else {
+            self.mix_samples()
+        };
+        self.accumulator_left += raw_left;
+        self.accumulator_right += raw_right;
+        self.accumulator_count += 1;
+
         self.tick_frame_sequencer();
 
         self.cycles += 1;
@@ -314,14 +329,18 @@ impl Audio {
         while self.sample_timer >= 1.0 {
             self.sample_timer -= 1.0;
 
-            let (left, right) = if self.nr52 & 0x80 == 0 {
-                (0.0, 0.0)
-            } else {
-                self.mix_samples()
-            };
+            if self.accumulator_count > 0 {
+                let left = self.accumulator_left / self.accumulator_count as f32;
+                let right = self.accumulator_right / self.accumulator_count as f32;
+                self.accumulator_left = 0.0;
+                self.accumulator_right = 0.0;
+                self.accumulator_count = 0;
 
-            self.sample_buffer[self.sample_buffer_pos] = left;
-            self.sample_buffer[self.sample_buffer_pos + 1] = right;
+                self.apply_filters(left, right);
+            }
+
+            self.sample_buffer[self.sample_buffer_pos] = self.low_pass_left;
+            self.sample_buffer[self.sample_buffer_pos + 1] = self.low_pass_right;
             self.sample_buffer_pos += 2;
         }
 

@@ -206,6 +206,6 @@ impl WaveChannel {
             _ => unreachable!(),
         };
 
-        (shifted as f32 / 7.5) - 1.0
+        shifted as f32 / 15.0
     }
 }
