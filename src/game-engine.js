@@ -85,6 +85,8 @@ export const initGameEngine = () => {
 
     const reader = new FileReader();
     reader.onload = async () => {
+      document.documentElement.classList.add('game-started');
+
       canvas = document.createElement('canvas');
       canvas.width = 160;
       canvas.height = 144;

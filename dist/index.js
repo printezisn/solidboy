@@ -403,7 +403,7 @@ var O = {
 		J = t.name;
 		let n = new FileReader();
 		n.onload = async () => {
-			G = document.createElement("canvas"), G.width = 160, G.height = 144, document.getElementById("insert-rom-container").remove(), document.getElementById("screen-container").appendChild(G);
+			document.documentElement.classList.add("game-started"), G = document.createElement("canvas"), G.width = 160, G.height = 144, document.getElementById("insert-rom-container").remove(), document.getElementById("screen-container").appendChild(G);
 			let e = new Uint8Array(n.result), t = await F(J);
 			await z(), U(H()), c(e, t), k(), Z();
 		}, n.readAsArrayBuffer(t);
