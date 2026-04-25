@@ -16,6 +16,9 @@ const SAMPLE_TICK: f32 = SAMPLE_RATE / CLOCK_RATE;
 const CYCLES_PER_FRAME: u32 = 70224;
 const FREQUENCER_TICK_CYCLES: u16 = 8192;
 
+const HP_FACTOR: f32 = 0.999;
+const LP_FACTOR: f32 = 0.9;
+
 pub struct Audio {
     sample_buffer: [f32; SAMPLE_BUFFER_SIZE],
     sample_buffer_pos: usize,
@@ -32,6 +35,11 @@ pub struct Audio {
 
     frame_sequencer_counter: u16,
     frame_sequencer_step: u8,
+
+    high_pass_left: f32,
+    high_pass_right: f32,
+    low_pass_left: f32,
+    low_pass_right: f32,
 }
 
 impl Audio {
@@ -52,6 +60,11 @@ impl Audio {
 
             frame_sequencer_counter: 0,
             frame_sequencer_step: 0,
+
+            high_pass_left: 0.0,
+            high_pass_right: 0.0,
+            low_pass_left: 0.0,
+            low_pass_right: 0.0,
         }
     }
 
@@ -223,7 +236,18 @@ impl Audio {
         }
     }
 
-    fn mix_samples(&self) -> (f32, f32) {
+    fn apply_filters(&mut self, left: f32, right: f32) {
+        self.high_pass_left = self.high_pass_left * HP_FACTOR + left * (1.0 - HP_FACTOR);
+        self.high_pass_right = self.high_pass_right * HP_FACTOR + right * (1.0 - HP_FACTOR);
+        
+        let left_filtered = left - self.high_pass_left;
+        let right_filtered = right - self.high_pass_right;
+        
+        self.low_pass_left = self.low_pass_left * LP_FACTOR + left_filtered * (1.0 - LP_FACTOR);
+        self.low_pass_right = self.low_pass_right * LP_FACTOR + right_filtered * (1.0 - LP_FACTOR);
+    }
+
+    fn mix_samples(&mut self) -> (f32, f32) {
         let ch1 = self.pulse_channel.output();
         let ch2 = self.envelope_pulse_channel.output();
         let ch3 = self.wave_channel.output();
@@ -263,7 +287,9 @@ impl Audio {
         left *= left_vol / 8.0;
         right *= right_vol / 8.0;
 
-        (left / 4.0, right / 4.0)
+        self.apply_filters(left / 4.0, right / 4.0);
+
+        (self.low_pass_left, self.low_pass_right)
     }
 
     pub fn tick(&mut self, cycles: u8) {
