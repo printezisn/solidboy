@@ -17,7 +17,7 @@ const CYCLES_PER_FRAME: u32 = 70224;
 const FREQUENCER_TICK_CYCLES: u16 = 8192;
 
 const HP_FACTOR: f32 = 1.0;
-const LP_FACTOR: f32 = 0.85;
+const LP_FACTOR: f32 = 0.9;
 
 pub struct Audio {
     sample_buffer: [f32; SAMPLE_BUFFER_SIZE],
