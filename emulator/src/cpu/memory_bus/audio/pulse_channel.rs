@@ -316,3 +316,180 @@ impl PulseChannel {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn create_pulse_channel(model_type: ModelType) -> PulseChannel {
+        PulseChannel::new(model_type)
+    }
+
+    #[test]
+    fn test_new_initialization() {
+        let channel = create_pulse_channel(ModelType::DMG);
+        // After write_nr4(0, 0xBF) is called, channel is enabled with dac_enabled=true
+        // and volume is set from nr2: (0xF3 >> 4) & 0x0F = 15
+        assert_eq!(channel.enabled, true);
+        assert_eq!(channel.dac_enabled, true);
+        assert_eq!(channel.volume, 15);
+    }
+
+    #[test]
+    fn test_enabled_status_after_init() {
+        let mut channel = create_pulse_channel(ModelType::DMG);
+        // Initially enabled after write_nr4(0, 0xBF)
+        assert_eq!(channel.enabled, true);
+
+        // Disable dac
+        channel.write_nr2(0x00);
+        assert_eq!(channel.dac_enabled, false);
+        assert_eq!(channel.enabled, false);
+    }
+
+    #[test]
+    fn test_output_when_not_enabled() {
+        let mut channel = create_pulse_channel(ModelType::DMG);
+        // Initially enabled with volume 15
+        assert_eq!(channel.enabled, true);
+
+        // Disable to test output
+        channel.enabled = false;
+        assert_eq!(channel.output(), 0.0);
+    }
+
+    #[test]
+    fn test_output_when_dac_disabled() {
+        let mut channel = create_pulse_channel(ModelType::DMG);
+        channel.enabled = true;
+        channel.dac_enabled = false;
+        assert_eq!(channel.output(), 0.0);
+    }
+
+    #[test]
+    fn test_write_nr2_dac_enabled() {
+        let mut channel = create_pulse_channel(ModelType::DMG);
+        channel.write_nr2(0xF0);
+        assert_eq!(channel.dac_enabled, true);
+    }
+
+    #[test]
+    fn test_write_nr2_dac_disabled() {
+        let mut channel = create_pulse_channel(ModelType::DMG);
+        channel.enabled = true;
+        channel.write_nr2(0x00);
+        assert_eq!(channel.dac_enabled, false);
+        assert_eq!(channel.enabled, false);
+    }
+
+    #[test]
+    fn test_read_returns_correct_values() {
+        let mut channel = create_pulse_channel(ModelType::DMG);
+        channel.nr1 = 0xC0;
+        channel.nr2 = 0xF3;
+        channel.nr4 = 0x80;
+
+        // 0xFF10: nr0 = 0x80, so 0x80 | 0x80 = 0x80
+        assert_eq!(channel.read(0xFF10), Some(0x80));
+        assert_eq!(channel.read(0xFF11), Some(0xC0 | 0x3F));
+        assert_eq!(channel.read(0xFF12), Some(0xF3));
+        assert_eq!(channel.read(0xFF13), Some(0xFF));
+        assert_eq!(channel.read(0xFF14), Some(0x80 | 0xBF));
+    }
+
+    #[test]
+    fn test_read_invalid_address() {
+        let channel = create_pulse_channel(ModelType::DMG);
+        assert_eq!(channel.read(0xFF00), None);
+    }
+
+    #[test]
+    fn test_envelope_tick_increase() {
+        let mut channel = create_pulse_channel(ModelType::DMG);
+        channel.envelope_enabled = true;
+        channel.envelope_timer = 0;
+        channel.volume = 5;
+        channel.nr2 = 0x08; // Envelope pace = 0, direction = 1 (increase)
+
+        channel.envelope_tick();
+        // Should not increase when pace is 0
+        assert_eq!(channel.volume, 5);
+    }
+
+    #[test]
+    fn test_length_tick_disabled() {
+        let mut channel = create_pulse_channel(ModelType::DMG);
+        channel.enabled = true;
+        channel.length_enabled = false;
+        channel.length_counter = 10;
+
+        channel.length_tick();
+
+        assert_eq!(channel.length_counter, 10);
+        assert_eq!(channel.enabled, true);
+    }
+
+    #[test]
+    fn test_length_tick_enabled_decrements() {
+        let mut channel = create_pulse_channel(ModelType::DMG);
+        channel.enabled = true;
+        channel.length_enabled = true;
+        channel.length_counter = 2;
+
+        channel.length_tick();
+        assert_eq!(channel.length_counter, 1);
+
+        channel.length_tick();
+        assert_eq!(channel.length_counter, 0);
+        assert_eq!(channel.enabled, false);
+    }
+
+    #[test]
+    fn test_tick_increments_duty_step() {
+        let mut channel = create_pulse_channel(ModelType::DMG);
+        channel.period_timer = 0;
+        let initial_step = channel.duty_step;
+
+        channel.tick();
+
+        assert_eq!(channel.duty_step, (initial_step + 1) % 8);
+    }
+
+    #[test]
+    fn test_tick_decrements_period_timer() {
+        let mut channel = create_pulse_channel(ModelType::DMG);
+        channel.period_timer = 100;
+
+        channel.tick();
+
+        assert_eq!(channel.period_timer, 99);
+    }
+
+    #[test]
+    fn test_output_with_duty_pattern() {
+        let mut channel = create_pulse_channel(ModelType::DMG);
+        channel.enabled = true;
+        channel.dac_enabled = true;
+        channel.volume = 15;
+        channel.duty_step = 0;
+        channel.nr1 = 0x00; // Duty pattern 0: [0, 0, 0, 0, 0, 0, 0, 1]
+
+        assert_eq!(channel.output(), 0.0);
+
+        channel.duty_step = 7;
+        assert_eq!(channel.output(), 1.0);
+    }
+
+    #[test]
+    fn test_output_volume_scaling() {
+        let mut channel = create_pulse_channel(ModelType::DMG);
+        channel.enabled = true;
+        channel.dac_enabled = true;
+        channel.volume = 7;
+        channel.duty_step = 7;
+        channel.nr1 = 0x00; // Duty pattern 0
+
+        let output = channel.output();
+        assert_eq!(output, 7.0 / 15.0);
+    }
+}

@@ -209,3 +209,197 @@ impl WaveChannel {
         shifted as f32 / 15.0
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn create_wave_channel(model_type: ModelType) -> WaveChannel {
+        WaveChannel::new(model_type)
+    }
+
+    #[test]
+    fn test_new_initialization() {
+        let channel = create_wave_channel(ModelType::DMG);
+        assert_eq!(channel.enabled, false);
+        assert_eq!(channel.dac_enabled, false);
+        assert_eq!(channel.wave_pos, 0);
+    }
+
+    #[test]
+    fn test_clear_resets_state() {
+        let mut channel = create_wave_channel(ModelType::DMG);
+        channel.enabled = true;
+        channel.wave_pos = 5;
+        channel.length_counter = 256;
+
+        channel.clear();
+
+        assert_eq!(channel.enabled, false);
+        assert_eq!(channel.wave_pos, 5);
+        assert_eq!(channel.length_counter, 0);
+    }
+
+    #[test]
+    fn test_enabled_status() {
+        let channel = create_wave_channel(ModelType::DMG);
+        assert_eq!(channel.enabled(), false);
+    }
+
+    #[test]
+    fn test_output_when_disabled() {
+        let channel = create_wave_channel(ModelType::DMG);
+        assert_eq!(channel.output(), 0.0);
+    }
+
+    #[test]
+    fn test_output_when_dac_disabled() {
+        let mut channel = create_wave_channel(ModelType::DMG);
+        channel.enabled = true;
+        channel.dac_enabled = false;
+        assert_eq!(channel.output(), 0.0);
+    }
+
+    #[test]
+    fn test_read_nr0() {
+        let mut channel = create_wave_channel(ModelType::DMG);
+        channel.nr0 = 0x80;
+        assert_eq!(channel.read(0xFF1A), Some(0x80 | 0x7F));
+    }
+
+    #[test]
+    fn test_read_nr2() {
+        let mut channel = create_wave_channel(ModelType::DMG);
+        channel.nr2 = 0x60;
+        assert_eq!(channel.read(0xFF1C), Some(0x60 | 0x9F));
+    }
+
+    #[test]
+    fn test_read_nr4() {
+        let mut channel = create_wave_channel(ModelType::DMG);
+        channel.nr4 = 0x80;
+        assert_eq!(channel.read(0xFF1E), Some(0x80 | 0xBF));
+    }
+
+    #[test]
+    fn test_read_fixed_addresses() {
+        let channel = create_wave_channel(ModelType::DMG);
+        assert_eq!(channel.read(0xFF1B), Some(0xFF));
+        assert_eq!(channel.read(0xFF1D), Some(0xFF));
+    }
+
+    #[test]
+    fn test_read_wave_ram_when_disabled() {
+        let mut channel = create_wave_channel(ModelType::DMG);
+        channel.enabled = false;
+        channel.wave_ram[0] = 0x12;
+        assert_eq!(channel.read(0xFF30), Some(0x12));
+    }
+
+    #[test]
+    fn test_read_wave_ram_when_enabled() {
+        let mut channel = create_wave_channel(ModelType::DMG);
+        channel.enabled = true;
+        channel.wave_pos = 0;
+        channel.wave_ram[0] = 0x12;
+        assert_eq!(channel.read(0xFF30), Some(0x12));
+    }
+
+    #[test]
+    fn test_read_invalid_address() {
+        let channel = create_wave_channel(ModelType::DMG);
+        assert_eq!(channel.read(0xFF00), None);
+    }
+
+    #[test]
+    fn test_length_tick_disabled() {
+        let mut channel = create_wave_channel(ModelType::DMG);
+        channel.enabled = true;
+        channel.length_enabled = false;
+        channel.length_counter = 100;
+
+        channel.length_tick();
+
+        assert_eq!(channel.length_counter, 100);
+        assert_eq!(channel.enabled, true);
+    }
+
+    #[test]
+    fn test_length_tick_enabled_decrements() {
+        let mut channel = create_wave_channel(ModelType::DMG);
+        channel.enabled = true;
+        channel.length_enabled = true;
+        channel.length_counter = 2;
+
+        channel.length_tick();
+        assert_eq!(channel.length_counter, 1);
+
+        channel.length_tick();
+        assert_eq!(channel.length_counter, 0);
+        assert_eq!(channel.enabled, false);
+    }
+
+    #[test]
+    fn test_tick_decrements_period_timer() {
+        let mut channel = create_wave_channel(ModelType::DMG);
+        channel.period_timer = 100;
+        channel.enabled = true;
+
+        channel.tick();
+
+        assert_eq!(channel.period_timer, 99);
+    }
+
+    #[test]
+    fn test_output_with_shift_0() {
+        let mut channel = create_wave_channel(ModelType::DMG);
+        channel.enabled = true;
+        channel.dac_enabled = true;
+        channel.nr2 = 0x00; // Shift: 0
+        channel.wave_ram[0] = 0x12;
+        channel.wave_pos = 0;
+
+        assert_eq!(channel.output(), 0.0);
+    }
+
+    #[test]
+    fn test_output_with_shift_1() {
+        let mut channel = create_wave_channel(ModelType::DMG);
+        channel.enabled = true;
+        channel.dac_enabled = true;
+        channel.nr2 = 0x20; // Shift: 1
+        channel.wave_ram[0] = 0xF0;
+        channel.wave_pos = 0;
+
+        let output = channel.output();
+        assert_eq!(output, 15.0 / 15.0);
+    }
+
+    #[test]
+    fn test_output_with_shift_2() {
+        let mut channel = create_wave_channel(ModelType::DMG);
+        channel.enabled = true;
+        channel.dac_enabled = true;
+        channel.nr2 = 0x40; // Shift: 2
+        channel.wave_ram[0] = 0xF0;
+        channel.wave_pos = 0;
+
+        let output = channel.output();
+        let expected = ((15u8 >> 1) as f32) / 15.0;
+        assert_eq!(output, expected);
+    }
+
+    #[test]
+    fn test_output_with_shift_3() {
+        let mut channel = create_wave_channel(ModelType::DMG);
+        channel.enabled = true;
+        channel.dac_enabled = true;
+        channel.nr2 = 0x60; // Shift: 3
+        channel.wave_ram[0] = 0xF0;
+        channel.wave_pos = 0;
+
+        let output = channel.output();
+        let expected = ((15u8 >> 2) as f32) / 15.0;
+        assert_eq!(output, expected);
+    }
+}

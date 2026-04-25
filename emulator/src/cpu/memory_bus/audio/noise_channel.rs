@@ -223,3 +223,174 @@ impl NoiseChannel {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn create_noise_channel(model_type: ModelType) -> NoiseChannel {
+        NoiseChannel::new(model_type)
+    }
+
+    #[test]
+    fn test_new_initialization() {
+        let channel = create_noise_channel(ModelType::DMG);
+        assert_eq!(channel.enabled, false);
+        assert_eq!(channel.dac_enabled, false);
+        assert_eq!(channel.volume, 0);
+    }
+
+    #[test]
+    fn test_enabled_status() {
+        let channel = create_noise_channel(ModelType::DMG);
+        assert_eq!(channel.enabled(), false);
+    }
+
+    #[test]
+    fn test_output_when_disabled() {
+        let channel = create_noise_channel(ModelType::DMG);
+        assert_eq!(channel.output(), 0.0);
+    }
+
+    #[test]
+    fn test_output_when_dac_disabled() {
+        let mut channel = create_noise_channel(ModelType::DMG);
+        channel.enabled = true;
+        channel.dac_enabled = false;
+        assert_eq!(channel.output(), 0.0);
+    }
+
+    #[test]
+    fn test_read_nr1() {
+        let channel = create_noise_channel(ModelType::DMG);
+        assert_eq!(channel.read(0xFF20), Some(0xFF));
+    }
+
+    #[test]
+    fn test_read_nr2() {
+        let mut channel = create_noise_channel(ModelType::DMG);
+        channel.nr2 = 0xF3;
+        assert_eq!(channel.read(0xFF21), Some(0xF3));
+    }
+
+    #[test]
+    fn test_read_nr3() {
+        let mut channel = create_noise_channel(ModelType::DMG);
+        channel.nr3 = 0x42;
+        assert_eq!(channel.read(0xFF22), Some(0x42));
+    }
+
+    #[test]
+    fn test_read_nr4() {
+        let mut channel = create_noise_channel(ModelType::DMG);
+        channel.nr4 = 0x80;
+        assert_eq!(channel.read(0xFF23), Some(0x80 | 0xBF));
+    }
+
+    #[test]
+    fn test_read_invalid_address() {
+        let channel = create_noise_channel(ModelType::DMG);
+        assert_eq!(channel.read(0xFF00), None);
+    }
+
+    #[test]
+    fn test_write_nr2_dac_enabled() {
+        let mut channel = create_noise_channel(ModelType::DMG);
+        channel.write_nr2(0xF0);
+        assert_eq!(channel.dac_enabled, true);
+    }
+
+    #[test]
+    fn test_write_nr2_dac_disabled() {
+        let mut channel = create_noise_channel(ModelType::DMG);
+        channel.enabled = true;
+        channel.write_nr2(0x00);
+        assert_eq!(channel.dac_enabled, false);
+        assert_eq!(channel.enabled, false);
+    }
+
+    #[test]
+    fn test_length_tick_disabled() {
+        let mut channel = create_noise_channel(ModelType::DMG);
+        channel.enabled = true;
+        channel.length_enabled = false;
+        channel.length_counter = 64;
+
+        channel.length_tick();
+
+        assert_eq!(channel.length_counter, 64);
+        assert_eq!(channel.enabled, true);
+    }
+
+    #[test]
+    fn test_length_tick_enabled_decrements() {
+        let mut channel = create_noise_channel(ModelType::DMG);
+        channel.enabled = true;
+        channel.length_enabled = true;
+        channel.length_counter = 2;
+
+        channel.length_tick();
+        assert_eq!(channel.length_counter, 1);
+
+        channel.length_tick();
+        assert_eq!(channel.length_counter, 0);
+        assert_eq!(channel.enabled, false);
+    }
+
+    #[test]
+    fn test_envelope_tick_disabled() {
+        let mut channel = create_noise_channel(ModelType::DMG);
+        channel.envelope_enabled = false;
+        channel.volume = 10;
+
+        channel.envelope_tick();
+
+        assert_eq!(channel.volume, 10);
+    }
+
+    #[test]
+    fn test_tick_decrements_period_timer() {
+        let mut channel = create_noise_channel(ModelType::DMG);
+        channel.period_timer = 100;
+        channel.enabled = true;
+
+        channel.tick();
+
+        assert_eq!(channel.period_timer, 99);
+    }
+
+    #[test]
+    fn test_output_with_lfsr_bit_0_low() {
+        let mut channel = create_noise_channel(ModelType::DMG);
+        channel.enabled = true;
+        channel.dac_enabled = true;
+        channel.volume = 15;
+        channel.lfsr = 0x0000; // LSB is 0
+
+        let output = channel.output();
+        assert_eq!(output, 1.0);
+    }
+
+    #[test]
+    fn test_output_with_lfsr_bit_0_high() {
+        let mut channel = create_noise_channel(ModelType::DMG);
+        channel.enabled = true;
+        channel.dac_enabled = true;
+        channel.volume = 15;
+        channel.lfsr = 0x0001; // LSB is 1
+
+        assert_eq!(channel.output(), 0.0);
+    }
+
+    #[test]
+    fn test_output_volume_scaling() {
+        let mut channel = create_noise_channel(ModelType::DMG);
+        channel.enabled = true;
+        channel.dac_enabled = true;
+        channel.volume = 8;
+        channel.lfsr = 0x0000; // LSB is 0
+
+        let output = channel.output();
+        assert_eq!(output, 8.0 / 15.0);
+    }
+}

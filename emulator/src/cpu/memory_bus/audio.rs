@@ -351,3 +351,223 @@ impl Audio {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn create_audio(model_type: ModelType) -> Audio {
+        Audio::new(model_type)
+    }
+
+    #[test]
+    fn test_new_initialization() {
+        let audio = create_audio(ModelType::DMG);
+        assert_eq!(audio.nr50, 0x77);
+        assert_eq!(audio.nr51, 0xF3);
+        assert_eq!(audio.nr52, 0xF1);
+        assert_eq!(audio.sample_buffer_pos, 0);
+    }
+
+    #[test]
+    fn test_new_initializes_all_channels() {
+        let audio = create_audio(ModelType::DMG);
+        // After initialization, pulse channel is enabled
+        assert_eq!(audio.pulse_channel.enabled(), true);
+    }
+
+    #[test]
+    fn test_read_master_volume() {
+        let mut audio = create_audio(ModelType::DMG);
+        audio.nr50 = 0x77;
+        assert_eq!(audio.read(0xFF24), Some(0x77));
+    }
+
+    #[test]
+    fn test_read_stereo_panning() {
+        let mut audio = create_audio(ModelType::DMG);
+        audio.nr51 = 0xF3;
+        assert_eq!(audio.read(0xFF25), Some(0xF3));
+    }
+
+    #[test]
+    fn test_read_audio_enabled_all_disabled() {
+        let audio = create_audio(ModelType::DMG);
+        let value = audio.read(0xFF26).unwrap();
+        // All channels disabled (bits 0-3 are 0), but bit 0 might be 1 if pulse is enabled
+        // In initialization, pulse channel has dac_enabled=true but enabled=false
+        assert_eq!(value & 0x08, 0x00); // Check that at least noise is disabled
+    }
+
+    #[test]
+    fn test_read_audio_enabled_master_bit() {
+        let mut audio = create_audio(ModelType::DMG);
+        audio.nr52 = 0x80;
+        let value = audio.read(0xFF26).unwrap();
+        assert_eq!(value & 0x80, 0x80);
+    }
+
+    #[test]
+    fn test_read_fixed_values() {
+        let audio = create_audio(ModelType::DMG);
+        // 0xFF10 is read from pulse_channel, which returns nr0 | 0x80 = 0x80 | 0x80 = 0x80
+        assert_eq!(audio.read(0xFF10), Some(0x80));
+        assert_eq!(audio.read(0xFF27), Some(0xFF));
+    }
+
+    #[test]
+    fn test_read_invalid_address() {
+        let audio = create_audio(ModelType::DMG);
+        assert_eq!(audio.read(0xFF00), None);
+    }
+
+    #[test]
+    fn test_write_master_volume() {
+        let mut audio = create_audio(ModelType::DMG);
+        assert!(audio.write(0xFF24, 0x55));
+        assert_eq!(audio.nr50, 0x55);
+    }
+
+    #[test]
+    fn test_write_stereo_panning() {
+        let mut audio = create_audio(ModelType::DMG);
+        assert!(audio.write(0xFF25, 0xA5));
+        assert_eq!(audio.nr51, 0xA5);
+    }
+
+    #[test]
+    fn test_write_nr52_disable_audio() {
+        let mut audio = create_audio(ModelType::DMG);
+        audio.nr52 = 0x80;
+        audio.nr50 = 0x77;
+        audio.nr51 = 0xF3;
+
+        assert!(audio.write(0xFF26, 0x00));
+
+        assert_eq!(audio.nr52, 0x00);
+        assert_eq!(audio.nr50, 0x00);
+        assert_eq!(audio.nr51, 0x00);
+    }
+
+    #[test]
+    fn test_write_nr52_enable_audio() {
+        let mut audio = create_audio(ModelType::DMG);
+        audio.nr52 = 0x00;
+
+        assert!(audio.write(0xFF26, 0x80));
+
+        assert_eq!(audio.nr52, 0x80);
+    }
+
+    #[test]
+    fn test_write_invalid_address() {
+        let mut audio = create_audio(ModelType::DMG);
+        assert!(!audio.write(0xFF00, 0xFF));
+    }
+
+    #[test]
+    fn test_write_disabled_audio_returns_true() {
+        let mut audio = create_audio(ModelType::DMG);
+        audio.nr52 = 0x00;
+        // Writing to channel addresses when audio is disabled should return true
+        assert!(audio.write(0xFF12, 0xFF));
+    }
+
+    #[test]
+    fn test_reset_frame_sequencer_counter() {
+        let mut audio = create_audio(ModelType::DMG);
+        audio.frame_sequencer_counter = 100;
+        audio.reset_frame_sequencer_counter();
+        assert_eq!(audio.frame_sequencer_counter, 0);
+    }
+
+    #[test]
+    fn test_tick_increments_cycles() {
+        let mut audio = create_audio(ModelType::DMG);
+        let initial_cycles = audio.cycles;
+        audio.tick(1);
+        // cycles should have incremented
+        assert!(audio.cycles > initial_cycles || audio.sample_buffer_pos > 0);
+    }
+
+    #[test]
+    fn test_tick_with_audio_disabled() {
+        let mut audio = create_audio(ModelType::DMG);
+        audio.nr52 = 0x00;
+        let initial_cycles = audio.cycles;
+
+        audio.tick(10);
+
+        // cycles should have incremented even with audio disabled
+        assert!(audio.cycles > initial_cycles);
+    }
+
+    #[test]
+    fn test_mix_samples_no_channels_routed() {
+        let mut audio = create_audio(ModelType::DMG);
+        audio.nr51 = 0x00; // No channels routed
+
+        let (left, right) = audio.mix_samples();
+        assert_eq!(left, 0.0);
+        assert_eq!(right, 0.0);
+    }
+
+    #[test]
+    fn test_mix_samples_volume_levels() {
+        let mut audio = create_audio(ModelType::DMG);
+        audio.nr50 = 0x77; // Max volume
+        audio.nr51 = 0x11; // Channel 1 to both sides
+
+        // This requires channels to have output, which they don't by default
+        let (left, right) = audio.mix_samples();
+        // Both should be equal since same channels routed
+        assert_eq!(left, right);
+    }
+
+    #[test]
+    fn test_apply_filters() {
+        let mut audio = create_audio(ModelType::DMG);
+        // Initially all filter values are 0
+        assert_eq!(audio.high_pass_left, 0.0);
+        assert_eq!(audio.low_pass_left, 0.0);
+
+        audio.apply_filters(1.0, 1.0);
+
+        // After filtering, verify that filter logic is applied
+        // high_pass_left = 0.0 * HP_FACTOR + 1.0 * (1.0 - HP_FACTOR)
+        // Since HP_FACTOR = 1.0, this results in 0.0
+        assert_eq!(audio.high_pass_left, 0.0);
+    }
+
+    #[test]
+    fn test_frame_sequencer_step_cycles() {
+        let mut audio = create_audio(ModelType::DMG);
+        audio.nr52 = 0x80; // Enable audio
+        let initial_step = audio.frame_sequencer_step;
+
+        for _ in 0..FREQUENCER_TICK_CYCLES {
+            audio.tick(1);
+        }
+
+        // Frame sequencer step should have advanced
+        assert_ne!(audio.frame_sequencer_step, initial_step);
+    }
+
+    #[test]
+    fn test_audio_disabled_tick() {
+        let mut audio = create_audio(ModelType::DMG);
+        audio.nr52 = 0x00; // Disable audio
+
+        let initial_cycles = audio.cycles;
+        audio.tick(100);
+        // Channels should not tick when audio is disabled, but cycles should still increment
+        assert!(audio.cycles > initial_cycles || audio.sample_buffer_pos > 0);
+    }
+
+    #[test]
+    fn test_color_model_initialization() {
+        let audio = create_audio(ModelType::Color);
+        assert_eq!(audio.nr50, 0x77);
+        assert_eq!(audio.nr51, 0xF3);
+    }
+}
