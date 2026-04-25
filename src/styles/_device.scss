@@ -61,7 +61,7 @@
     align-items: center;
     gap: var(--spacing-8);
     user-select: none;
-    touch-action: none;
+    touch-action: pan-x pan-y;
     -webkit-touch-callout: none;
     -webkit-user-select: none;
 
